@@ -1,0 +1,4 @@
+<#model type="Product">
+<li>
+    <a href="{{ Model.Url }}">{{ Model.Name }}</a> <span>{{ Model.Price.ToString("0.00", Context.FormatProvider) }}</span>
+</li>

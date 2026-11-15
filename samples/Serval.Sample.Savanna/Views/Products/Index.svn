@@ -1,0 +1,14 @@
+<#model type="ProductIndexModel">
+<#extends view="Layouts/Catalog.svn" model="Model.Catalog">
+<#import view="Products/Card.svn" as="ProductCard">
+<#block name="title"><#parent> | {{ Model.Title }}</#block>
+<#block name="content">
+    <h1>{{ Model.Title }}</h1>
+    <ul>
+        <#foreach item="product" in="Model.Products">
+            <#include view="ProductCard" model="product" />
+        <#empty>
+            <li>No products found.</li>
+        </#foreach>
+    </ul>
+</#block>

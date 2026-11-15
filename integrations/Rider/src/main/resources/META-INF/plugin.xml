@@ -1,0 +1,22 @@
+<idea-plugin>
+    <id>dev.serval.savanna</id>
+    <name>Serval.Savanna</name>
+    <vendor>Serval</vendor>
+    <description><![CDATA[
+        Editor support for Serval.Savanna templates: syntax highlighting, C# model completion and quick documentation,
+        template and block navigation, and compiler diagnostics. Requires the .NET 11 SDK.
+    ]]></description>
+    <depends>com.intellij.modules.rider</depends>
+    <depends>com.intellij.modules.lsp</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <fileType name="Savanna" language="Savanna" implementationClass="dev.serval.savanna.SavannaFileType" fieldName="INSTANCE" extensions="svn"/>
+        <lang.parserDefinition language="Savanna" implementationClass="dev.serval.savanna.SavannaParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="Savanna" implementationClass="dev.serval.savanna.SavannaHighlighterFactory"/>
+        <editorHighlighterProvider filetype="Savanna" implementationClass="dev.serval.savanna.SavannaEditorHighlighterProvider"/>
+        <platform.lsp.integrationProvider implementation="dev.serval.savanna.SavannaLspIntegration"/>
+        <gotoDeclarationHandler order="first" implementation="dev.serval.savanna.SavannaGotoDeclarationHandler"/>
+        <codeBlockSupportHandler language="Savanna" implementationClass="dev.serval.savanna.SavannaCodeBlockSupportHandler"/>
+        <applicationConfigurable id="dev.serval.savanna.settings" parentId="language"
+                                 displayName="Serval.Savanna" instance="dev.serval.savanna.SavannaSettingsConfigurable"/>
+    </extensions>
+</idea-plugin>

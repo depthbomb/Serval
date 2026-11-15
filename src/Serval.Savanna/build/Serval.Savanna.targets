@@ -1,0 +1,15 @@
+<Project>
+    <PropertyGroup>
+        <SavannaRoot Condition="'$(SavannaRoot)' == ''">Views</SavannaRoot>
+        <SavannaRoot>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(SavannaRoot)'))</SavannaRoot>
+        <SavannaNamespace Condition="'$(SavannaNamespace)' == ''">$(RootNamespace).Generated</SavannaNamespace>
+        <EnableDefaultSavannaItems Condition="'$(EnableDefaultSavannaItems)' == ''">true</EnableDefaultSavannaItems>
+    </PropertyGroup>
+    <ItemGroup>
+        <SavannaTemplate Include="$(SavannaRoot)/**/*.svn" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" Condition="'$(EnableDefaultSavannaItems)' == 'true'"/>
+        <AdditionalFiles Include="@(SavannaTemplate)"/>
+        <CompilerVisibleProperty Include="MSBuildProjectDirectory"/>
+        <CompilerVisibleProperty Include="SavannaRoot"/>
+        <CompilerVisibleProperty Include="SavannaNamespace"/>
+    </ItemGroup>
+</Project>

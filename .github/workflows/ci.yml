@@ -1,0 +1,105 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  dotnet:
+    name: .NET solution
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - name: Restore
+        run: dotnet restore Serval.slnx --disable-build-servers
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: samples/Serval.Sample.Vite/ClientApp/package-lock.json
+      - name: Install Vite sample dependencies
+        run: npm ci --prefix samples/Serval.Sample.Vite/ClientApp --ignore-scripts
+      - name: Build
+        run: dotnet build Serval.slnx --configuration Release --no-restore --disable-build-servers
+      - name: Test framework and samples
+        run: dotnet test tests/Serval.Tests/Serval.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/framework
+      - name: Verify Vite package integration
+        run: ./tests/Serval.Tests/Packaging/VerifyVitePackage.ps1
+      - name: Verify Vite development proxy and HMR
+        run: node ./tests/Serval.Tests/Packaging/VerifyViteDevelopment.mjs
+      - name: Test Savanna language server
+        run: dotnet test tests/Serval.Savanna.LanguageServer.Tests/Serval.Savanna.LanguageServer.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/savanna-language-server
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dotnet-test-results
+          path: TestResults/**/*.trx
+          if-no-files-found: ignore
+          retention-days: 7
+
+  rider:
+    name: Rider plugin
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-provider: basic
+      - name: Test and package plugin
+        working-directory: integrations/Rider
+        run: .\gradlew.bat test buildPlugin --no-daemon --console=plain --stacktrace "-PriderDotnetPath=$((Get-Command dotnet).Source)"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rider-test-results
+          path: integrations/Rider/build/test-results/test/*.xml
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload Rider diagnostics
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rider-diagnostics
+          path: |
+            integrations/Rider/build/reports/
+            integrations/Rider/.intellijPlatform/sandbox/**/log-test/
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload plugin
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rider-plugin
+          path: integrations/Rider/build/distributions/*.zip
+          if-no-files-found: error
+          retention-days: 7

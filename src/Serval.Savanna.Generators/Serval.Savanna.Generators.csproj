@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);IncludeSavannaAnalyzerDependencies</GetTargetPathDependsOn>
+    <AnalyzerReleaseDirectory>$([System.IO.Path]::GetTempPath())Serval/SavannaAnalyzerReleases/$([MSBuild]::StableStringHash('$(MSBuildProjectFullPath)'))/$(Configuration)</AnalyzerReleaseDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Serval.Savanna.Compiler/Serval.Savanna.Compiler.csproj"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all"/>
+    <AdditionalFiles Include="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Shipped.md"/>
+    <AdditionalFiles Include="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Unshipped.md"/>
+  </ItemGroup>
+  <!-- IDEs need the compiler beside the generator when they copy analyzers into their own load context. -->
+  <Target Name="IncludeSavannaAnalyzerDependencies">
+    <ItemGroup>
+      <TargetPathWithTargetPlatformMoniker Include="$(TargetDir)Serval.Savanna.Compiler.dll" IncludeRuntimeDependency="false"/>
+    </ItemGroup>
+  </Target>
+  <Target Name="PrepareSavannaAnalyzerReleaseMetadata" BeforeTargets="CoreCompile">
+    <MakeDir Directories="$(AnalyzerReleaseDirectory)"/>
+    <WriteLinesToFile File="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Shipped.md" Lines="" Overwrite="true" WriteOnlyWhenDifferent="true"/>
+    <WriteLinesToFile File="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Unshipped.md" Lines="### New Rules;Rule ID | Category | Severity | Notes;--------|----------|----------|------;SAVANNA001 | Savanna | Error | InvalidTemplate;SAVANNA002 | Savanna | Error | InvalidReference;SAVANNA003 | Savanna | Error | UnsafeContext;SAVANNA004 | Savanna | Error | InvalidConfiguration" Overwrite="true" WriteOnlyWhenDifferent="true"/>
+  </Target>
+</Project>

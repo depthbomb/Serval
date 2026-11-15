@@ -1,0 +1,39 @@
+<Project>
+    <PropertyGroup>
+        <!-- Vite's default output with build.manifest enabled. Custom filenames are supported too. -->
+        <ViteManifest Condition="'$(ViteManifest)' == ''">dist/.vite/manifest.json</ViteManifest>
+        <!-- Keep the resolved path separate: command-line properties cannot be reassigned by a target. -->
+        <ViteManifestFullPath>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(ViteManifest)'))</ViteManifestFullPath>
+        <ViteNamespace Condition="'$(ViteNamespace)' == ''">$(RootNamespace).Generated</ViteNamespace>
+        <ViteClassName Condition="'$(ViteClassName)' == ''">Assets</ViteClassName>
+        <!-- Match the URL where the Vite output directory is served. Use ./ for relative URLs. -->
+        <ViteBaseUrl Condition="'$(ViteBaseUrl)' == ''">/</ViteBaseUrl>
+        <!-- Opt in explicitly. Release and publish builds use the manifest unless this property is supplied. -->
+        <ViteDevelopment Condition="'$(ViteDevelopment)' == ''">false</ViteDevelopment>
+        <!-- This is Vite's public URL, including its base path. / works when Vite serves the app's origin. -->
+        <ViteDevServerUrl Condition="'$(ViteDevServerUrl)' == ''">/</ViteDevServerUrl>
+        <!-- ViteDevEntries and optional ViteDevAssets are semicolon-separated source paths relative to Vite's root. -->
+        <ViteWorkingDirectory Condition="'$(ViteWorkingDirectory)' == ''">$(MSBuildProjectDirectory)</ViteWorkingDirectory>
+        <!-- The IDE cannot infer which frontend inputs an arbitrary command depends on. -->
+        <DisableFastUpToDateCheck Condition="'$(ViteBuildCommand)' != '' or '$(ViteBuildDependsOn)' != ''">true</DisableFastUpToDateCheck>
+    </PropertyGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="$(ViteManifestFullPath)" Condition="'$(ViteDevelopment)' != 'true'"/>
+        <CompilerVisibleProperty Include="ViteManifest"/>
+        <CompilerVisibleProperty Include="ViteManifestFullPath"/>
+        <CompilerVisibleProperty Include="ViteNamespace"/>
+        <CompilerVisibleProperty Include="ViteClassName"/>
+        <CompilerVisibleProperty Include="ViteBaseUrl"/>
+        <CompilerVisibleProperty Include="ViteDevelopment"/>
+        <CompilerVisibleProperty Include="ViteDevServerUrl"/>
+        <CompilerVisibleProperty Include="ViteDevEntries"/>
+        <CompilerVisibleProperty Include="ViteDevAssets"/>
+        <UpToDateCheckInput Include="$(ViteManifestFullPath)" Condition="'$(ViteDevelopment)' != 'true'"/>
+    </ItemGroup>
+    <!-- Run frontend commands only when C# can be rebuilt with the resulting manifest. -->
+    <Target Name="PrepareViteManifest" BeforeTargets="PrepareForBuild" DependsOnTargets="$(ViteBuildDependsOn)" Condition="'$(ViteDevelopment)' != 'true' and '$(DesignTimeBuild)' != 'true' and '$(NoBuild)' != 'true'">
+        <Exec Command="$(ViteBuildCommand)" WorkingDirectory="$(ViteWorkingDirectory)" Condition="'$(ViteBuildCommand)' != ''"/>
+        <Error Condition="!Exists('$(ViteManifestFullPath)')" Code="VITE001"
+               Text="Vite manifest not found: $(ViteManifestFullPath). Enable build.manifest in Vite and build the frontend, or set ViteBuildCommand to run it during the .NET build."/>
+    </Target>
+</Project>

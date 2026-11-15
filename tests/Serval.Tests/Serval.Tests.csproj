@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0"/>
+    <PackageReference Include="xunit" Version="2.9.3"/>
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all"/>
+    <ProjectReference Include="../../src/Serval/Serval.csproj"/>
+    <ProjectReference Include="../../src/Serval.Savanna/Serval.Savanna.csproj"/>
+    <ProjectReference Include="../../src/Serval.Savanna.Compiler/Serval.Savanna.Compiler.csproj"/>
+    <ProjectReference Include="../../src/Serval.Savanna.Generators/Serval.Savanna.Generators.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Savanna/Serval.Sample.Savanna.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Vite/Serval.Sample.Vite.csproj"/>
+    <ProjectReference Include="../../src/Serval.Authentication/Serval.Authentication.csproj"/>
+    <ProjectReference Include="../../src/Serval.OAuth/Serval.OAuth.csproj"/>
+    <ProjectReference Include="../../src/Serval.SignedUrls/Serval.SignedUrls.csproj"/>
+    <ProjectReference Include="../../src/Serval.Vite/Serval.Vite.csproj"/>
+    <ProjectReference Include="../../src/Serval.Vite.Generators/Serval.Vite.Generators.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.Http2/Serval.Transport.Http2.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.Http3/Serval.Transport.Http3.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Routing/Serval.Sample.Routing.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.TodoApi/Serval.Sample.TodoApi.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Middleware/Serval.Sample.Middleware.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Lifecycles/Serval.Sample.Lifecycles.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Files/Serval.Sample.Files.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Forms/Serval.Sample.Forms.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Streaming/Serval.Sample.Streaming.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.CookieAuth/Serval.Sample.CookieAuth.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.BearerAuth/Serval.Sample.BearerAuth.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.OAuth/Serval.Sample.OAuth.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.SignedUrls/Serval.Sample.SignedUrls.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Exceptions/Serval.Sample.Exceptions.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.Transports/Serval.Sample.Transports.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.EntityFramework/Serval.Sample.EntityFramework.csproj"/>
+    <ProjectReference Include="../../samples/Serval.Sample.BackgroundServices/Serval.Sample.BackgroundServices.csproj"/>
+    <ProjectReference Include="../../src/Serval.Generators/Serval.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true"/>
+    <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll" Private="true"/>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll" Private="true"/>
+    <Using Include="Xunit"/>
+  </ItemGroup>
+</Project>

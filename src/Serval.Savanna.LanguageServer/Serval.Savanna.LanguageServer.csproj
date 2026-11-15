@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Serval.Savanna.LanguageServer.Tests"/>
+    <ProjectReference Include="../Serval.Savanna.Compiler/Serval.Savanna.Compiler.csproj"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="5.9.0"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.9.0" PrivateAssets="all" Publish="true"/>
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.11.2" PrivateAssets="all" Publish="true"/>
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.11.48" ExcludeAssets="runtime" PrivateAssets="all"/>
+  </ItemGroup>
+</Project>

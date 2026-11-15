@@ -1,0 +1,16 @@
+<#model type="SiteModel">
+<#layout>
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title><#block name="title">{{ Model.Name }}</#block></title>
+    </head>
+    <body>
+        <header>
+            <a href="/">{{ Model.Name }}</a>
+        </header>
+        <main><#block name="content" required></#block></main>
+        <#component type="FooterComponent" arguments="Model.Name" />
+    </body>
+</html>

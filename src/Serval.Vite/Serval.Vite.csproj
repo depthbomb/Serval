@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Generated Vite asset lookups with production manifests and development HMR support.</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.1.0</Version>
+    <Title>Serval.Vite</Title>
+    <Authors>Caprine Logic</Authors>
+    <Copyright>Copyright (c) 2026 Caprine Logic</Copyright>
+    <PackageProjectUrl>https://github.com/depthbomb/serval</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/depthbomb/serval</RepositoryUrl>
+    <Company>Caprine Logic</Company>
+    <AssemblyVersion>0.1.0</AssemblyVersion>
+    <FileVersion>0.1.0</FileVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Serval.Vite.Generators/Serval.Vite.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all"/>
+    <None Update="build/Serval.Vite.targets" Pack="true" PackagePath="build/Serval.Vite.targets"/>
+  </ItemGroup>
+  <!-- Generator dependencies belong beside the analyzer, never in the application's runtime dependencies. -->
+  <Target Name="IncludeViteGenerator" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="../Serval.Vite.Generators/Serval.Vite.Generators.csproj" Targets="GetViteAnalyzerFiles"
+             Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0">
+      <Output TaskParameter="TargetOutputs" ItemName="_ViteAnalyzerFile"/>
+    </MSBuild>
+    <ItemGroup>
+      <None Include="@(_ViteAnalyzerFile)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    </ItemGroup>
+  </Target>
+</Project>

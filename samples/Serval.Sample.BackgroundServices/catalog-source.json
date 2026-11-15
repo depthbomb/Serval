@@ -1,0 +1,17 @@
+[
+  {
+    "sku": "coffee",
+    "name": "House coffee",
+    "priceCents": 1295
+  },
+  {
+    "sku": "tea",
+    "name": "Green tea",
+    "priceCents": 895
+  },
+  {
+    "sku": "cocoa",
+    "name": "Drinking chocolate",
+    "priceCents": 1095
+  }
+]

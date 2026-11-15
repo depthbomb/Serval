@@ -1,0 +1,8 @@
+{
+  "framework": "Serval",
+  "features": [
+    "static files",
+    "conditional requests",
+    "HEAD metadata"
+  ]
+}

@@ -1,0 +1,49 @@
+# .NET build and test output
+**/bin/
+**/obj/
+TestResults/
+artifacts/
+**/node_modules/
+samples/Serval.Sample.Vite/ClientApp/dist/
+*.nupkg
+*.snupkg
+*.coverage
+*.coveragexml
+
+# Local IDE settings
+.idea/
+.vs/
+*.user
+*.suo
+
+# Gradle and Rider plugin output
+**/.gradle/
+**/.intellijPlatform/
+integrations/Rider/build/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+appsettings.Local.json
+*.local.properties
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Sample databases and runtime output
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini

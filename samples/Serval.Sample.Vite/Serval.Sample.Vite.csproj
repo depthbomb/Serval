@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <DefaultItemExcludes>$(DefaultItemExcludes);ClientApp/node_modules/**;ClientApp/dist/**</DefaultItemExcludes>
+    <ViteManifest>ClientApp/dist/.vite/manifest.json</ViteManifest>
+    <ViteWorkingDirectory>$(MSBuildProjectDirectory)/ClientApp</ViteWorkingDirectory>
+    <!-- Run npm ci in ClientApp once; subsequent .NET builds also build the frontend. -->
+    <ViteBuildCommand>npm run build</ViteBuildCommand>
+    <!-- For HMR, use dotnet run -p:ViteDevelopment=true and npm run dev in ClientApp, then open http://localhost:5173. -->
+    <ViteDevServerUrl>/_vite/</ViteDevServerUrl>
+    <ViteDevEntries>src/main.js</ViteDevEntries>
+    <ViteDevAssets>src/logo.svg</ViteDevAssets>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Serval.Vite/Serval.Vite.csproj"/>
+    <ProjectReference Include="../../src/Serval.Savanna/Serval.Savanna.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
+    <!-- NuGet packages supply these analyzers automatically. Project references need explicit wiring. -->
+    <ProjectReference Include="../../src/Serval.Generators/Serval.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="../../src/Serval.Savanna.Generators/Serval.Savanna.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="../../src/Serval.Vite.Generators/Serval.Vite.Generators.csproj" ReferenceOutputAssembly="false"/>
+  </ItemGroup>
+  <Import Project="../../src/Serval.Savanna/build/Serval.Savanna.targets"/>
+  <Import Project="../../src/Serval.Vite/build/Serval.Vite.targets"/>
+  <Target Name="IncludeViteSampleAnalyzerDependencies" BeforeTargets="CoreCompile">
+    <MSBuild Projects="../../src/Serval.Vite.Generators/Serval.Vite.Generators.csproj" Targets="GetViteAnalyzerFiles" Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0">
+      <Output TaskParameter="TargetOutputs" ItemName="Analyzer"/>
+    </MSBuild>
+  </Target>
+  <!-- Discover assets after Vite runs so a clean build copies them too. The private manifest stays out of Public. -->
+  <Target Name="IncludeViteSampleAssets" BeforeTargets="AssignTargetPaths" DependsOnTargets="PrepareViteManifest" Condition="'$(ViteDevelopment)' != 'true'">
+    <ItemGroup>
+      <_ViteSampleAsset Include="ClientApp/dist/assets/**/*"/>
+      <Content Include="@(_ViteSampleAsset)">
+        <Link>Public/assets/%(_ViteSampleAsset.RecursiveDir)%(_ViteSampleAsset.Filename)%(_ViteSampleAsset.Extension)</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+</Project>

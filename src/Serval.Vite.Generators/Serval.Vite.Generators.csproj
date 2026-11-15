@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <AnalyzerReleaseDirectory>$([System.IO.Path]::GetTempPath())Serval/ViteAnalyzerReleases/$([MSBuild]::StableStringHash('$(MSBuildProjectFullPath)'))/$(Configuration)</AnalyzerReleaseDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all"/>
+    <PackageReference Include="System.Text.Json" Version="11.0.0" PrivateAssets="all"/>
+    <AdditionalFiles Include="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Shipped.md"/>
+    <AdditionalFiles Include="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Unshipped.md"/>
+  </ItemGroup>
+  <!-- Query resolved files instead of guessing bin paths, which change with custom artifact directories. -->
+  <Target Name="GetViteAnalyzerFiles" DependsOnTargets="ResolveReferences;GetTargetPath" Returns="@(_ViteAnalyzerFile)">
+    <ItemGroup>
+      <_ViteAnalyzerFile Include="$(TargetPath)"/>
+      <_ViteAnalyzerFile Include="@(ReferenceCopyLocalPaths)"
+                         Condition="'%(ReferenceCopyLocalPaths.Extension)' == '.dll'
+                         and '%(ReferenceCopyLocalPaths.DestinationSubDirectory)' == ''
+                         and '%(ReferenceCopyLocalPaths.Filename)' != 'Microsoft.CodeAnalysis'
+                         and '%(ReferenceCopyLocalPaths.Filename)' != 'Microsoft.CodeAnalysis.CSharp'
+                         and '%(ReferenceCopyLocalPaths.Filename)' != 'System.Collections.Immutable'
+                         and '%(ReferenceCopyLocalPaths.Filename)' != 'System.Reflection.Metadata'
+                         and '%(ReferenceCopyLocalPaths.Filename)' != 'System.Text.Encoding.CodePages'"/>
+    </ItemGroup>
+  </Target>
+  <Target Name="PrepareViteAnalyzerReleaseMetadata" BeforeTargets="CoreCompile">
+    <MakeDir Directories="$(AnalyzerReleaseDirectory)"/>
+    <WriteLinesToFile File="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Shipped.md" Lines="" Overwrite="true" WriteOnlyWhenDifferent="true"/>
+    <WriteLinesToFile File="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Unshipped.md" Lines="### New Rules;Rule ID | Category | Severity | Notes;--------|----------|----------|------;VITE001 | Vite | Error | MissingManifest;VITE002 | Vite | Error | InvalidManifest;VITE003 | Vite | Error | InvalidConfiguration" Overwrite="true" WriteOnlyWhenDifferent="true"/>
+  </Target>
+</Project>

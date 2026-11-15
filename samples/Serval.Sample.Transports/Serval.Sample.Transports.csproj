@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="Public/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
+    <ProjectReference Include="../../src/Serval/Serval.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.Http2/Serval.Transport.Http2.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.Http3/Serval.Transport.Http3.csproj"/>
+    <ProjectReference Include="../../src/Serval.Generators/Serval.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+  </ItemGroup>
+</Project>

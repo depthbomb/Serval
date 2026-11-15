@@ -1,0 +1,4 @@
+<#model type="CatalogModel">
+<#layout>
+<#extends view="Layouts/Site.svn" model="Model.Site">
+<#block name="title"><#parent> | {{ Model.Title }}</#block>

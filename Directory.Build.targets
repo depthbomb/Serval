@@ -1,0 +1,11 @@
+<Project>
+    <!-- Packable SDK projects default to true later, so only an explicit false opts out here. -->
+    <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(IsPackable)' != 'false'">
+        <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="" Visible="false"/>
+        <None Update="README.md" Pack="true" PackagePath=""/>
+    </ItemGroup>
+</Project>

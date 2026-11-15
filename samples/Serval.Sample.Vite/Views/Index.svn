@@ -1,0 +1,37 @@
+<#using namespace="Serval.Sample.Vite">
+<#model type="HomeModel">
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Serval + Vite</title>
+        <#foreach item="url" in="Model.Entry.Stylesheets">
+            <link rel="stylesheet" href="{{ url }}">
+        </#foreach>
+        <#foreach item="url" in="Model.Entry.ModulePreloads">
+            <link rel="modulepreload" href="{{ url }}" crossorigin>
+        </#foreach>
+    </head>
+    <body>
+        <main>
+            <img id="logo" src="{{ Model.LogoUrl }}" width="64" height="64" alt="An acacia tree beneath the sun">
+            <p class="eyebrow">Serval.Vite</p>
+            <h1>Built by Vite.<br>Served by Serval.</h1>
+            <#if condition="Model.IsDevelopment">
+                <p>Vite serves the frontend while Serval renders this page. Try editing the styles to see them update immediately.</p>
+            <#else>
+                <p>Savanna renders this page with asset URLs generated from the Vite manifest during the C# build.</p>
+            </#if>
+            <div class="actions">
+                <button id="counter" type="button">Clicked 0 times</button>
+                <button id="load-details" class="secondary" type="button">Load another module</button>
+            </div>
+            <p id="details" aria-live="polite"></p>
+            <noscript>The page and styles work without JavaScript. Enable it to try the buttons.</noscript>
+        </main>
+        <#foreach item="url" in="Model.Entry.Scripts">
+            <script type="module" src="{{ url }}" crossorigin></script>
+        </#foreach>
+    </body>
+</html>

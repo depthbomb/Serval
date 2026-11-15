@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <AnalyzerReleaseDirectory>$([System.IO.Path]::GetTempPath())Serval/AnalyzerReleases/$([MSBuild]::StableStringHash('$(MSBuildProjectFullPath)'))/$(Configuration)</AnalyzerReleaseDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Serval/Routing/RoutePattern.cs" Link="Routing/RoutePattern.cs"/>
+    <Compile Include="../Serval/Routing/RouteConstraintParser.cs" Link="Routing/RouteConstraintParser.cs"/>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all"/>
+    <AdditionalFiles Include="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Shipped.md"/>
+    <AdditionalFiles Include="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Unshipped.md"/>
+  </ItemGroup>
+  <!-- Release tables are compiler inputs; keep their generated files outside the project. -->
+  <Target Name="PrepareAnalyzerReleaseMetadata" BeforeTargets="CoreCompile">
+    <MakeDir Directories="$(AnalyzerReleaseDirectory)"/>
+    <WriteLinesToFile File="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Shipped.md" Lines="" Overwrite="true" WriteOnlyWhenDifferent="true"/>
+    <WriteLinesToFile File="$(AnalyzerReleaseDirectory)/AnalyzerReleases.Unshipped.md" Lines="### New Rules;Rule ID | Category | Severity | Notes;--------|----------|----------|------;SERVAL001 | Serval | Error | InvalidController;SERVAL002 | Serval | Error | InvalidAction;SERVAL003 | Serval | Error | InvalidRoute;SERVAL004 | Serval | Error | InvalidBinding;SERVAL005 | Serval | Error | DuplicateRoute;SERVAL006 | Serval | Error | InvalidUrlHelper" Overwrite="true" WriteOnlyWhenDifferent="true"/>
+  </Target>
+</Project>
