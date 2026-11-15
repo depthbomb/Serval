@@ -1,0 +1,63 @@
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, sans-serif;
+    line-height: 1.6;
+}
+
+body {
+    margin: 0;
+}
+
+main {
+    max-width: 56rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+section {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid GrayText;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+button, input {
+    font: inherit;
+    padding: 0.4rem 0.75rem;
+}
+
+button:enabled {
+    cursor: pointer;
+}
+
+label {
+    display: block;
+    margin-top: 1rem;
+}
+
+input {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.log, pre {
+    border: 1px solid GrayText;
+    border-radius: 0.25rem;
+    padding: 1rem;
+    font-family: ui-monospace, monospace;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.log {
+    height: 12rem;
+    overflow-y: auto;
+    list-style: none;
+}

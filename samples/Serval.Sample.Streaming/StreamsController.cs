@@ -17,33 +17,36 @@ namespace Serval.Sample.Streaming;
 public sealed class StreamsController : ControllerBase
 {
     [Get("/")]
-    public ValueTask<IActionResult> IndexAsync(RequestContext context) => TextAsync("""
-                                                                                    Streaming recipes
-                                                                                    GET /events        SSE events 1 through 10, one every 250 ms, with heartbeats
-                                                                                    Send Last-Event-ID: 7 to resume this deterministic sequence at event 8.
-                                                                                    A completed SSE sequence returns 204 on reconnect with Last-Event-ID: 10.
-                                                                                    GET /records       Five newline-delimited JSON records, flushed individually
-                                                                                    GET /socket        WebSocket echo; text or binary, including fragmented messages
-                                                                                    The WebSocket message limit is 64 KiB, with a two-minute idle timeout.
-                                                                                    Use curl -N for HTTP streams and a WebSocket client for /socket.
-                                                                                    """);
+    public ValueTask<IActionResult> IndexAsync(RequestContext context)
+        => FileAsync(Path.Combine(AppContext.BaseDirectory, "Public", "streaming", "index.html"), MimeTypes.Html);
 
     [Get("/events")]
     public async ValueTask<IActionResult> EventsAsync(RequestContext context)
     {
+        var batch = QueryValue("batch", 10);
+
+        AbortIf(batch is < 1 or > 10, StatusCodes.BadRequest, "batch must be an integer from 1 through 10.");
+
         var last     = 0;
         var supplied = context.Request.Headers.GetValues("Last-Event-ID");
-        AbortIf(supplied.Count > 1 || supplied.Count == 1
-            && (!int.TryParse(supplied[0], NumberStyles.None, CultureInfo.InvariantCulture, out last) || last is < 0 or > 10),
-            StatusCodes.BadRequest, "Last-Event-ID must be an integer from 0 through 10.");
+
+        AbortIf(supplied.Count > 1 ||
+                supplied.Count == 1 &&
+                (!int.TryParse(supplied[0], NumberStyles.None, CultureInfo.InvariantCulture, out last) || last is < 0 or > 10),
+                StatusCodes.BadRequest,
+                "Last-Event-ID must be an integer from 0 through 10.");
+
         if (last == 10)
         {
             return StatusCode(StatusCodes.NoContent);
         }
 
         context.DisableRequestTimeout();
+
         var events = await context.Response.StartEventsAsync(context.RequestAborted);
-        for (var id = last + 1; id <= 10; id++)
+        // Short batches let EventSource demonstrate automatic reconnects using Last-Event-ID.
+        var end    = Math.Min(last + batch, 10);
+        for (var id = last + 1; id <= end; id++)
         {
             await events.HeartbeatAsync(context.RequestAborted);
             await events.SendAsync($"Tick {id}", "tick", id.ToString(CultureInfo.InvariantCulture), TimeSpan.FromSeconds(1), context.RequestAborted);
@@ -59,9 +62,14 @@ public sealed class StreamsController : ControllerBase
         context.DisableRequestTimeout();
         context.Response.Headers[HeaderNames.ContentType]  = "application/x-ndjson; charset=utf-8";
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
+
         for (var index = 1; index <= 5; index++)
         {
-            var json = JsonSerializer.Serialize(new { index, message = $"Record {index}" });
+            var json = JsonSerializer.Serialize(new
+            {
+                index,
+                message = $"Record {index}",
+            });
             await context.Response.WriteAsync(Encoding.UTF8.GetBytes(json + "\n"), context.RequestAborted);
             await context.Response.FlushAsync(context.RequestAborted);
             await Task.Delay(100, context.RequestAborted);
@@ -74,6 +82,7 @@ public sealed class StreamsController : ControllerBase
     public async ValueTask<IActionResult> SocketAsync(RequestContext context)
     {
         context.DisableRequestTimeout();
+
         using var socket       = await context.Response.AcceptWebSocketAsync(cancellationToken: context.RequestAborted);
         using var idle         = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
         var       buffer       = new byte[4096];
@@ -83,6 +92,7 @@ public sealed class StreamsController : ControllerBase
             while (socket.State == WebSocketState.Open)
             {
                 idle.CancelAfter(TimeSpan.FromMinutes(2));
+
                 var received = await socket.ReceiveAsync(buffer.AsMemory(), idle.Token);
                 if (received.MessageType == WebSocketMessageType.Close)
                 {

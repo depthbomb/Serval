@@ -7,5 +7,6 @@
     <ProjectReference Include="../../src/Serval/Serval.csproj"/>
     <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
     <ProjectReference Include="../../src/Serval.Generators/Serval.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <None Update="Public/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
   </ItemGroup>
 </Project>

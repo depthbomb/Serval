@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Serval streaming samples</title>
+    <link rel="stylesheet" href="/streaming/site.css">
+    <script type="module" src="/streaming/events.js"></script>
+    <script type="module" src="/streaming/socket.js"></script>
+</head>
+<body>
+<main>
+    <h1>Streaming with Serval</h1>
+    <p>Try server-sent events and WebSockets using the browser's built-in clients.</p>
+
+    <section aria-labelledby="events-heading">
+        <h2 id="events-heading">Server-sent events</h2>
+        <p>The server sends ten numbered <code>tick</code> events, one every 250 ms, with heartbeat comments.
+            Each connection ends after three events. <code>EventSource</code> waits one second, then reconnects
+            with <code>Last-Event-ID</code> to pick up where it left off.</p>
+        <div class="controls">
+            <button id="events-start" type="button">Start events</button>
+            <button id="events-stop" type="button" disabled>Stop events</button>
+            <span id="events-status" role="status">Stopped</span>
+        </div>
+        <ol id="events-log" class="log" role="log" aria-label="Server-sent events"></ol>
+        <p>Starting again creates a new sequence. The client closes after event 10. A reconnect with
+            <code>Last-Event-ID: 10</code> gets HTTP 204, which also stops automatic reconnects.</p>
+    </section>
+
+    <section aria-labelledby="socket-heading">
+        <h2 id="socket-heading">WebSocket echo</h2>
+        <p>Connect to <code>/socket</code>, then send a message as text or UTF-8 binary data.
+            The server echoes the same bytes and message type, including fragmented messages.</p>
+        <div class="controls">
+            <button id="socket-connect" type="button">Connect</button>
+            <button id="socket-disconnect" type="button" disabled>Disconnect</button>
+            <span id="socket-status" role="status">Disconnected</span>
+        </div>
+        <form id="socket-form">
+            <label for="socket-message">Message</label>
+            <input id="socket-message" name="message" value="Hello, Serval!" maxlength="1024" required>
+            <div class="controls">
+                <button id="socket-send-text" type="submit" disabled>Send text</button>
+                <button id="socket-send-binary" type="submit" disabled>Send binary</button>
+            </div>
+        </form>
+        <ol id="socket-log" class="log" role="log" aria-label="WebSocket messages"></ol>
+        <p>The server limits each message to 64 KiB and disconnects idle clients after two minutes.
+            This page keeps the latest 100 log entries.</p>
+    </section>
+
+    <section aria-labelledby="terminal-heading">
+        <h2 id="terminal-heading">Try it from a terminal</h2>
+        <p>Run these from another terminal while the sample is running on its default port:</p>
+        <pre><code>curl.exe -N http://localhost:8105/events
+curl.exe -N -H "Last-Event-ID: 7" http://localhost:8105/events
+curl.exe -N http://localhost:8105/records</code></pre>
+        <p>Use <code>curl</code> on macOS or Linux. The <code>/records</code> endpoint streams five
+            newline-delimited JSON records. Use a WebSocket client with <code>ws://localhost:8105/socket</code>.
+            Adjust the port if you started the sample with <code>-- --port</code>.</p>
+    </section>
+    <noscript>Enable JavaScript to use the interactive clients, or try the terminal commands above.</noscript>
+</main>
+</body>
+</html>

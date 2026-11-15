@@ -23,7 +23,10 @@ public static class Program
     {
         var host = Host.CreateApplicationBuilder(args);
         var port = host.Configuration.GetValue("port", 8105);
-        host.Services.AddServal().AddGeneratedControllers().AddHttpListener(options =>
+        host.Services.AddServal(options =>
+        {
+            options.StaticFiles.DirectoryPath = Path.Combine(AppContext.BaseDirectory, "Public");
+        }).AddGeneratedControllers().AddHttpListener(options =>
         {
             options.Prefixes.Clear();
             options.Prefixes.Add($"http://localhost:{port}/");

@@ -466,7 +466,7 @@ Run any sample with `dotnet run --project samples/<project-name>`.
 | [TodoApi](samples/Serval.Sample.TodoApi)                       | JSON APIs, body binding, validation, and generated JSON metadata.                 | 8102 |
 | [Middleware](samples/Serval.Sample.Middleware)                 | Wrapping application and route execution, ordering, and short-circuiting.         | 8103 |
 | [Files](samples/Serval.Sample.Files)                           | Static files, downloads, and buffered raw uploads.                                | 8104 |
-| [Streaming](samples/Serval.Sample.Streaming)                   | Server-sent events, streamed JSON, and WebSockets.                                | 8105 |
+| [Streaming](samples/Serval.Sample.Streaming)                   | Interactive SSE reconnection and WebSocket echo clients, plus streamed JSON.      | 8105 |
 | [CookieAuth](samples/Serval.Sample.CookieAuth)                 | Session cookies, sign-in, sign-out, and CSRF checks.                              | 8106 |
 | [BearerAuth](samples/Serval.Sample.BearerAuth)                 | Bearer authentication, policies, and resource authorization.                      | 8107 |
 | [OAuth](samples/Serval.Sample.OAuth)                           | Provider configuration and sign-in backed by cookie sessions.                     | 8108 |
@@ -479,6 +479,14 @@ Run any sample with `dotnet run --project samples/<project-name>`.
 | [SignedUrls](samples/Serval.Sample.SignedUrls)                 | Permanent and expiring links, signed payloads, middleware, and manual validation. | 8115 |
 | [Forms](samples/Serval.Sample.Forms)                           | Browser forms, JSON POST values, multipart files, and route/query helpers.        | 8116 |
 | [Lifecycles](samples/Serval.Sample.Lifecycles)                 | Request initialization, final headers, completion outcomes, and local callbacks.  | 8117 |
+
+Run `dotnet run --project samples/Serval.Sample.Streaming` and open <http://localhost:8105/> to try SSE and WebSockets.
+The page uses native `EventSource` and `WebSocket` clients with no frontend dependencies. Start the event feed to
+watch it reconnect every three events using `Last-Event-ID`, or connect the echo client and send text or binary
+messages. The server code is in `StreamsController.cs`; the client code is in `Public/streaming/`.
+Use `curl.exe -N http://localhost:8105/events` for the full ten-event stream, or add `-H "Last-Event-ID: 7"` to resume
+at event 8. `/events?batch=3` limits each response to three events; a reconnect after event 10 returns HTTP 204.
+`/records` streams five newline-delimited JSON records. Use `curl` on macOS or Linux.
 
 The Vite sample needs Node.js 24 and `npm ci --prefix samples/Serval.Sample.Vite/ClientApp --ignore-scripts` first.
 For HMR, run it with `-p:ViteDevelopment=true`, start `npm --prefix samples/Serval.Sample.Vite/ClientApp run dev` in a

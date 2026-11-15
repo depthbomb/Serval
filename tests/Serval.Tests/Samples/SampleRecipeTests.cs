@@ -224,6 +224,39 @@ public sealed class SampleRecipeTests
     }
 
     [Fact]
+    public async Task StreamingSampleServesItsBrowserClient()
+    {
+        await using var app  = new SampleApplication("Streaming");
+        var             page = await app.SendAsync("/");
+        Assert.Equal(200, page.StatusCode);
+        Assert.Equal(MimeTypes.Html, page.Headers[HeaderNames.ContentType]);
+        Assert.Contains("/streaming/events.js", page.Text);
+        Assert.Contains("/streaming/socket.js", page.Text);
+
+        foreach (var asset in new[] { "events.js", "socket.js", "log.js", "site.css" })
+        {
+            var response = await app.SendAsync("/streaming/" + asset);
+            Assert.Equal(200, response.StatusCode);
+            Assert.NotEmpty(response.Text);
+            Assert.StartsWith(asset.EndsWith(".js", StringComparison.Ordinal) ? "text/javascript" : "text/css",
+                response.Headers[HeaderNames.ContentType]);
+        }
+    }
+
+    [Theory]
+    [InlineData("batch=0")]
+    [InlineData("batch=11")]
+    [InlineData("batch=invalid")]
+    [InlineData("batch=3&batch=4")]
+    public async Task StreamingSampleRejectsInvalidBatchSizes(string query)
+    {
+        await using var app      = new SampleApplication("Streaming");
+        var             response = await app.SendAsync("/events?" + query);
+        Assert.Equal(400, response.StatusCode);
+        Assert.DoesNotContain("event: tick", response.Text);
+    }
+
+    [Fact]
     public async Task StreamingRecipeResumesEventsAndStopsCompletedSequences()
     {
         await using var app      = new SampleApplication("Streaming");

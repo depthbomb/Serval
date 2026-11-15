@@ -52,6 +52,54 @@ public sealed class SampleWireTests
     }
 
     [Fact]
+    public async Task StreamingSampleResumesEventBatchesOverHttp()
+    {
+        var       port    = FreePort();
+        using var host    = SampleApplication.Build("Streaming", ["--port", port.ToString(CultureInfo.InvariantCulture)]);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        await host.StartAsync(timeout.Token);
+        try
+        {
+            using var client = new HttpClient(new SocketsHttpHandler { UseProxy = false });
+            var last = 0;
+            while (last < 10)
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:{port}/events?batch=3");
+                if (last > 0)
+                {
+                    request.Headers.Add("Last-Event-ID", last.ToString(CultureInfo.InvariantCulture));
+                }
+
+                using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+                Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType);
+                using var reader = new StreamReader(await response.Content.ReadAsStreamAsync(timeout.Token));
+                var ids = new List<int>();
+                while (await reader.ReadLineAsync(timeout.Token) is { } line)
+                {
+                    if (line.StartsWith("id: ", StringComparison.Ordinal))
+                    {
+                        ids.Add(int.Parse(line.AsSpan(4), CultureInfo.InvariantCulture));
+                    }
+                }
+
+                Assert.Equal(Enumerable.Range(last + 1, Math.Min(3, 10 - last)), ids);
+                last = ids[^1];
+            }
+
+            using var completed = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:{port}/events?batch=3");
+            completed.Headers.Add("Last-Event-ID", "10");
+            using var finished = await client.SendAsync(completed, timeout.Token);
+            Assert.Equal(HttpStatusCode.NoContent, finished.StatusCode);
+            Assert.Empty(await finished.Content.ReadAsByteArrayAsync(timeout.Token));
+        }
+        finally
+        {
+            await host.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact]
     public async Task StreamingSampleEchoesFragmentsAndClosesOversizedMessages()
     {
         var       port    = FreePort();
