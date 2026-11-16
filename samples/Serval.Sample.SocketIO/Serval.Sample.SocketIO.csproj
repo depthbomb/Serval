@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Serval.SocketIO/Serval.SocketIO.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
+    <ProjectReference Include="../../src/Serval.Generators/Serval.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <None Update="Public/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
+    <None Include="node_modules/socket.io-client/dist/socket.io.min.js" Link="Public/socketio/socket.io.min.js" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
+    <None Include="node_modules/socket.io-client/LICENSE" Link="Public/socketio/client-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
+  </ItemGroup>
+  <Target Name="CheckSocketIOClient" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('node_modules/socket.io-client/dist/socket.io.min.js')" Text="Install the official browser client first: npm ci --prefix samples/Serval.Sample.SocketIO --ignore-scripts"/>
+  </Target>
+</Project>

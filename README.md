@@ -24,7 +24,7 @@ static files, timeouts, and trace ID generation.
 
 ## Packages
 
-These nine projects produce NuGet packages. Build them locally or consume them through your internal feed.
+These ten projects produce NuGet packages. Build them locally or consume them through your internal feed.
 
 | Package                                                            | Purpose                                                                                |
 |--------------------------------------------------------------------|----------------------------------------------------------------------------------------|
@@ -32,6 +32,7 @@ These nine projects produce NuGet packages. Build them locally or consume them t
 | [Serval.Authentication](src/Serval.Authentication)                 | Authentication, sessions, authorization, password hashing, and CSRF helpers.           |
 | [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and provider sign-in, including authorization code flows with PKCE.  |
 | [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed route URLs, verified payload data, request validation, and optional expiration. |
+| [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, binary payloads, acknowledgements, namespaces, and in-memory rooms. |
 | [Serval.Savanna](src/Serval.Savanna)                                     | Compiled HTML templates with typed models, layouts, includes, and components.          |
 | [Serval.Vite](src/Serval.Vite)                                     | Asset lookups generated from Vite manifests, plus development URLs for HMR.            |
 | [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets through `System.Net.HttpListener`; the default in most samples.    |
@@ -456,6 +457,82 @@ absolute HTTP(S) request URLs and ignores their origin. Signatures do not cover 
 request body. Tokens are readable and reusable until they expire, so keep sensitive data out of them and apply any
 additional authentication, authorization, or single-use checks your endpoint needs.
 
+## Socket.IO
+
+`Serval.SocketIO` supports Socket.IO 4.x clients using the default JSON/binary parser: Socket.IO protocol 5 over
+Engine.IO 4 (`EIO=4`). It accepts HTTP long-polling, direct WebSockets, and polling-to-WebSocket upgrades.
+The interoperability suite uses the official JavaScript client, pinned to 4.8.4. Protocol details follow the
+[Engine.IO](https://socket.io/docs/v4/engine-io-protocol/) and
+[Socket.IO](https://socket.io/docs/v4/socket-io-protocol/) specifications.
+
+Register fixed namespaces and derive handlers from `SocketIOHandler`:
+
+```csharp
+builder.Services.AddServal().AddSocketIO(socketIO =>
+{
+    socketIO.MapNamespace<ChatHandler>("/").MapNamespace<ChatHandler>("/chat");
+}).AddHttpListener();
+
+public sealed class ChatHandler : SocketIOHandler
+{
+    public override async ValueTask OnEventAsync(SocketIOEvent message, CancellationToken ct)
+    {
+        if (message.Name == "hello")
+        {
+            var name = message.Arguments.Get<string>(0);
+            await message.Socket.EmitAsync("greeting", $"Hello, {name}!");
+            if (message.ExpectsAcknowledgement)
+            {
+                await message.AcknowledgeAsync("received");
+            }
+        }
+    }
+}
+```
+
+The default endpoint is `/socket.io/`; the namespace `/chat` still uses that same HTTP endpoint. Configure the endpoint,
+timeouts, JSON settings, origins, and limits through the second `AddSocketIO` callback. Route groups apply their prefix
+and endpoint middleware. On HTTP transports without WebSocket upgrades, set `EnableWebSockets = false` and use polling.
+Keep the framework's `MaxRequestBodyBytes` at least as large as the Socket.IO `MaxPayloadBytes`.
+
+Each connecting, connected, event, and disconnected callback gets a fresh, asynchronously disposed DI scope.
+Callbacks run in order per Engine.IO session, including across multiplexed namespaces. Acknowledgements are processed
+separately, so a handler can await `socket.EmitWithAcknowledgementAsync("question", ["Ready?"], ct: ct)` without
+blocking the reply. Callback deadlines are cooperative: handlers must observe `ct`. Exceptions close the session and
+are logged; disconnect callbacks get a separate cleanup deadline. Connections can be retained for background sends,
+but handlers and their scoped dependencies should stay within their callback.
+
+Use `Arguments.Get<T>(index)` to deserialize an argument. `byte[]` values, including properties nested in objects and
+arrays, travel as binary attachments. `EmitAsync` and `AcknowledgeAsync` accept multiple arguments. Acknowledgements
+are explicit and can be sent once per event. Server acknowledgement waits have a timeout, support cancellation, and
+end when the connection closes. Completion of a normal send means the message was queued, not that the peer received it.
+
+Call `socket.Join("room")` or `socket.Leave("room")` for namespace-local rooms. Each accepted socket also joins its own
+ID room. Inject `SocketIOServer` to broadcast from handlers or background services:
+
+```csharp
+await server.BroadcastAsync("/chat", "message", [new { text = "Hello, room!" }], room: "lobby");
+```
+
+An optional `except` socket ID excludes the sender. Rooms and pending acknowledgements are cleared on disconnect.
+`socket.Disconnect()` ends that namespace; `socket.Disconnect(closeTransport: true)` ends all namespaces on the
+connection and allows the official client's reconnection logic to run.
+
+Authentication middleware can call `context.AuthenticateAsync()` before endpoint dispatch. The initial handshake's
+principal is copied into each namespace socket. Override `OnConnectingAsync` to validate the client's `auth` object,
+apply namespace authorization, and optionally assign a validated `socket.User`. Returning false sends `connect_error`
+without disconnecting other namespaces. HTTP request services and credentials are not retained. Long-lived connections
+keep their accepted principal; applications should disconnect or revalidate them when credentials expire or are revoked.
+Browser origins are checked for both polling and WebSockets. Same-origin requests and requests without an Origin header
+are accepted; add exact cross-origin URLs to `AllowedOrigins`. Origin checks do not replace authentication.
+
+Queues, connections, rooms, namespaces, binary attachments, and pending acknowledgements have configurable limits.
+Slow consumers are disconnected when their queues fill. Heartbeats detect dead peers; incomplete POST bodies, binary
+packets, and upgrade probes have deadlines. Host shutdown cancels connections, awaits handlers, and removes rooms.
+Delivery is ordered and at most once, with no replay after reconnecting. This first version uses in-memory state in a
+single server process. Distributed adapters, connection-state recovery, WebTransport, legacy `EIO=3`, dynamic namespace
+patterns, custom parsers, and serving the JavaScript client from the protocol endpoint are outside its scope.
+
 ## Samples
 
 Run any sample with `dotnet run --project samples/<project-name>`.
@@ -467,6 +544,7 @@ Run any sample with `dotnet run --project samples/<project-name>`.
 | [Middleware](samples/Serval.Sample.Middleware)                 | Wrapping application and route execution, ordering, and short-circuiting.         | 8103 |
 | [Files](samples/Serval.Sample.Files)                           | Static files, downloads, and buffered raw uploads.                                | 8104 |
 | [Streaming](samples/Serval.Sample.Streaming)                   | Interactive SSE reconnection and WebSocket echo clients, plus streamed JSON.      | 8105 |
+| [SocketIO](samples/Serval.Sample.SocketIO)                     | Room chat, namespace selection, binary echo, acknowledgements, and transport upgrades. | 8119 |
 | [CookieAuth](samples/Serval.Sample.CookieAuth)                 | Session cookies, sign-in, sign-out, and CSRF checks.                              | 8106 |
 | [BearerAuth](samples/Serval.Sample.BearerAuth)                 | Bearer authentication, policies, and resource authorization.                      | 8107 |
 | [OAuth](samples/Serval.Sample.OAuth)                           | Provider configuration and sign-in backed by cookie sessions.                     | 8108 |
@@ -488,6 +566,11 @@ Use `curl.exe -N http://localhost:8105/events` for the full ten-event stream, or
 at event 8. `/events?batch=3` limits each response to three events; a reconnect after event 10 returns HTTP 204.
 `/records` streams five newline-delimited JSON records. Use `curl` on macOS or Linux.
 
+The Socket.IO sample needs `npm ci --prefix samples/Serval.Sample.SocketIO --ignore-scripts` first, then
+`dotnet run --project samples/Serval.Sample.SocketIO`. Open <http://localhost:8119/> in two tabs and join the same
+room. The page offers polling, WebSockets, and upgrades, and uses the official client copied into the published
+assets. No CDN is needed at runtime.
+
 The Vite sample needs Node.js 24 and `npm ci --prefix samples/Serval.Sample.Vite/ClientApp --ignore-scripts` first.
 For HMR, run it with `-p:ViteDevelopment=true`, start `npm --prefix samples/Serval.Sample.Vite/ClientApp run dev` in a
 second terminal, and open <http://localhost:5173/>. Its project file and Vite configuration show how the two servers fit
@@ -504,6 +587,8 @@ Build and test the solution from the repository root:
 
 ```powershell
 npm ci --prefix samples/Serval.Sample.Vite/ClientApp --ignore-scripts
+npm ci --prefix samples/Serval.Sample.SocketIO --ignore-scripts
+npm ci --prefix tests/Serval.SocketIO.Tests --ignore-scripts
 dotnet restore Serval.slnx
 dotnet build Serval.slnx --configuration Release --no-restore
 dotnet test Serval.slnx --configuration Release --no-build --no-restore
@@ -512,6 +597,25 @@ dotnet test Serval.slnx --configuration Release --no-build --no-restore
 NuGet packages land in each package project's `bin/Release` directory. Use `-p:GeneratePackageOnBuild=false` when you
 only need assemblies. Additional [package](tests/Serval.Tests/Packaging/VerifyVitePackage.ps1) and
 [HMR](tests/Serval.Tests/Packaging/VerifyViteDevelopment.mjs) checks cover Vite integration.
+
+To run only Socket.IO checks, use `dotnet test tests/Serval.SocketIO.Tests --configuration Release` after installing
+the two Socket.IO npm dependencies above. The test project starts a real local server and invokes Node.js 24 with
+the pinned official client. Missing Node.js or client dependencies fail the tests rather than skipping interoperability.
+
+The [Socket.IO benchmarks](benchmarks/Serval.SocketIO.Benchmarks) measure packet processing time and allocations,
+plus acknowledgement throughput and latency over polling and WebSockets. They use the test project's pinned client.
+Build once in Release, then run the measurements without a build running alongside them:
+
+```powershell
+dotnet build benchmarks/Serval.SocketIO.Benchmarks -c Release -p:GeneratePackageOnBuild=false
+dotnet benchmarks/Serval.SocketIO.Benchmarks/bin/Release/net11.0/Serval.SocketIO.Benchmarks.dll
+dotnet benchmarks/Serval.SocketIO.Benchmarks/bin/Release/net11.0/Serval.SocketIO.Benchmarks.dll server 8120
+# In a second terminal, while the benchmark server is running:
+node benchmarks/Serval.SocketIO.Benchmarks/load.mjs http://localhost:8120
+```
+
+The load test checks every reply and reports JSON with five samples per case, four clients, and eight requests in
+flight per client. Compare runs on the same machine; loopback results do not represent production capacity.
 
 The Rider plugin provides Savanna highlighting, completion, navigation, and diagnostics. It targets Rider 2026.3 and
 requires the .NET SDK; building it also needs JDK 25. On Windows:

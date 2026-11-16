@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Socket.IO 4.x events, namespaces, rooms, and acknowledgements over HTTP polling and WebSockets for Serval.</Description>
+    <Title>Serval.SocketIO</Title>
+    <Authors>Caprine Logic</Authors>
+    <Copyright>Copyright (c) 2026 Caprine Logic</Copyright>
+    <PackageProjectUrl>https://github.com/depthbomb/serval</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/depthbomb/serval</RepositoryUrl>
+    <Company>Caprine Logic</Company>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Serval/Serval.csproj"/>
+    <None Include="../../README.md" Link="README.md" Pack="true" PackagePath=""/>
+  </ItemGroup>
+</Project>

@@ -34,13 +34,22 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: samples/Serval.Sample.Vite/ClientApp/package-lock.json
+          cache-dependency-path: |
+            samples/Serval.Sample.Vite/ClientApp/package-lock.json
+            samples/Serval.Sample.SocketIO/package-lock.json
+            tests/Serval.SocketIO.Tests/package-lock.json
       - name: Install Vite sample dependencies
         run: npm ci --prefix samples/Serval.Sample.Vite/ClientApp --ignore-scripts
+      - name: Install official Socket.IO clients
+        run: |
+          npm ci --prefix samples/Serval.Sample.SocketIO --ignore-scripts
+          npm ci --prefix tests/Serval.SocketIO.Tests --ignore-scripts
       - name: Build
         run: dotnet build Serval.slnx --configuration Release --no-restore --disable-build-servers
       - name: Test framework and samples
         run: dotnet test tests/Serval.Tests/Serval.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/framework
+      - name: Test Socket.IO protocols and official JavaScript client
+        run: dotnet test tests/Serval.SocketIO.Tests/Serval.SocketIO.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/socketio
       - name: Verify Vite package integration
         run: ./tests/Serval.Tests/Packaging/VerifyVitePackage.ps1
       - name: Verify Vite development proxy and HMR
