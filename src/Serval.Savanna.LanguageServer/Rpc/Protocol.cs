@@ -12,8 +12,9 @@ namespace Serval.Savanna.LanguageServer.Rpc;
 public sealed class Protocol
 {
     private const int MaximumMessageBytes = 16 * 1024 * 1024;
-    private       int _readCount;
-    private       int _readOffset;
+
+    private int _readCount;
+    private int _readOffset;
 
     private readonly Stream        _input;
     private readonly Stream        _output;

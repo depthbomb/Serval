@@ -139,8 +139,7 @@ public class OAuthClientOptions
 
     internal void ValidateUri(Uri? uri, string name)
     {
-        if (
-            uri is null              ||
+        if (uri is null              ||
             !uri.IsAbsoluteUri       ||
             uri.UserInfo.Length != 0 ||
             uri.Fragment.Length != 0 ||

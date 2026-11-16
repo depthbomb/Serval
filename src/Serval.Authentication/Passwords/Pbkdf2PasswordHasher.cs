@@ -24,9 +24,9 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
     /// </exception>
     public Pbkdf2PasswordHasher(Pbkdf2PasswordHasherOptions options)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(options.Iterations, 10000);
+        ArgumentOutOfRangeException.ThrowIfLessThan(options.Iterations, 10_000);
         ArgumentOutOfRangeException.ThrowIfLessThan(options.MaximumVerificationIterations, options.Iterations);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(options.MaximumVerificationIterations, 10000000);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(options.MaximumVerificationIterations, 10_000_000);
         ArgumentOutOfRangeException.ThrowIfLessThan(options.SaltBytes, 16);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(options.SaltBytes, 64);
         ArgumentOutOfRangeException.ThrowIfLessThan(options.HashBytes, 32);
@@ -84,12 +84,9 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
         // Bound the stored work factor before deriving anything; database content isn't a CPU budget.
         var parts = encodedHash.Split('$');
         if (
-            parts.Length != 6                                                                            ||
-            parts[0]     != "serval"                                                                     ||
-            parts[1]     != "pbkdf2-sha256"                                                              ||
-            parts[2]     != "v1"                                                                         ||
+            parts is not ["serval", "pbkdf2-sha256", "v1", _, _, _]                                      ||
             !int.TryParse(parts[3], NumberStyles.None, CultureInfo.InvariantCulture, out var iterations) ||
-            iterations < 10000                                                                           ||
+            iterations < 10_000                                                                          ||
             iterations > _maximumIterations)
         {
             return PasswordVerificationResult.Failed;
@@ -119,7 +116,9 @@ public sealed class Pbkdf2PasswordHasher : IPasswordHasher
             return PasswordVerificationResult.Failed;
         }
 
-        return iterations < _iterations || saltLength < _saltBytes || hashLength < _hashBytes
+        return iterations < _iterations ||
+               saltLength < _saltBytes  ||
+               hashLength < _hashBytes
             ? PasswordVerificationResult.SuccessRehashNeeded
             : PasswordVerificationResult.Success;
     }

@@ -54,10 +54,10 @@ public sealed class MemoryAuthenticationSessionStoreOptions
 /// </remarks>
 public sealed class MemoryAuthenticationSessionStore : IAuthenticationSessionStore
 {
-    private          DateTimeOffset _nextCleanup;
-    private readonly int            _capacity;
-    private readonly Lock           _gate = new();
+    private DateTimeOffset _nextCleanup;
 
+    private readonly int                                      _capacity;
+    private readonly Lock                                     _gate     = new();
     private readonly Dictionary<string, AuthenticationTicket> _sessions = new(StringComparer.Ordinal);
     private readonly TimeProvider                             _time;
 
@@ -68,6 +68,7 @@ public sealed class MemoryAuthenticationSessionStore : IAuthenticationSessionSto
     public MemoryAuthenticationSessionStore(TimeProvider timeProvider, MemoryAuthenticationSessionStoreOptions options)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.Capacity);
+
         _capacity = options.Capacity;
         _time     = timeProvider;
     }
@@ -121,7 +122,9 @@ public sealed class MemoryAuthenticationSessionStore : IAuthenticationSessionSto
     public ValueTask<bool> RenewAsync(string key, AuthenticationTicket ticket, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
         Validate(ticket);
+
         lock (_gate)
         {
             // Keep lookup and replacement under one lock so renewal cannot bring back a revoked session.
@@ -139,6 +142,7 @@ public sealed class MemoryAuthenticationSessionStore : IAuthenticationSessionSto
     public ValueTask RemoveAsync(string key, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
         lock (_gate)
         {
             _sessions.Remove(key);

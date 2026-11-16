@@ -70,6 +70,7 @@ public sealed class AuthenticationResult
     public static AuthenticationResult Success(AuthenticationTicket ticket)
     {
         ArgumentNullException.ThrowIfNull(ticket);
+
         if (!ticket.Principal.Identities.Any(identity => identity.IsAuthenticated))
         {
             throw new ArgumentException("An authenticated identity is required.", nameof(ticket));
@@ -89,6 +90,7 @@ public sealed class AuthenticationResult
     public static AuthenticationResult Fail(string reason)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
         return new AuthenticationResult(null, reason);
     }
 }

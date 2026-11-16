@@ -11,8 +11,9 @@ namespace Serval.OAuth;
 
 internal static class OAuthProtocol
 {
-    private static readonly HashSet<string> Reserved = new(StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly HashSet<string> Reserved =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
         "client_id",
         "client_secret",
         "redirect_uri",
@@ -28,7 +29,7 @@ internal static class OAuthProtocol
         "refresh_token",
         "token",
         "token_type_hint",
-    };
+    ];
 
     internal static string RandomToken() => Base64Url(RandomNumberGenerator.GetBytes(32));
 

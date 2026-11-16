@@ -238,7 +238,7 @@ public sealed class SignedUrlService : ISignedUrlService
         var     prefix = "Serval.SignedUrls.v1."u8;
         var     length = prefix.Length + encoded.Length;
         byte[]? rented = null;
-        var     input  = length <= 1024 ? stackalloc byte[length] : rented = ArrayPool<byte>.Shared.Rent(length);
+        var     input  = length <= 1_024 ? stackalloc byte[length] : rented = ArrayPool<byte>.Shared.Rent(length);
         try
         {
             prefix.CopyTo(input);

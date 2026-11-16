@@ -15,11 +15,20 @@ internal static class MetadataDeclaration
 {
     private static readonly SymbolDisplayFormat DeclarationFormat = new(
         typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters | SymbolDisplayGenericsOptions.IncludeTypeConstraints,
-        memberOptions: SymbolDisplayMemberOptions.IncludeAccessibility      | SymbolDisplayMemberOptions.IncludeModifiers | SymbolDisplayMemberOptions.IncludeType            | SymbolDisplayMemberOptions.IncludeParameters,
-        parameterOptions: SymbolDisplayParameterOptions.IncludeType         | SymbolDisplayParameterOptions.IncludeName   | SymbolDisplayParameterOptions.IncludeParamsRefOut | SymbolDisplayParameterOptions.IncludeDefaultValue,
+        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters |
+                         SymbolDisplayGenericsOptions.IncludeTypeConstraints,
+        memberOptions: SymbolDisplayMemberOptions.IncludeAccessibility |
+                       SymbolDisplayMemberOptions.IncludeModifiers     |
+                       SymbolDisplayMemberOptions.IncludeType          |
+                       SymbolDisplayMemberOptions.IncludeParameters,
+        parameterOptions: SymbolDisplayParameterOptions.IncludeType         |
+                          SymbolDisplayParameterOptions.IncludeName         |
+                          SymbolDisplayParameterOptions.IncludeParamsRefOut |
+                          SymbolDisplayParameterOptions.IncludeDefaultValue,
         propertyStyle: SymbolDisplayPropertyStyle.ShowReadWriteDescriptor,
-        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes | SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers | SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.UseSpecialTypes          |
+                              SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers |
+                              SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
     public static async Task<object?> CreateAsync(ISymbol symbol, CancellationToken cancellationToken)
     {
@@ -57,7 +66,7 @@ internal static class MetadataDeclaration
         foreach (var member in type.GetMembers().Where(member => member is { IsImplicitlyDeclared: false, DeclaredAccessibility: Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal }))
         {
             if (member is not (IMethodSymbol or IPropertySymbol or IFieldSymbol or IEventSymbol)
-                or IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
+                          or IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
             {
                 continue;
             }
@@ -104,6 +113,10 @@ internal static class MetadataDeclaration
             }
         }
 
-        return new { uri = new Uri(path).AbsoluteUri, range = Position.Range(SourceText.From(content), selection) };
+        return new
+        {
+            uri   = new Uri(path).AbsoluteUri,
+            range = Position.Range(SourceText.From(content), selection)
+        };
     }
 }

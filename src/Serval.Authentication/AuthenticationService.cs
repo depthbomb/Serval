@@ -73,8 +73,9 @@ public interface IAuthenticationService
 /// <summary>Uses scoped handlers and caches authentication results per request and scheme.</summary>
 public sealed class AuthenticationService : IAuthenticationService
 {
-    private readonly        AuthenticationOptions _options;
-    private static readonly object                CacheKey = new();
+    private readonly AuthenticationOptions _options;
+
+    private static readonly object CacheKey = new();
 
     /// <summary>Creates an authentication service using the configured schemes and defaults.</summary>
     /// <param name="options">The registered schemes and operation defaults.</param>

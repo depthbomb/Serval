@@ -80,7 +80,7 @@ public interface IOAuthStateStore
 public sealed class MemoryOAuthStateStoreOptions
 {
     /// <summary>The positive maximum number of pending sign-ins. Defaults to 10,000.</summary>
-    public int Capacity { get; set; } = 10000;
+    public int Capacity { get; set; } = 10_000;
 }
 
 /// <summary>Stores bounded, single-use OAuth state in memory.</summary>
@@ -90,10 +90,10 @@ public sealed class MemoryOAuthStateStoreOptions
 /// </remarks>
 public sealed class MemoryOAuthStateStore : IOAuthStateStore
 {
-    private          DateTimeOffset _nextCleanup;
-    private readonly int            _capacity;
-    private readonly Lock           _gate = new();
+    private DateTimeOffset _nextCleanup;
 
+    private readonly int                            _capacity;
+    private readonly Lock                           _gate   = new();
     private readonly Dictionary<string, OAuthState> _states = new(StringComparer.Ordinal);
     private readonly TimeProvider                   _time;
 
@@ -166,8 +166,7 @@ public sealed class MemoryOAuthStateStore : IOAuthStateStore
                 return ValueTask.FromResult<OAuthState?>(null);
             }
 
-            if (
-                state.Scheme != scheme ||
+            if (state.Scheme != scheme ||
                 !CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(state.CorrelationHash), Encoding.UTF8.GetBytes(correlationHash)))
             {
                 // A guessed state token must not let another browser cancel the real sign-in attempt.

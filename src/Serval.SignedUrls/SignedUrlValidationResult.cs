@@ -61,7 +61,11 @@ public sealed class SignedUrlData
     /// <summary>The exclusive UTC expiration time, or null when the URL does not expire.</summary>
     public DateTimeOffset? ExpiresAt { get; }
 
-    internal SignedUrlData(string path, string? routeName, Dictionary<string, string?> routeValues, IEnumerable<KeyValuePair<string, string[]>> query, DateTimeOffset? expiresAt)
+    internal SignedUrlData(string                                      path,
+                           string?                                     routeName,
+                           Dictionary<string, string?>                 routeValues,
+                           IEnumerable<KeyValuePair<string, string[]>> query,
+                           DateTimeOffset?                             expiresAt)
     {
         Path        = path;
         RouteName   = routeName;

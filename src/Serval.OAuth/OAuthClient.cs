@@ -27,6 +27,7 @@ public sealed class OAuthClient : IDisposable
     public OAuthClient(OAuthClientOptions options)
     {
         options.Validate();
+
         _options  = options;
         _ownsHttp = options.Backchannel is null;
         _http = options.Backchannel ?? new HttpClient(new SocketsHttpHandler
@@ -144,6 +145,7 @@ public sealed class OAuthClient : IDisposable
                                                       CancellationToken    cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(refreshToken);
+
         var form = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["grant_type"]    = "refresh_token",
@@ -233,12 +235,17 @@ public sealed class OAuthClient : IDisposable
         using var request = FormRequest(_options.TokenEndpoint, form);
         using var timeout = CreateTimeout(cancellationToken);
         var       root    = await SendAsync(request, operation, false, timeout.Token);
+
         timeout.Token.ThrowIfCancellationRequested();
+
         var tokens = _options.ReadTokenResponse is {} readTokens ? await readTokens(root, timeout.Token) : ReadTokens(root);
         // A custom parser may ignore cancellation. Don't accept a result that arrived after the deadline.
         timeout.Token.ThrowIfCancellationRequested();
-        if (tokens is null                      || string.IsNullOrWhiteSpace(tokens.AccessToken) || string.IsNullOrWhiteSpace(tokens.TokenType)
-            || tokens.ExpiresIn < TimeSpan.Zero || tokens.AccessToken.Any(char.IsControl)        || tokens.TokenType.Any(char.IsControl))
+        if (tokens is null                                ||
+            string.IsNullOrWhiteSpace(tokens.AccessToken) ||
+            string.IsNullOrWhiteSpace(tokens.TokenType)   ||
+            tokens.ExpiresIn < TimeSpan.Zero              ||
+            tokens.AccessToken.Any(char.IsControl)        || tokens.TokenType.Any(char.IsControl))
         {
             throw new OAuthProtocolException("invalid_token_response");
         }
@@ -337,6 +344,7 @@ public sealed class OAuthClient : IDisposable
         {
             var root = document.RootElement;
             OAuthProtocol.ValidateObject(root);
+
             var error = OAuthProtocol.String(root, "error");
             if (error is not null || !response.IsSuccessStatusCode)
             {

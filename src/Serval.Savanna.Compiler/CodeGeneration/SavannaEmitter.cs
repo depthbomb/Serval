@@ -15,26 +15,53 @@ namespace Serval.Savanna.Compiler.CodeGeneration;
 
 internal sealed class SavannaEmitter
 {
-    private          int               _literal;
-    private          int               _temporary;
-    private readonly CancellationToken _cancellationToken;
+    private int _literal;
+    private int _temporary;
 
-    private readonly        IReadOnlyList<SavannaDocument>               _chain;
-    private readonly        string                                    _className;
-    private readonly        StringBuilder                             _code = new();
-    private readonly        List<SavannaDiagnostic>                      _diagnostics;
-    private readonly        List<SavannaSourceMapping>                   _mappings = [];
-    private readonly        string                                    _namespace;
-    private readonly        IReadOnlyDictionary<string, SavannaDocument> _views;
-    private static readonly Regex                                     AttributePrefix = new(@"\s+[^\s=<>/]+\s*=\s*['""]$", RegexOptions.CultureInvariant);
-    private static readonly HashSet<string> BooleanAttributes = new(StringComparer.Ordinal)
-        { "allowfullscreen", "async", "autofocus", "autoplay", "checked", "controls", "default", "defer", "disabled", "formnovalidate", "inert", "ismap", "itemscope", "loop", "multiple", "muted", "nomodule", "novalidate", "open", "playsinline", "readonly", "required", "reversed", "selected" };
+    private readonly CancellationToken                            _cancellationToken;
+    private readonly IReadOnlyList<SavannaDocument>               _chain;
+    private readonly string                                       _className;
+    private readonly StringBuilder                                _code = new();
+    private readonly List<SavannaDiagnostic>                      _diagnostics;
+    private readonly List<SavannaSourceMapping>                   _mappings = [];
+    private readonly string                                       _namespace;
+    private readonly IReadOnlyDictionary<string, SavannaDocument> _views;
+
+    private static readonly Regex AttributePrefix = new(@"\s+[^\s=<>/]+\s*=\s*['""]$", RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> BooleanAttributes =
+    [
+        with(StringComparer.Ordinal),
+        "allowfullscreen",
+        "async",
+        "autofocus",
+        "autoplay",
+        "checked",
+        "controls",
+        "default",
+        "defer",
+        "disabled",
+        "formnovalidate",
+        "inert",
+        "ismap",
+        "itemscope",
+        "loop",
+        "multiple",
+        "muted",
+        "nomodule",
+        "novalidate",
+        "open",
+        "playsinline",
+        "readonly",
+        "required",
+        "reversed",
+        "selected",
+    ];
 
     private SavannaEmitter(IReadOnlyList<SavannaDocument>               chain,
-                        IReadOnlyDictionary<string, SavannaDocument> views,
-                        string                                    generatedNamespace,
-                        List<SavannaDiagnostic>                      diagnostics,
-                        CancellationToken                         cancellationToken)
+                           IReadOnlyDictionary<string, SavannaDocument> views,
+                           string                                       generatedNamespace,
+                           List<SavannaDiagnostic>                      diagnostics,
+                           CancellationToken                            cancellationToken)
     {
         _chain             = chain;
         _views             = views;
@@ -46,10 +73,10 @@ internal sealed class SavannaEmitter
     }
 
     public static SavannaGeneratedSource Emit(IReadOnlyList<SavannaDocument>               chain,
-                                           IReadOnlyDictionary<string, SavannaDocument> views,
-                                           string                                    generatedNamespace,
-                                           List<SavannaDiagnostic>                      diagnostics,
-                                           CancellationToken                         cancellationToken)
+                                              IReadOnlyDictionary<string, SavannaDocument> views,
+                                              string                                       generatedNamespace,
+                                              List<SavannaDiagnostic>                      diagnostics,
+                                              CancellationToken                            cancellationToken)
     {
         var emitter = new SavannaEmitter(chain, views, generatedNamespace, diagnostics, cancellationToken);
         emitter.Generate();
@@ -118,7 +145,7 @@ internal sealed class SavannaEmitter
             Namespace(document);
             _code.Append("    internal sealed partial class ").AppendLine(_className).AppendLine("    {");
             Mapped(document, document.ModelSpan, "        private ", document.Model, " __model" + index + " = default!;");
-            if (document.Parent is { } parent)
+            if (document.Parent is {} parent)
             {
                 _code.Append("        private void __Initialize").Append(index).AppendLine("()").AppendLine("        {");
                 Locals(index);
@@ -255,7 +282,7 @@ internal sealed class SavannaEmitter
 
                         attributeName = attributeField + ", ";
                         writeMethod = html.Interpolation == SavannaInterpolationContext.Url ? "WriteUrlAttributeAsync"
-                            : BooleanAttributes.Contains(html.AttributeName)             ? "WriteBooleanAttributeAsync" : "WriteAttributeAsync";
+                            : BooleanAttributes.Contains(html.AttributeName)                ? "WriteBooleanAttributeAsync" : "WriteAttributeAsync";
                         removeQuote = true;
                     }
 
@@ -429,7 +456,7 @@ internal sealed class SavannaEmitter
                     {
                         SavannaNodeKind.For          => "for",
                         SavannaNodeKind.AwaitForEach => "await foreach",
-                        _                         => "foreach",
+                        _                            => "foreach",
                     };
                     var loopId = _temporary++;
                     loops.Push(loopId);
@@ -594,8 +621,8 @@ internal sealed class SavannaEmitter
     private static string BlockMethod(int index, string name) => "__Block" + index + "_" + name.TrimStart('@') + "Async";
 
     private static bool IsFullAttribute(SavannaHtmlContext html, SavannaNode next) => html.IsEmptyQuotedValue
-                                                                                && html.Interpolation is SavannaInterpolationContext.Attribute or SavannaInterpolationContext.Url
-                                                                                && next.Kind == SavannaNodeKind.Text && next.Value.Length > 0 && next.Value[0] == html.Quote;
+                                                                                      && html.Interpolation is SavannaInterpolationContext.Attribute or SavannaInterpolationContext.Url
+                                                                                      && next.Kind == SavannaNodeKind.Text && next.Value.Length > 0 && next.Value[0] == html.Quote;
 
     private static string ReadText(IReadOnlyList<SavannaNode> nodes, ref int index)
     {

@@ -22,18 +22,19 @@ public sealed record TemplateSnapshot(SavannaDocument Document, IReadOnlyList<Sa
 
 public sealed class SavannaWorkspace : IDisposable
 {
-    public           IReadOnlyCollection<OpenDocument>        OpenDocuments => _open.Values;
-    private          SavannaDocument[]                           _importFiles     = [];
-    private readonly Dictionary<string, EditorAnalyzerLoader> _analyzerLoaders = new(PathComparer);
-    private readonly Dictionary<string, Project>              _editorProjects  = new(PathComparer);
-    private readonly Dictionary<string, CachedFeatures>       _features        = new(PathComparer);
-    private readonly Dictionary<SavannaDocument, SavannaDocument>   _imported        = new();
+    public  IReadOnlyCollection<OpenDocument> OpenDocuments => _open.Values;
+    private SavannaDocument[]                 _importFiles = [];
 
-    private readonly        Dictionary<string, OpenDocument>     _open          = new(PathComparer);
-    private readonly        Dictionary<string, string>           _projectErrors = new(PathComparer);
-    private readonly        Dictionary<string, MSBuildWorkspace> _projects      = new(PathComparer);
-    private readonly        Dictionary<string, CachedTemplate>   _templates     = new(PathComparer);
-    private static readonly StringComparer                       PathComparer   = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private readonly Dictionary<string, EditorAnalyzerLoader>     _analyzerLoaders = new(PathComparer);
+    private readonly Dictionary<string, Project>                  _editorProjects  = new(PathComparer);
+    private readonly Dictionary<string, CachedFeatures>           _features        = new(PathComparer);
+    private readonly Dictionary<SavannaDocument, SavannaDocument> _imported        = new();
+    private readonly Dictionary<string, OpenDocument>             _open            = new(PathComparer);
+    private readonly Dictionary<string, string>                   _projectErrors   = new(PathComparer);
+    private readonly Dictionary<string, MSBuildWorkspace>         _projects        = new(PathComparer);
+    private readonly Dictionary<string, CachedTemplate>           _templates       = new(PathComparer);
+
+    private static readonly StringComparer PathComparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
     public void Dispose() => InvalidateProjects();
 
@@ -71,7 +72,11 @@ public sealed class SavannaWorkspace : IDisposable
             }
         }
 
-        _open[path] = current with { Text = text, Version = version };
+        _open[path] = current with
+        {
+            Text = text,
+            Version = version
+        };
         return true;
     }
 
@@ -189,7 +194,12 @@ public sealed class SavannaWorkspace : IDisposable
         var paths = new HashSet<string>(PathComparer);
         if (Directory.Exists(root))
         {
-            var options = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true };
+            var options = new EnumerationOptions
+            {
+                RecurseSubdirectories = true,
+                AttributesToSkip      = FileAttributes.ReparsePoint,
+                IgnoreInaccessible    = true
+            };
             paths.UnionWith(Directory.EnumerateFiles(root, "*.svn", options));
         }
 

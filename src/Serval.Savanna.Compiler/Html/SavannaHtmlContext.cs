@@ -57,10 +57,10 @@ internal sealed class SavannaHtmlContext
     private bool   _closing;
     private char   _previous;
     private string _rawTag = "";
+    private State  _state;
+    private string _tag = "";
+    private bool   _valueHasContent;
 
-    private          State       _state;
-    private          string      _tag = "";
-    private          bool        _valueHasContent;
     private readonly SavannaRawText _rawText = new();
 
     public void Read(string text)

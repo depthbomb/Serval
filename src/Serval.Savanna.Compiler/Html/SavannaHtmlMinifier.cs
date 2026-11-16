@@ -14,20 +14,20 @@ internal sealed class SavannaHtmlMinifier
 {
     private bool _afterBlock;
     private bool _requiresOriginal;
+    private bool IsPreserved => _elements.Count > 0 && _elements[_elements.Count - 1].Preserve;
 
-    private          bool          IsPreserved => _elements.Count > 0 && _elements[_elements.Count - 1].Preserve;
-    private readonly Stack<Branch> _branches = new();
+    private readonly Stack<Branch>              _branches = new();
+    private readonly List<Element>              _elements = [];
+    private readonly IReadOnlyList<SavannaNode> _expressions;
+    private readonly string                     _marker;
+    private readonly HashSet<SavannaNode>       _preserved = [];
+    private readonly SavannaRawText             _rawText   = new();
 
-    private readonly        List<Element>           _elements = [];
-    private readonly        IReadOnlyList<SavannaNode> _expressions;
-    private readonly        string                  _marker;
-    private readonly        HashSet<SavannaNode>       _preserved            = [];
-    private readonly        SavannaRawText             _rawText              = new();
-    private static readonly Regex                   PreserveAttribute     = new(@"\sdata-savanna-preserve-whitespace(?=[\s=/>])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-    private static readonly HashSet<string>         VoidElements          = [with(StringComparer.OrdinalIgnoreCase), "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"];
-    private static readonly HashSet<string>         RawElements           = [with(StringComparer.OrdinalIgnoreCase), "script", "style", "textarea", "title", "xmp", "iframe", "noembed", "noframes", "plaintext"];
-    private static readonly HashSet<string>         BlockElements         = [with(StringComparer.OrdinalIgnoreCase), "html", "head", "body", "address", "article", "aside", "blockquote", "div", "dl", "dt", "dd", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hgroup", "hr", "li", "main", "menu", "nav", "ol", "p", "pre", "section", "table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption", "ul"];
-    private static readonly HashSet<string>         ElementOnlyContainers = [with(StringComparer.OrdinalIgnoreCase), "html", "head", "ul", "ol", "menu", "dl", "table", "thead", "tbody", "tfoot", "tr", "colgroup"];
+    private static readonly Regex           PreserveAttribute     = new(@"\sdata-savanna-preserve-whitespace(?=[\s=/>])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> VoidElements          = [with(StringComparer.OrdinalIgnoreCase), "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"];
+    private static readonly HashSet<string> RawElements           = [with(StringComparer.OrdinalIgnoreCase), "script", "style", "textarea", "title", "xmp", "iframe", "noembed", "noframes", "plaintext"];
+    private static readonly HashSet<string> BlockElements         = [with(StringComparer.OrdinalIgnoreCase), "html", "head", "body", "address", "article", "aside", "blockquote", "div", "dl", "dt", "dd", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hgroup", "hr", "li", "main", "menu", "nav", "ol", "p", "pre", "section", "table", "thead", "tbody", "tfoot", "tr", "td", "th", "caption", "ul"];
+    private static readonly HashSet<string> ElementOnlyContainers = [with(StringComparer.OrdinalIgnoreCase), "html", "head", "ul", "ol", "menu", "dl", "table", "thead", "tbody", "tfoot", "tr", "colgroup"];
 
     private SavannaHtmlMinifier(IReadOnlyList<SavannaNode> expressions, string marker)
     {
@@ -45,9 +45,9 @@ internal sealed class SavannaHtmlMinifier
             marker += "_";
         }
 
-        var       input       = new StringBuilder();
-        var       expressions = new List<SavannaNode>();
-        var       groups      = new List<SavannaNode?>();
+        var          input       = new StringBuilder();
+        var          expressions = new List<SavannaNode>();
+        var          groups      = new List<SavannaNode?>();
         SavannaNode? group       = null;
         foreach (var node in nodes)
         {
@@ -81,7 +81,7 @@ internal sealed class SavannaHtmlMinifier
         {
             var separator = marker + index + '\uE001';
             var end       = index == expressions.Count ? compact.Length : compact.IndexOf(separator, start, StringComparison.Ordinal);
-            if (groups[index] is { } first)
+            if (groups[index] is {} first)
             {
                 text[first] = compact.Substring(start, end - start);
             }

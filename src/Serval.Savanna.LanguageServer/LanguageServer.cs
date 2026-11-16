@@ -15,15 +15,16 @@ namespace Serval.Savanna.LanguageServer;
 
 public sealed class LanguageServer
 {
-    private          bool                                                  _definitionLinks;
-    private          bool                                                  _diagnosticRefresh;
-    private          bool                                                  _fileWatchRegistration;
-    private          bool                                                  _initialized;
-    private          int                                                   _refreshId;
-    private          bool                                                  _shutdown;
+    private bool _definitionLinks;
+    private bool _diagnosticRefresh;
+    private bool _fileWatchRegistration;
+    private bool _initialized;
+    private int  _refreshId;
+    private bool _shutdown;
+
     private readonly Protocol                                              _protocol;
     private readonly ConcurrentDictionary<string, CancellationTokenSource> _requests = new();
-    private readonly SavannaWorkspace                                         _workspace;
+    private readonly SavannaWorkspace                                      _workspace;
 
     public LanguageServer(Protocol protocol, SavannaWorkspace workspace)
     {
@@ -39,7 +40,7 @@ public sealed class LanguageServer
         var       worker   = ProcessAsync();
         try
         {
-            while (await _protocol.ReadAsync(lifetime.Token) is { } input)
+            while (await _protocol.ReadAsync(lifetime.Token) is {} input)
             {
                 using (input)
                 {
@@ -55,7 +56,7 @@ public sealed class LanguageServer
                         continue;
                     }
 
-                    if (method.ValueKind != JsonValueKind.String || method.GetString() is not { } methodName)
+                    if (method.ValueKind != JsonValueKind.String || method.GetString() is not {} methodName)
                     {
                         await ErrorAsync(message.TryGetProperty("id", out var invalidId) ? invalidId : null, -32600, "A request method must be a string.");
                         continue;
@@ -70,7 +71,7 @@ public sealed class LanguageServer
                             {
                                 await pending.CancelAsync();
                             }
-                            catch (ObjectDisposedException) { }
+                            catch (ObjectDisposedException) {}
                         }
 
                         continue;
@@ -117,7 +118,12 @@ public sealed class LanguageServer
                         if (hasId)
                         {
                             // A canceled request must not leave half a JSON-RPC frame on the shared output stream.
-                            await _protocol.WriteAsync(new { jsonrpc = "2.0", id, result }, CancellationToken.None);
+                            await _protocol.WriteAsync(new
+                            {
+                                jsonrpc = "2.0",
+                                id,
+                                result
+                            }, CancellationToken.None);
                         }
                     }
                     catch (OperationCanceledException)
@@ -173,13 +179,41 @@ public sealed class LanguageServer
             {
                 capabilities = new
                 {
-                    positionEncoding       = "utf-16", textDocumentSync = new { openClose = true, change = 2, save = true },
-                    completionProvider     = new { triggerCharacters                      = new[] { ".", " ", "\"", "'", "/", "{", "#", "<" } },
-                    hoverProvider          = true, definitionProvider = true, documentFormattingProvider = true,
-                    semanticTokensProvider = new { legend     = new { tokenTypes = SemanticTokens.Types, tokenModifiers = Array.Empty<string>() }, full = true },
-                    diagnosticProvider     = new { identifier = "Serval.Savanna", interFileDependencies                                                    = true, workspaceDiagnostics = false },
+                    positionEncoding = "utf-16",
+                    textDocumentSync = new
+                    {
+                        openClose = true,
+                        change    = 2,
+                        save      = true
+                    },
+                    completionProvider = new
+                    {
+                        triggerCharacters = new[] { ".", " ", "\"", "'", "/", "{", "#", "<" }
+                    },
+                    hoverProvider              = true,
+                    definitionProvider         = true,
+                    documentFormattingProvider = true,
+                    semanticTokensProvider = new
+                    {
+                        legend = new
+                        {
+                            tokenTypes     = SemanticTokens.Types,
+                            tokenModifiers = Array.Empty<string>()
+                        },
+                        full = true
+                    },
+                    diagnosticProvider = new
+                    {
+                        identifier            = "Serval.Savanna",
+                        interFileDependencies = true,
+                        workspaceDiagnostics  = false
+                    },
                 },
-                serverInfo = new { name = "Serval.Savanna", version = "0.2.1" },
+                serverInfo = new
+                {
+                    name    = "Serval.Savanna",
+                    version = "0.2.1"
+                },
             };
         }
 
@@ -189,15 +223,28 @@ public sealed class LanguageServer
             {
                 await _protocol.WriteAsync(new
                 {
-                    jsonrpc = "2.0", id = "savanna-watch", method = "client/registerCapability",
+                    jsonrpc = "2.0",
+                    id      = "savanna-watch",
+                    method  = "client/registerCapability",
                     @params = new
                     {
                         registrations = new[]
                         {
                             new
                             {
-                                id              = "savanna-project-files", method = "workspace/didChangeWatchedFiles",
-                                registerOptions = new { watchers = new[] { new { globPattern = "**/*.{savanna,cs,csproj,props,targets,json,editorconfig}", kind = 7 } } },
+                                id     = "savanna-project-files",
+                                method = "workspace/didChangeWatchedFiles",
+                                registerOptions = new
+                                {
+                                    watchers = new[]
+                                    {
+                                        new
+                                        {
+                                            globPattern = "**/*.{savanna,cs,csproj,props,targets,json,editorconfig}",
+                                            kind        = 7
+                                        }
+                                    }
+                                },
                             },
                         },
                     },
@@ -302,8 +349,11 @@ public sealed class LanguageServer
             var compilation = SavannaCompiler.Compile(snapshot.Templates, "Serval.Savanna.Editor", cancellationToken);
             var diagnostics = compilation.Diagnostics.Where(diagnostic => diagnostic.Path == snapshot.Document.Path).Select(diagnostic => (object)new
             {
-                range  = Position.Range(snapshot.Document.Text, diagnostic.Span), severity = 1, code = diagnostic.Code,
-                source = "Savanna", message                                                   = diagnostic.Message,
+                range    = Position.Range(snapshot.Document.Text, diagnostic.Span),
+                severity = 1,
+                code     = diagnostic.Code,
+                source   = "Savanna",
+                message  = diagnostic.Message,
             }).ToList();
             if (csharp is not null)
             {
@@ -312,17 +362,32 @@ public sealed class LanguageServer
 
             if (snapshot.ProjectError is not null)
             {
-                diagnostics.Add(new { range = Position.Range(snapshot.Document.Text, default), severity = 2, code = "SAVANNAIDE001", source = "Savanna", message = snapshot.ProjectError });
+                diagnostics.Add(new
+                {
+                    range    = Position.Range(snapshot.Document.Text, default),
+                    severity = 2,
+                    code     = "SAVANNAIDE001",
+                    source   = "Savanna",
+                    message  = snapshot.ProjectError
+                });
             }
 
-            return new { kind = "full", items = diagnostics };
+            return new
+            {
+                kind  = "full",
+                items = diagnostics
+            };
         }
 
         var offset = Position.Read(parameters.GetProperty("position")).Offset(snapshot.Document.Text);
         if (method == "textDocument/completion")
         {
             var items = TemplateFeatures.Complete(snapshot, offset) ?? (csharp is null ? [] : await csharp.CompleteAsync(offset, cancellationToken));
-            return new { isIncomplete = items.Length >= 300, items };
+            return new
+            {
+                isIncomplete = items.Length >= 300,
+                items
+            };
         }
 
         if (method == "textDocument/definition")
@@ -338,10 +403,24 @@ public sealed class LanguageServer
         };
     }
 
-    private Task ErrorAsync(JsonElement? id, int code, string message) => _protocol.WriteAsync(new { jsonrpc = "2.0", id, error = new { code, message } });
+    private Task ErrorAsync(JsonElement? id, int code, string message) => _protocol.WriteAsync(new
+    {
+        jsonrpc = "2.0",
+        id,
+        error = new
+        {
+            code,
+            message
+        }
+    });
 
     private Task RefreshAsync() => _diagnosticRefresh
-        ? _protocol.WriteAsync(new { jsonrpc = "2.0", id = "savanna-refresh-" + ++_refreshId, method = "workspace/diagnostic/refresh" })
+        ? _protocol.WriteAsync(new
+        {
+            jsonrpc = "2.0",
+            id      = "savanna-refresh-" + ++_refreshId,
+            method  = "workspace/diagnostic/refresh"
+        })
         : Task.CompletedTask;
 
     private sealed class RpcException : Exception
@@ -364,7 +443,7 @@ internal static class JsonExtensions
         public string GetRequiredString(string property)
         {
             var value = element.GetValueOrDefault(property);
-            if (value.ValueKind != JsonValueKind.String || value.GetString() is not { } text)
+            if (value.ValueKind != JsonValueKind.String || value.GetString() is not {} text)
             {
                 throw new ArgumentException($"'{property}' must be a string.", nameof(property));
             }

@@ -99,7 +99,10 @@ public interface IAuthorizationService
     /// <exception cref="ArgumentOutOfRangeException">
     ///     The built-in service receives an undeclared permission value.
     /// </exception>
-    public ValueTask<AuthorizationResult> AuthorizeAsync<TPermission>(RequestContext context, ClaimsPrincipal principal, object? resource, TPermission permission) where TPermission : struct, Enum
+    public ValueTask<AuthorizationResult> AuthorizeAsync<TPermission>(RequestContext  context,
+                                                                      ClaimsPrincipal principal,
+                                                                      object?         resource,
+                                                                      TPermission     permission) where TPermission : struct, Enum
         => ValueTask.FromException<AuthorizationResult>(new NotSupportedException("This authorization service does not support resource permissions."));
 }
 
@@ -152,7 +155,10 @@ public sealed class AuthorizationService : IAuthorizationService
     }
 
     /// <inheritdoc />
-    public async ValueTask<AuthorizationResult> AuthorizeAsync<TPermission>(RequestContext context, ClaimsPrincipal principal, object? resource, TPermission permission) where TPermission : struct, Enum
+    public async ValueTask<AuthorizationResult> AuthorizeAsync<TPermission>(RequestContext  context,
+                                                                            ClaimsPrincipal principal,
+                                                                            object?         resource,
+                                                                            TPermission     permission) where TPermission : struct, Enum
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(principal);

@@ -46,7 +46,10 @@ public interface ISignInHandler : IAuthenticationHandler
     /// <param name="properties">Requested lifetime, persistence, and application metadata.</param>
     /// <returns>The issued ticket, including any handler-supplied properties.</returns>
     /// <remarks>Run before response startup and honor context.RequestAborted.</remarks>
-    public ValueTask<AuthenticationTicket> SignInAsync(RequestContext context, string scheme, ClaimsPrincipal principal, AuthenticationProperties properties);
+    public ValueTask<AuthenticationTicket> SignInAsync(RequestContext           context,
+                                                       string                   scheme,
+                                                       ClaimsPrincipal          principal,
+                                                       AuthenticationProperties properties);
 
     /// <summary>Revokes the request's credentials and removes any associated client cookie.</summary>
     /// <param name="context">The current request and its scoped services.</param>

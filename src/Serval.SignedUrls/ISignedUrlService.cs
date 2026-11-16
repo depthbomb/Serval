@@ -26,7 +26,10 @@ public interface ISignedUrlService
     ///     parameter is used, or the URL is invalid or too long.
     /// </exception>
     /// <exception cref="ArgumentOutOfRangeException">Expiration is not in the future.</exception>
-    string Path(string routeName, IReadOnlyDictionary<string, object?>? values = null, IReadOnlyDictionary<string, object?>? query = null, DateTimeOffset? expiresAt = null);
+    string Path(string                                routeName,
+                IReadOnlyDictionary<string, object?>? values    = null,
+                IReadOnlyDictionary<string, object?>? query     = null,
+                DateTimeOffset?                       expiresAt = null);
 
     /// <summary>Generates a named route URL that expires after a positive lifetime.</summary>
     /// <param name="routeName">The case-sensitive route name.</param>
@@ -35,7 +38,10 @@ public interface ISignedUrlService
     /// <param name="query">Optional query values.</param>
     /// <returns>The escaped application-relative signed URL.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The lifetime is not positive or exceeds the supported date range.</exception>
-    string TemporaryPath(string routeName, TimeSpan lifetime, IReadOnlyDictionary<string, object?>? values = null, IReadOnlyDictionary<string, object?>? query = null);
+    string TemporaryPath(string                                routeName,
+                         TimeSpan                              lifetime,
+                         IReadOnlyDictionary<string, object?>? values = null,
+                         IReadOnlyDictionary<string, object?>? query  = null);
 
     /// <summary>Signs an existing application-relative URL, including a generated typed route helper's output.</summary>
     /// <param name="path">A URL starting with a single slash, without a fragment or existing signature parameter.</param>
