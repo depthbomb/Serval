@@ -9,18 +9,20 @@ namespace Serval.SocketIO.Tests;
 
 public sealed class CorrectnessTests
 {
-    [Fact]
-    public async Task PollingReadRemainsExclusiveUntilResponseCompletes()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PollingReadRemainsExclusiveUntilResponseCompletes(bool blockCompletion)
     {
         await using var host = await TestServer.StartAsync();
         var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
-        session.Enqueue(EnginePacket.Text("42[\"test\"]"));
-        var response = new CapturedResponse(block: true);
+        session.Enqueue(EnginePacket.Text(blockCompletion ? "6" : "42[\"test\"]"));
+        var response = new CapturedResponse(block: true) { BlockCompletion = blockCompletion };
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
         var pending = session.PollAsync(response, timeout.Token).AsTask();
         try
         {
-            await response.Writing.Task.WaitAsync(TimeSpan.FromSeconds(1));
+            await response.Writing.Task.WaitAsync(TimeSpan.FromSeconds(blockCompletion ? 3 : 1), timeout.Token);
             var exception = await Assert.ThrowsAsync<HttpErrorException>(() => session.PollAsync(new CapturedResponse(), timeout.Token).AsTask());
             Assert.Equal(400, exception.StatusCode);
         }
@@ -28,7 +30,7 @@ public sealed class CorrectnessTests
         {
             response.Release.TrySetResult();
             session.Close("test complete");
-            try { await pending; } catch (OperationCanceledException) { }
+            try { await pending; } catch (OperationCanceledException) when (!blockCompletion) { }
         }
     }
 
@@ -194,28 +196,6 @@ public sealed class CorrectnessTests
         Assert.Equal("b" + Convert.ToBase64String(new byte[10]) + "\x1e" + "6", secondPacket.PollingText);
         Assert.True(secondPacket.Data.Length <= 20);
         session.Close("test complete");
-    }
-
-    [Fact]
-    public async Task PollingReadRemainsExclusiveDuringCompletion()
-    {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
-        session.Enqueue(EnginePacket.Text("6"));
-        var response = new CapturedResponse(block: true) { BlockCompletion = true };
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-        var pending = session.PollAsync(response, timeout.Token).AsTask();
-        try
-        {
-            await response.Writing.Task.WaitAsync(timeout.Token);
-            await Assert.ThrowsAsync<HttpErrorException>(() => session.PollAsync(new CapturedResponse(), timeout.Token).AsTask());
-        }
-        finally
-        {
-            response.Release.TrySetResult();
-            session.Close("test complete");
-            await pending;
-        }
     }
 
     private static async Task<string> ReadMatchingTextAsync(EngineSession session, string prefix)

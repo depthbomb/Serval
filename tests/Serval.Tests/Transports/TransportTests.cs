@@ -16,9 +16,7 @@ using Serval.Hosting;
 using Serval.Http;
 using Serval.Http.Constants;
 using Serval.Http.Results;
-using Serval.Sample.Transports;
 using Serval.Tests.Support;
-using Serval.Transport.Http3;
 using Serval.Transport.HttpListener;
 
 namespace Serval.Tests.Transports;
@@ -34,87 +32,65 @@ public sealed class TransportTests
     [Fact]
     public async Task HttpListenerServesJsonHeadCookiesSseAndWebSockets()
     {
-        var port    = FreePort(SocketType.Stream, ProtocolType.Tcp);
-        var builder = Host.CreateApplicationBuilder();
-        builder.Logging.ClearProviders();
-        builder.Services.AddScoped<ScopedProbe>();
-        var serval = builder.Services.AddServal().AddGeneratedControllers();
-        Serval_Sample_TransportsControllers.Register(serval);
-        serval.AddController<object>(HttpMethods.Get, "/transport/cookies", null, (_, context) =>
+        await using var server = await TransportTestHost.StartAsync(HttpVersion.Version11, false, ClientHandler, serval =>
         {
-            var options = new CookieOptions { Secure = false, Expires = DateTimeOffset.UtcNow.AddDays(1) };
-            context.Response.Cookies.Set("first", "one", options);
-            context.Response.Cookies.Set("second", "two", options);
-            return ValueTask.FromResult<IActionResult>(new TextResult("cookies"));
-        });
-        serval.AddController<object>(HttpMethods.Get, "/transport/early-hints", null, async (_, context) =>
-        {
-            var hints = new Headers { [HeaderNames.Link] = "</site.css>; rel=preload; as=style" };
-            Assert.False(context.Response.SupportsEarlyHints);
-            Assert.False(await context.Response.SendEarlyHintsAsync(hints, context.RequestAborted));
-            Assert.False(context.Response.HasStarted);
-            context.Response.Headers["X-Final"] = "yes";
-            return new TextResult("final");
-        });
-        serval.AddHttpListener(options =>
-        {
-            options.Prefixes.Clear();
-            options.Prefixes.Add($"http://localhost:{port}/");
-        });
-
-        using var host = builder.Build();
-        await host.StartAsync();
-        try
-        {
-            // All clients share a connection pool; each test owns only its client wrapper.
-            // ReSharper disable once ShortLivedHttpClient
-            using var client = new HttpClient(ClientHandler, false);
-            client.BaseAddress = new Uri($"http://localhost:{port}");
-            client.Timeout     = TimeSpan.FromSeconds(10);
-            Assert.Equal("12:controller,method", await client.GetStringAsync("/test/items/12"));
-            foreach (var json in new[] { "{}", "{\"name\":null}" })
+            Serval_Sample_TransportsControllers.Register(serval);
+            serval.AddController<object>(HttpMethods.Get, "/transport/cookies", null, (_, context) =>
             {
-                using var content       = new StringContent(json, Encoding.UTF8, MimeTypes.Json);
-                using var invalidWidget = await client.PostAsync("/api/widgets", content);
-                Assert.Equal(HttpStatusCode.UnprocessableEntity, invalidWidget.StatusCode);
-            }
-
-            using var head = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, "/test/items/12"));
-            Assert.Equal(HttpStatusCode.OK, head.StatusCode);
-            Assert.Empty(await head.Content.ReadAsByteArrayAsync());
-            using var hints = await client.GetAsync("/transport/early-hints");
-            Assert.Equal(HttpStatusCode.OK, hints.StatusCode);
-            Assert.Equal("yes", Assert.Single(hints.Headers.GetValues("X-Final")));
-            Assert.False(hints.Headers.Contains(HeaderNames.Link));
-            Assert.Equal("final", await hints.Content.ReadAsStringAsync());
-            using var cookie = await client.GetAsync("/api/cookie");
-            Assert.Contains("theme=dark", cookie.Headers.GetValues(HeaderNames.SetCookie).Single());
-            using var multipleCookies = await client.GetAsync("/transport/cookies");
-            var       cookieHeaders   = multipleCookies.Headers.GetValues(HeaderNames.SetCookie).ToArray();
-            Assert.Equal(2, cookieHeaders.Length);
-            Assert.Contains(cookieHeaders, value => value.StartsWith("first=one;", StringComparison.Ordinal));
-            Assert.Contains(cookieHeaders, value => value.StartsWith("second=two;", StringComparison.Ordinal));
-            using var events = await client.GetAsync("/api/events", HttpCompletionOption.ResponseHeadersRead);
-            Assert.Equal(MimeTypes.EventStream, events.Content.Headers.ContentType!.MediaType);
-            await using var body   = await events.Content.ReadAsStreamAsync();
-            using var       reader = new StreamReader(body);
-            Assert.Equal("event: tick", await reader.ReadLineAsync());
-            Assert.Contains("data: Event 2", await reader.ReadToEndAsync());
-
-            using var socket  = new ClientWebSocket();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await socket.ConnectAsync(new Uri($"ws://localhost:{port}/api/socket"), timeout.Token);
-            await socket.SendAsync("hello"u8.ToArray().AsMemory(), WebSocketMessageType.Text, true, timeout.Token);
-            var buffer  = new byte[128];
-            var message = await socket.ReceiveAsync(buffer.AsMemory(), timeout.Token);
-            Assert.Equal("hello", Encoding.UTF8.GetString(buffer, 0, message.Count));
-            await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", timeout.Token);
-        }
-        finally
+                var options = new CookieOptions { Secure = false, Expires = DateTimeOffset.UtcNow.AddDays(1) };
+                context.Response.Cookies.Set("first", "one", options);
+                context.Response.Cookies.Set("second", "two", options);
+                return ValueTask.FromResult<IActionResult>(new TextResult("cookies"));
+            });
+            serval.AddController<object>(HttpMethods.Get, "/transport/early-hints", null, async (_, context) =>
+            {
+                var hints = new Headers { [HeaderNames.Link] = "</site.css>; rel=preload; as=style" };
+                Assert.False(context.Response.SupportsEarlyHints);
+                Assert.False(await context.Response.SendEarlyHintsAsync(hints, context.RequestAborted));
+                Assert.False(context.Response.HasStarted);
+                context.Response.Headers["X-Final"] = "yes";
+                return new TextResult("final");
+            });
+        }, clientTimeout: TimeSpan.FromSeconds(10));
+        var client = server.Client;
+        Assert.Equal("12:controller,method", await client.GetStringAsync("/test/items/12"));
+        foreach (var json in new[] { "{}", "{\"name\":null}" })
         {
-            using var shutdown = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await host.StopAsync(shutdown.Token);
+            using var content       = new StringContent(json, Encoding.UTF8, MimeTypes.Json);
+            using var invalidWidget = await client.PostAsync("/api/widgets", content);
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, invalidWidget.StatusCode);
         }
+
+        using var head = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, "/test/items/12"));
+        Assert.Equal(HttpStatusCode.OK, head.StatusCode);
+        Assert.Empty(await head.Content.ReadAsByteArrayAsync());
+        using var hints = await client.GetAsync("/transport/early-hints");
+        Assert.Equal(HttpStatusCode.OK, hints.StatusCode);
+        Assert.Equal("yes", Assert.Single(hints.Headers.GetValues("X-Final")));
+        Assert.False(hints.Headers.Contains(HeaderNames.Link));
+        Assert.Equal("final", await hints.Content.ReadAsStringAsync());
+        using var cookie = await client.GetAsync("/api/cookie");
+        Assert.Contains("theme=dark", cookie.Headers.GetValues(HeaderNames.SetCookie).Single());
+        using var multipleCookies = await client.GetAsync("/transport/cookies");
+        var       cookieHeaders   = multipleCookies.Headers.GetValues(HeaderNames.SetCookie).ToArray();
+        Assert.Equal(2, cookieHeaders.Length);
+        Assert.Contains(cookieHeaders, value => value.StartsWith("first=one;", StringComparison.Ordinal));
+        Assert.Contains(cookieHeaders, value => value.StartsWith("second=two;", StringComparison.Ordinal));
+        using var events = await client.GetAsync("/api/events", HttpCompletionOption.ResponseHeadersRead);
+        Assert.Equal(MimeTypes.EventStream, events.Content.Headers.ContentType!.MediaType);
+        await using var body   = await events.Content.ReadAsStreamAsync();
+        using var       reader = new StreamReader(body);
+        Assert.Equal("event: tick", await reader.ReadLineAsync());
+        Assert.Contains("data: Event 2", await reader.ReadToEndAsync());
+
+        using var socket  = new ClientWebSocket();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await socket.ConnectAsync(new Uri($"ws://localhost:{client.BaseAddress!.Port}/api/socket"), timeout.Token);
+        await socket.SendAsync("hello"u8.ToArray().AsMemory(), WebSocketMessageType.Text, true, timeout.Token);
+        var buffer  = new byte[128];
+        var message = await socket.ReceiveAsync(buffer.AsMemory(), timeout.Token);
+        Assert.Equal("hello", Encoding.UTF8.GetString(buffer, 0, message.Count));
+        await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", timeout.Token);
     }
 
     [Theory]
@@ -199,74 +175,40 @@ public sealed class TransportTests
     [QuicFact]
     public async Task Http3ServesConcurrentRequestsJsonBodiesAndErrors()
     {
-        if (!QuicListener.IsSupported)
+        await using var server = await TransportTestHost.StartAsync(HttpVersion.Version30, true, ClientHandler,
+            serval => Serval_Sample_TransportsControllers.Register(serval));
+        var client = server.Client;
+        using var response = await client.GetAsync("/test/items/12");
+        Assert.Equal(HttpVersion.Version30, response.Version);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("12:controller,method", await response.Content.ReadAsStringAsync());
+        var pending = new Task<string>[20];
+        for (var index = 0; index < pending.Length; index++)
         {
-            throw new PlatformNotSupportedException();
+            pending[index] = client.GetStringAsync($"/test/items/{index + 1}");
         }
 
-        var       port        = FreePort(SocketType.Dgram, ProtocolType.Udp);
-        using var certificate = DevelopmentCertificate.Create();
-        var       builder     = Host.CreateApplicationBuilder();
-        builder.Logging.ClearProviders();
-        builder.Services.AddScoped<ScopedProbe>();
-        var serval = builder.Services.AddServal().AddGeneratedControllers();
-        Serval_Sample_TransportsControllers.Register(serval).AddHttp3(options =>
+        var responses = await Task.WhenAll(pending);
+        Assert.Equal(20, responses.Length);
+        using var content = new StringContent("{\"Text\":\"quic\"}", Encoding.UTF8, MimeTypes.Json);
+        using var post    = await client.PostAsync("/test/json", content);
+        Assert.Equal("{\"Text\":\"quic\"}", await post.Content.ReadAsStringAsync());
+        using var error = await client.GetAsync("/test/error");
+        Assert.Equal((HttpStatusCode)StatusCodes.UnprocessableContent, error.StatusCode);
+        Assert.Contains("validation_failed", await error.Content.ReadAsStringAsync());
+
+        using var head = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, "/test/items/12")
         {
-            options.EndPoint    = new IPEndPoint(IPAddress.Loopback, port);
-            // Configuration runs immediately; the certificate stays alive through host shutdown.
-            // ReSharper disable once AccessToDisposedClosure
-            options.Certificate = certificate;
+            Version       = HttpVersion.Version30,
+            VersionPolicy = HttpVersionPolicy.RequestVersionExact,
         });
-
-        using var host = builder.Build();
-        await host.StartAsync();
-        try
-        {
-            // All clients share a connection pool; each test owns only its client wrapper.
-            // ReSharper disable once ShortLivedHttpClient
-            using var client = new HttpClient(ClientHandler, false);
-            client.BaseAddress           = new Uri($"https://127.0.0.1:{port}");
-            client.DefaultRequestVersion = HttpVersion.Version30;
-            client.DefaultVersionPolicy  = HttpVersionPolicy.RequestVersionExact;
-            client.Timeout               = TimeSpan.FromSeconds(15);
-
-            using var response = await client.GetAsync("/test/items/12");
-            Assert.Equal(HttpVersion.Version30, response.Version);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            Assert.Equal("12:controller,method", await response.Content.ReadAsStringAsync());
-            var pending = new Task<string>[20];
-            for (var index = 0; index < pending.Length; index++)
-            {
-                pending[index] = client.GetStringAsync($"/test/items/{index + 1}");
-            }
-
-            var responses = await Task.WhenAll(pending);
-            Assert.Equal(20, responses.Length);
-            using var content = new StringContent("{\"Text\":\"quic\"}", Encoding.UTF8, MimeTypes.Json);
-            using var post    = await client.PostAsync("/test/json", content);
-            Assert.Equal("{\"Text\":\"quic\"}", await post.Content.ReadAsStringAsync());
-            using var error = await client.GetAsync("/test/error");
-            Assert.Equal((HttpStatusCode)StatusCodes.UnprocessableContent, error.StatusCode);
-            Assert.Contains("validation_failed", await error.Content.ReadAsStringAsync());
-
-            using var head = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, "/test/items/12")
-            {
-                Version       = HttpVersion.Version30,
-                VersionPolicy = HttpVersionPolicy.RequestVersionExact,
-            });
-            Assert.Equal(HttpStatusCode.OK, head.StatusCode);
-            Assert.Empty(await head.Content.ReadAsByteArrayAsync());
-            using var       events    = await client.GetAsync("/api/events", HttpCompletionOption.ResponseHeadersRead);
-            await using var eventBody = await events.Content.ReadAsStreamAsync();
-            using var       reader    = new StreamReader(eventBody);
-            Assert.Equal("event: tick", await reader.ReadLineAsync());
-            Assert.Contains("data: Event 2", await reader.ReadToEndAsync());
-        }
-        finally
-        {
-            using var shutdown = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-            await host.StopAsync(shutdown.Token);
-        }
+        Assert.Equal(HttpStatusCode.OK, head.StatusCode);
+        Assert.Empty(await head.Content.ReadAsByteArrayAsync());
+        using var       events    = await client.GetAsync("/api/events", HttpCompletionOption.ResponseHeadersRead);
+        await using var eventBody = await events.Content.ReadAsStreamAsync();
+        using var       reader    = new StreamReader(eventBody);
+        Assert.Equal("event: tick", await reader.ReadLineAsync());
+        Assert.Contains("data: Event 2", await reader.ReadToEndAsync());
     }
 
     private static int FreePort(SocketType type, ProtocolType protocol)

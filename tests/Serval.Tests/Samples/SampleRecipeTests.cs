@@ -24,14 +24,8 @@ public sealed class SampleRecipeTests
     [InlineData("editor-demo", "/documents/999", "GET", 404)]
     public async Task TypedPermissionSampleChecksOwnershipAndHonorsTheLockVeto(string? token, string path, string method, int status)
     {
-        await using var app      = new SampleApplication("BearerAuth");
-        var             response = await app.SendAsync(path, method, configure: headers => headers[HeaderNames.Authorization] = token is null ? null : "Bearer " + token);
-        Assert.Equal(status, response.StatusCode);
-        if (status == 401)
-        {
-            Assert.Equal("Bearer", response.Headers[HeaderNames.WwwAuthenticate]);
-        }
-        else if (status == 403)
+        var response = await SendBearerRequestAsync(token, path, method, status);
+        if (status == 403)
         {
             Assert.Equal("document_access_denied", Json(response).GetProperty("code").GetString());
             Assert.DoesNotContain("Approved documents", response.Text);
@@ -214,13 +208,7 @@ public sealed class SampleRecipeTests
     [InlineData("editor-demo", "/reports/alice", "GET", 200)]
     public async Task BearerRecipeDistinguishesAuthenticationRolesClaimsAndOwnership(string? token, string path, string method, int status)
     {
-        await using var app      = new SampleApplication("BearerAuth");
-        var             response = await app.SendAsync(path, method, configure: headers => headers[HeaderNames.Authorization] = token is null ? null : "Bearer " + token);
-        Assert.Equal(status, response.StatusCode);
-        if (status == 401)
-        {
-            Assert.Equal("Bearer", response.Headers[HeaderNames.WwwAuthenticate]);
-        }
+        await SendBearerRequestAsync(token, path, method, status);
     }
 
     [Fact]
@@ -318,6 +306,19 @@ public sealed class SampleRecipeTests
         Assert.True(response.Aborted);
         Assert.Equal("The response has already started.\n", response.Text);
         Assert.Null(response.Headers["X-Trace-Id"]);
+    }
+
+    private static async Task<MemoryResponse> SendBearerRequestAsync(string? token, string path, string method, int status)
+    {
+        await using var app      = new SampleApplication("BearerAuth");
+        var             response = await app.SendAsync(path, method, configure: headers => headers[HeaderNames.Authorization] = token is null ? null : "Bearer " + token);
+        Assert.Equal(status, response.StatusCode);
+        if (status == 401)
+        {
+            Assert.Equal("Bearer", response.Headers[HeaderNames.WwwAuthenticate]);
+        }
+
+        return response;
     }
 
     private static JsonElement Json(MemoryResponse response)

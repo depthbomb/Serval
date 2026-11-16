@@ -8,11 +8,11 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using System.Reflection;
-using System.Runtime.Loader;
 using Serval.Savanna;
 using Serval.Savanna.Compiler;
 using Serval.Savanna.Compiler.Parsing;
 using Serval.Savanna.Generators;
+using Serval.Tests.Support;
 
 namespace Serval.Tests.Savanna;
 
@@ -352,22 +352,9 @@ public sealed partial class SavannaCompilerTests
 
     private static async Task<string> Run(SavannaCompilation result, string code, CSharpParseOptions? options = null, bool normalizeComments = true)
     {
-        var       compilation = CreateCompilation(result, code, options);
-        using var stream      = new MemoryStream();
-        var       emit        = compilation.Emit(stream);
-        Assert.True(emit.Success, string.Join(Environment.NewLine, emit.Diagnostics));
-        stream.Position = 0;
-        var loadContext = new AssemblyLoadContext(compilation.AssemblyName!, true);
-        try
-        {
-            var assembly = loadContext.LoadFromStream(stream);
-            var output   = await (Task<string>)assembly.GetType("Entry")!.GetMethod("Run", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, null)!;
-            return normalizeComments ? SavannaTestOutput.NamesOnly(output) : output;
-        }
-        finally
-        {
-            loadContext.Unload();
-        }
+        using var compiled = new CompiledTestAssembly(CreateCompilation(result, code, options));
+        var output = await (Task<string>)compiled.Assembly.GetType("Entry")!.GetMethod("Run", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, null)!;
+        return normalizeComments ? SavannaTestOutput.NamesOnly(output) : output;
     }
 
     private sealed class TemplateFile(string path, string text) : AdditionalText

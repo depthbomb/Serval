@@ -55,115 +55,85 @@ public sealed class RequestScopeTests
     [InlineData(true)]
     public async Task CleanupFailuresAreReportedAfterSuccessfulResponsesWithoutRewritingThem(bool empty)
     {
-        await using var services = Application((_, _) => empty
+        await using var app = new DisposalFailureApplication((_, _) => empty
             ? ValueTask.FromResult<IActionResult>(new StatusCodeResult(204))
             : ValueTask.FromResult<IActionResult>(new TextResult("success")));
-        var failure  = new InvalidOperationException("Cleanup failed.");
-        var scope    = new FailingDisposalScope(services.CreateScope(), failure);
-        var errors   = new RecordingExceptionHandler();
-        var logger   = new RecordingLogger();
-        var response = new RecordingResponse();
-        var handler  = Handler(services, new TestScopeFactory(() => scope), errors, logger);
 
-        await handler.HandleAsync(Request(), response, CancellationToken.None);
+        await app.HandleAsync();
 
-        Assert.Equal(1, scope.Disposals);
-        Assert.True(scope.InnerDisposed);
-        Assert.Equal(empty ? 204 : 200, response.StatusCode);
-        Assert.Equal(empty ? "" : "success", response.Text);
-        Assert.Equal(1, response.Completions);
-        Assert.False(response.Aborted);
-        Assert.Empty(errors.Exceptions);
-        Assert.Same(failure, Assert.Single(logger.Exceptions));
-        Assert.Contains(response.Headers["X-Test-Trace"]!, Assert.Single(logger.Messages));
+        Assert.Equal(1, app.Scope.Disposals);
+        Assert.True(app.Scope.InnerDisposed);
+        Assert.Equal(empty ? 204 : 200, app.Response.StatusCode);
+        Assert.Equal(empty ? "" : "success", app.Response.Text);
+        Assert.Equal(1, app.Response.Completions);
+        Assert.False(app.Response.Aborted);
+        Assert.Empty(app.Errors.Exceptions);
+        Assert.Same(app.Cleanup, Assert.Single(app.Logger.Exceptions));
+        Assert.Contains(app.Response.Headers["X-Test-Trace"]!, Assert.Single(app.Logger.Messages));
     }
 
     [Fact]
     public async Task CleanupFailuresDoNotReplaceTheOriginalApplicationError()
     {
         var             original = new HttpErrorException(409, "An intentional conflict.");
-        await using var services = Application((_, _) => throw original);
-        var             cleanup  = new InvalidOperationException("Cleanup failed.");
-        var             scope    = new FailingDisposalScope(services.CreateScope(), cleanup);
-        var             errors   = new RecordingExceptionHandler();
-        var             logger   = new RecordingLogger();
-        var             response = new RecordingResponse();
-        var             handler  = Handler(services, new TestScopeFactory(() => scope), errors, logger);
+        await using var app = new DisposalFailureApplication((_, _) => throw original);
 
-        await handler.HandleAsync(Request(), response, CancellationToken.None);
+        await app.HandleAsync();
 
-        Assert.Same(original, Assert.Single(errors.Exceptions));
-        Assert.Same(cleanup, Assert.Single(logger.Exceptions));
-        Assert.Contains(errors.Context!.TraceId, Assert.Single(logger.Messages));
-        Assert.Equal("central handler", response.Text);
-        Assert.Equal(1, response.Completions);
+        Assert.Same(original, Assert.Single(app.Errors.Exceptions));
+        Assert.Same(app.Cleanup, Assert.Single(app.Logger.Exceptions));
+        Assert.Contains(app.Errors.Context!.TraceId, Assert.Single(app.Logger.Messages));
+        Assert.Equal("central handler", app.Response.Text);
+        Assert.Equal(1, app.Response.Completions);
     }
 
     [Fact]
     public async Task CleanupFailuresDoNotMaskTransportExceptions()
     {
         var             original = new RequestTransportException("The stream was reset.");
-        await using var services = Application((_, _) => throw original);
-        var             cleanup  = new InvalidOperationException("Cleanup failed.");
-        var             scope    = new FailingDisposalScope(services.CreateScope(), cleanup);
-        var             errors   = new RecordingExceptionHandler();
-        var             logger   = new RecordingLogger();
-        var             response = new RecordingResponse();
-        var             handler  = Handler(services, new TestScopeFactory(() => scope), errors, logger);
+        await using var app = new DisposalFailureApplication((_, _) => throw original);
 
-        var thrown = await Assert.ThrowsAsync<RequestTransportException>(() => handler.HandleAsync(Request(), response, CancellationToken.None).AsTask());
+        var thrown = await Assert.ThrowsAsync<RequestTransportException>(() => app.HandleAsync().AsTask());
 
         Assert.Same(original, thrown);
-        Assert.Same(cleanup, Assert.Single(logger.Exceptions));
-        Assert.Empty(errors.Exceptions);
-        Assert.Equal(1, scope.Disposals);
-        Assert.Equal(0, response.Completions);
+        Assert.Same(app.Cleanup, Assert.Single(app.Logger.Exceptions));
+        Assert.Empty(app.Errors.Exceptions);
+        Assert.Equal(1, app.Scope.Disposals);
+        Assert.Equal(0, app.Response.Completions);
     }
 
     [Fact]
     public async Task CleanupFailuresDoNotReplaceClientCancellation()
     {
-        await using var services = Application((_, context) =>
+        await using var app = new DisposalFailureApplication((_, context) =>
         {
             context.RequestAborted.ThrowIfCancellationRequested();
             return ValueTask.FromResult<IActionResult>(new TextResult("unreachable"));
         });
-        var       cleanup      = new InvalidOperationException("Cleanup failed.");
-        var       scope        = new FailingDisposalScope(services.CreateScope(), cleanup);
-        var       errors       = new RecordingExceptionHandler();
-        var       logger       = new RecordingLogger();
-        var       response     = new RecordingResponse();
-        var       handler      = Handler(services, new TestScopeFactory(() => scope), errors, logger);
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
-        await handler.HandleAsync(Request(), response, cancellation.Token);
+        await app.HandleAsync(cancellation.Token);
 
-        Assert.True(response.Aborted);
-        Assert.Equal(0, response.Completions);
-        Assert.Empty(errors.Exceptions);
-        Assert.Same(cleanup, Assert.Single(logger.Exceptions));
+        Assert.True(app.Response.Aborted);
+        Assert.Equal(0, app.Response.Completions);
+        Assert.Empty(app.Errors.Exceptions);
+        Assert.Same(app.Cleanup, Assert.Single(app.Logger.Exceptions));
     }
 
     [Fact]
     public async Task ExceptionHandlerAndCleanupFailuresAreBothReported()
     {
         var             original  = new InvalidOperationException("Action failed.");
-        await using var services  = Application((_, _) => throw original);
-        var             cleanup   = new InvalidOperationException("Cleanup failed.");
         var             rendering = new InvalidOperationException("Error rendering failed.");
-        var             scope     = new FailingDisposalScope(services.CreateScope(), cleanup);
-        var             errors    = new RecordingExceptionHandler { Failure = rendering };
-        var             logger    = new RecordingLogger();
-        var             response  = new RecordingResponse();
-        var             handler   = Handler(services, new TestScopeFactory(() => scope), errors, logger);
+        await using var app = new DisposalFailureApplication((_, _) => throw original, rendering);
 
-        await handler.HandleAsync(Request(), response, CancellationToken.None);
+        await app.HandleAsync();
 
-        Assert.Same(original, Assert.Single(errors.Exceptions));
-        Assert.Equal([rendering, cleanup], logger.Exceptions);
-        Assert.True(response.Aborted);
-        Assert.Equal(0, response.Completions);
+        Assert.Same(original, Assert.Single(app.Errors.Exceptions));
+        Assert.Equal([rendering, app.Cleanup], app.Logger.Exceptions);
+        Assert.True(app.Response.Aborted);
+        Assert.Equal(0, app.Response.Completions);
     }
 
     [Fact]
@@ -208,6 +178,29 @@ public sealed class RequestScopeTests
     private static Request Request() => new("GET", new Uri("http://localhost/"), HttpVersion.Version11, new Headers(), Stream.Null, 1024);
 
     private sealed class ScopedDependency;
+
+    private sealed class DisposalFailureApplication : IAsyncDisposable
+    {
+        public Exception Cleanup { get; } = new InvalidOperationException("Cleanup failed.");
+        public FailingDisposalScope Scope { get; }
+        public RecordingExceptionHandler Errors { get; }
+        public RecordingLogger Logger { get; } = new();
+        public RecordingResponse Response { get; } = new();
+        private readonly ServiceProvider _services;
+        private readonly RequestHandler _handler;
+
+        public DisposalFailureApplication(ControllerAction<object> action, Exception? handlerFailure = null)
+        {
+            _services = Application(action);
+            Scope = new FailingDisposalScope(_services.CreateScope(), Cleanup);
+            Errors = new RecordingExceptionHandler { Failure = handlerFailure };
+            _handler = Handler(_services, new TestScopeFactory(() => Scope), Errors, Logger);
+        }
+
+        public ValueTask DisposeAsync() => _services.DisposeAsync();
+
+        public ValueTask HandleAsync(CancellationToken ct = default) => _handler.HandleAsync(Request(), Response, ct);
+    }
 
     private sealed class ThrowingDependency : IAsyncDisposable
     {

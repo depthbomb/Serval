@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using System.Reflection;
-using System.Runtime.Loader;
 using System.Text.Json;
+using Serval.Tests.Support;
 using Serval.Vite;
 using Serval.Vite.Generators;
 
@@ -348,19 +348,8 @@ public sealed class ViteGeneratorTests
         var driver = Driver(manifest, options).RunGeneratorsAndUpdateCompilation(Compilation(code), out var compilation, out var diagnostics);
         Assert.Empty(diagnostics);
         Assert.Single(driver.GetRunResult().GeneratedTrees);
-        using var stream = new MemoryStream();
-        var       emit   = compilation.Emit(stream);
-        Assert.True(emit.Success, string.Join(Environment.NewLine, emit.Diagnostics));
-        stream.Position = 0;
-        var loadContext = new AssemblyLoadContext(compilation.AssemblyName!, true);
-        try
-        {
-            return (T)loadContext.LoadFromStream(stream).GetType("Probe")!.GetMethod("Run", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null)!;
-        }
-        finally
-        {
-            loadContext.Unload();
-        }
+        using var compiled = new CompiledTestAssembly(compilation);
+        return (T)compiled.Assembly.GetType("Probe")!.GetMethod("Run", BindingFlags.Public | BindingFlags.Static)!.Invoke(null, null)!;
     }
 
     private static CSharpCompilation Compilation(string code = "") => CSharpCompilation.Create("ViteTests_" + Guid.NewGuid().ToString("N"),
