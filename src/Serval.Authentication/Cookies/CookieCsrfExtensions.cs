@@ -26,7 +26,7 @@ public static class CookieCsrfExtensions
         public async ValueTask<string> GetCsrfTokenAsync(string? scheme = null)
         {
             var result = await context.AuthenticateAsync(scheme);
-            if (result.Ticket is not { } ticket || !ticket.Properties.Items.TryGetValue(CookieAuthenticationHandler.CsrfProperty, out var token))
+            if (result.Ticket is not {} ticket || !ticket.Properties.Items.TryGetValue(CookieAuthenticationHandler.CsrfProperty, out var token))
             {
                 throw new InvalidOperationException("An authenticated cookie session is required.");
             }
@@ -50,7 +50,7 @@ public static class CookieCsrfExtensions
             }
 
             var result = await context.AuthenticateAsync(scheme);
-            if (result.Ticket is not { } ticket || !ticket.Properties.Items.TryGetValue(CookieAuthenticationHandler.CsrfProperty, out var expected))
+            if (result.Ticket is not {} ticket || !ticket.Properties.Items.TryGetValue(CookieAuthenticationHandler.CsrfProperty, out var expected))
             {
                 return false;
             }
@@ -85,7 +85,7 @@ public sealed class RequireCsrfAttribute : MiddlewareAttribute
 
         var values = context.Request.Headers.GetValues(HeaderName);
         var token  = values.Count == 1 ? values[0] : null;
-        if (values.Count == 0 && FormFieldName is { } name && context.Request.HasFormContentType)
+        if (values.Count == 0 && FormFieldName is {} name && context.Request.HasFormContentType)
         {
             var form = await context.Request.ReadFormAsync(context.RequestAborted);
             form.TryGet<string>(name, out token);

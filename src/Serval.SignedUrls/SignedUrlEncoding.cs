@@ -97,7 +97,7 @@ internal static class SignedUrlEncoding
         {
             foreach (var pair in repeated)
             {
-                parsed[pair.Key] = pair.Value.ToArray();
+                parsed[pair.Key] = [.. pair.Value];
             }
         }
 

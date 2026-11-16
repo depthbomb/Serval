@@ -17,9 +17,9 @@ namespace Serval.Savanna;
 /// </remarks>
 public sealed class SavannaResult<TModel> : IActionResult
 {
-    private readonly int?             _bufferLimit;
-    private readonly TModel           _model;
-    private readonly int?             _statusCode;
+    private readonly int?                _bufferLimit;
+    private readonly TModel              _model;
+    private readonly int?                _statusCode;
     private readonly SavannaView<TModel> _view;
 
     /// <summary>Creates a deferred HTML result for a view and model.</summary>
@@ -51,14 +51,14 @@ public sealed class SavannaResult<TModel> : IActionResult
             throw new InvalidOperationException("A view result must execute before the response starts.");
         }
 
-        if (_statusCode is { } status)
+        if (_statusCode is {} status)
         {
             context.Response.StatusCode = status;
         }
 
         context.Response.Headers[HeaderNames.ContentType] = MimeTypes.Html;
         var renderContext = new SavannaRenderContext(context.Services, context.RequestAborted);
-        if (_bufferLimit is { } limit)
+        if (_bufferLimit is {} limit)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
 

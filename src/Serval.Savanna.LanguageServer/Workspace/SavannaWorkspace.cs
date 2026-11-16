@@ -272,7 +272,7 @@ public sealed class SavannaWorkspace : IDisposable
                 return cached;
             }
 
-            var resolved = SavannaImports.Apply(importFiles.Append(document).Distinct().ToArray()).Single(value => value.Path == document.Path);
+            var resolved = SavannaImports.Apply([.. importFiles.Append(document).Distinct()]).Single(value => value.Path == document.Path);
             _imported[document] = resolved;
             return resolved;
         }).ToArray();

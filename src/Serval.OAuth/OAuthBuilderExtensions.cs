@@ -49,7 +49,7 @@ public static class OAuthBuilderExtensions
                 throw new ArgumentException("OAuth must sign in through a separate local authentication scheme.");
             }
 
-            var duplicateCallback = builder.Services.Any(descriptor => descriptor.ServiceType == typeof(OAuthOptions) && descriptor.IsKeyedService && descriptor.KeyedImplementationInstance is OAuthOptions registered && registered.RedirectUri == options.RedirectUri);
+            var duplicateCallback = builder.Services.Any(descriptor => descriptor.ServiceType == typeof(OAuthOptions) && descriptor is { IsKeyedService: true, KeyedImplementationInstance: OAuthOptions registered } && registered.RedirectUri == options.RedirectUri);
             if (duplicateCallback)
             {
                 throw new ArgumentException("Each OAuth provider must have a distinct callback URI to prevent provider mix-ups.");

@@ -51,7 +51,7 @@ internal sealed class Http3Response : Response
         }
 
         // Check both ends of the declared length so intermediaries cannot accept ambiguous framing.
-        if (!_suppressBody && _contentLength is { } expected && _written != expected)
+        if (!_suppressBody && _contentLength is {} expected && _written != expected)
         {
             throw new Http3ProtocolException(Http3Error.Message, "Response Content-Length does not match the body.");
         }
@@ -77,7 +77,7 @@ internal sealed class Http3Response : Response
 
     protected override ValueTask OnStartAsync(CancellationToken cancellationToken)
     {
-        if (Headers[HeaderNames.ContentLength] is { } length)
+        if (Headers[HeaderNames.ContentLength] is {} length)
         {
             if (!long.TryParse(length, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed))
             {
@@ -98,7 +98,7 @@ internal sealed class Http3Response : Response
             return;
         }
 
-        if (_contentLength is { } expected && bytes.Length > expected - _written)
+        if (_contentLength is {} expected && bytes.Length > expected - _written)
         {
             throw new Http3ProtocolException(Http3Error.Message, "Response DATA exceeds Content-Length.");
         }

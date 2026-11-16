@@ -54,10 +54,10 @@ internal static class MetadataDeclaration
         }
 
         code.AppendLine("\n{");
-        foreach (var member in type.GetMembers().Where(member => !member.IsImplicitlyDeclared && member.DeclaredAccessibility is Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
+        foreach (var member in type.GetMembers().Where(member => member is { IsImplicitlyDeclared: false, DeclaredAccessibility: Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal }))
         {
             if (member is not (IMethodSymbol or IPropertySymbol or IFieldSymbol or IEventSymbol)
-                || member is IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
+                or IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
             {
                 continue;
             }

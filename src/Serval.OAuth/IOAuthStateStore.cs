@@ -43,7 +43,10 @@ public sealed class OAuthState
         RedirectUri     = RedirectUri,
         ReturnUrl       = ReturnUrl,
         ExpiresUtc      = ExpiresUtc,
-        Properties      = Properties with { Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal) },
+        Properties = Properties with
+        {
+            Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal)
+        },
     };
 }
 

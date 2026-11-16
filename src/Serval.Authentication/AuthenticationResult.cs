@@ -35,7 +35,10 @@ public sealed record AuthenticationTicket(ClaimsPrincipal Principal, string Sche
     /// <summary>Copies identities, claims, and the properties dictionary to isolate mutable request state.</summary>
     /// <returns>A ticket whose identities and item dictionary can be changed independently.</returns>
     public AuthenticationTicket Copy() => new(new ClaimsPrincipal(Principal.Identities.Select(identity => identity.Clone())), Scheme,
-        Properties with { Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal) });
+        Properties with
+        {
+            Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal)
+        });
 }
 
 /// <summary>Distinguishes successful, absent, and rejected credentials.</summary>

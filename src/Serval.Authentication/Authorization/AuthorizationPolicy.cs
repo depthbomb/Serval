@@ -112,7 +112,7 @@ public sealed class AuthorizationService : IAuthorizationService
     /// <summary>Creates policy authorization without resource voters.</summary>
     /// <param name="options">The default and named policies.</param>
     /// <remarks>Resource checks return NoApplicableVoter until voters are supplied.</remarks>
-    public AuthorizationService(AuthenticationOptions options) : this(options, []) { }
+    public AuthorizationService(AuthenticationOptions options) : this(options, []) {}
 
     /// <summary>Creates authorization using policies and a fixed snapshot of voters.</summary>
     /// <param name="options">The default and named policies.</param>
@@ -123,7 +123,7 @@ public sealed class AuthorizationService : IAuthorizationService
         ArgumentNullException.ThrowIfNull(voters);
 
         _options = options;
-        _voters  = voters.ToArray();
+        _voters  = [.. voters];
     }
 
     /// <inheritdoc />

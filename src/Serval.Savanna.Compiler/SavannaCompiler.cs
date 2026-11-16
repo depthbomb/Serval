@@ -143,7 +143,7 @@ public static class SavannaCompiler
 
                     // An overridden block's unused slots aren't part of the concrete view's contract.
                     var rendered = SavannaSlotsAnalysis.RenderedNodes(chain);
-                    declarations = chain.SelectMany(view => slots[view.Name].Declarations).Where(rendered.Contains).ToArray();
+                    declarations = [.. chain.SelectMany(view => slots[view.Name].Declarations).Where(rendered.Contains)];
                     slotContracts.Add(targetName, declarations);
                 }
 

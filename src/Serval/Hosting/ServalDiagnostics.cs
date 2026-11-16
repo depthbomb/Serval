@@ -6,6 +6,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Serval.Http;
+using Serval.Http.Constants;
 using Serval.Validation;
 
 namespace Serval.Hosting;
@@ -26,7 +27,7 @@ public static class ServalDiagnostics
     {
         var method = Method(request.Method);
         ActiveRequests.Add(1, new KeyValuePair<string, object?>("http.request.method", method));
-        var activity = ActivityContext.TryParse(request.Headers["traceparent"], request.Headers["tracestate"], true, out var parent)
+        var activity = ActivityContext.TryParse(request.Headers[HeaderNames.TraceParent], request.Headers[HeaderNames.TraceState], true, out var parent)
             ? Activities.StartActivity("HTTP " + method, ActivityKind.Server, parent)
             : Activities.StartActivity("HTTP " + method, ActivityKind.Server);
         activity?.SetTag("http.request.method", method);
@@ -59,10 +60,7 @@ public static class ServalDiagnostics
         {
             tags.Add("http.route", route);
             activity?.SetTag("http.route", route);
-            if (activity is not null)
-            {
-                activity.DisplayName = method + " " + route;
-            }
+            activity?.DisplayName = method + " " + route;
         }
 
         activity?.SetTag("url.scheme", request.Scheme);
@@ -80,5 +78,5 @@ public static class ServalDiagnostics
     }
 
     private static string Method(string method)
-        => method is "GET" or "HEAD" or "POST" or "PUT" or "DELETE" or "CONNECT" or "OPTIONS" or "TRACE" or "PATCH" ? method : "_OTHER";
+        => method is HttpMethods.Get or HttpMethods.Head or HttpMethods.Post or HttpMethods.Put or HttpMethods.Delete or HttpMethods.Connect or HttpMethods.Options or HttpMethods.Trace or HttpMethods.Patch ? method : "_OTHER";
 }

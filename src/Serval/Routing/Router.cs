@@ -126,7 +126,10 @@ internal sealed class Router : IUrlGenerator
 
         throw new HttpErrorException(StatusCodes.MethodNotAllowed, "This HTTP method is not supported for this route.")
         {
-            Headers = { [HeaderNames.Allow] = allow },
+            Headers =
+            {
+                [HeaderNames.Allow] = allow
+            },
         };
     }
 
@@ -142,11 +145,11 @@ internal sealed class Router : IUrlGenerator
 
         public EndpointIndex(RouteEndpoint[] endpoints, int depth, StringComparer comparer)
         {
-            _candidates = endpoints.Where(endpoint => endpoint.Template.LiteralPrefix.Length <= depth).ToArray();
+            _candidates = [.. endpoints.Where(endpoint => endpoint.Template.LiteralPrefix.Length <= depth)];
             _children = endpoints.Where(endpoint => endpoint.Template.LiteralPrefix.Length > depth)
                                  .GroupBy(endpoint => endpoint.Template.LiteralPrefix[depth], comparer)
                                  .ToFrozenDictionary(group => group.Key, group => new EndpointIndex(
-                                     group.Concat(_candidates).OrderByDescending(endpoint => endpoint.Template.Precedence, StringComparer.Ordinal).ToArray(), depth + 1, comparer), comparer);
+                                     [.. group.Concat(_candidates).OrderByDescending(endpoint => endpoint.Template.Precedence, StringComparer.Ordinal)], depth + 1, comparer), comparer);
         }
 
         public RouteEndpoint[] Find(string[] path)

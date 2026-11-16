@@ -44,7 +44,7 @@ public sealed class RequestBodyBufferTests
             Assert.Equal(StatusCodes.PayloadTooLarge, error.StatusCode);
         }
 
-        using var cancelledBody = new MemoryStream("\"value\""u8.ToArray());
+        using var cancelledBody = new MemoryStream([.. "\"value\""u8]);
         using var cancellation  = new CancellationTokenSource();
         await cancellation.CancelAsync();
         var cancelled = Request(cancelledBody);

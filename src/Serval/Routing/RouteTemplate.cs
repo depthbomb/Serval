@@ -27,12 +27,12 @@ internal sealed class RouteTemplate
         _options         = options;
         Text             = pattern.Text;
         _trailingSlash   = pattern.TrailingSlash;
-        _segments        = pattern.Segments.Select(segment => BindSegment(segment, options)).ToArray();
+        _segments        = [.. pattern.Segments.Select(segment => BindSegment(segment, options))];
         _minimumSegments = _segments.Count(segment => !segment.Optional);
         _maximumSegments = _segments.LastOrDefault()?.CatchAll > 0 ? int.MaxValue : _segments.Length;
         _parameterCount  = _segments.Count(segment => segment.Name is not null);
 
-        LiteralPrefix = _segments.TakeWhile(segment => segment.Literal is not null).Select(segment => segment.Literal!).ToArray();
+        LiteralPrefix = [.. _segments.TakeWhile(segment => segment.Literal is not null).Select(segment => segment.Literal!)];
         // Lexical ordering gives literals first, then constrained parameters, plain parameters, and catch-alls.
         // Parameter names stay out of the signature: renaming a capture doesn't make a route distinct.
         Precedence    = string.Concat(_segments.Select(segment => segment.Literal is not null ? '4' : segment.CatchAll > 0 ? '1' : segment.Constraints.Length > 0 ? '3' : '2'));
@@ -72,7 +72,7 @@ internal sealed class RouteTemplate
                 return false;
             }
 
-            if (segment.Literal is { } literal)
+            if (segment.Literal is {} literal)
             {
                 if (!literal.Equals(value, _options.CaseSensitivePaths ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
                 {
@@ -125,7 +125,7 @@ internal sealed class RouteTemplate
         var omitted = false;
         foreach (var segment in _segments)
         {
-            if (segment.Literal is { } literal)
+            if (segment.Literal is {} literal)
             {
                 result.Append('/').Append(Uri.EscapeDataString(literal));
                 continue;

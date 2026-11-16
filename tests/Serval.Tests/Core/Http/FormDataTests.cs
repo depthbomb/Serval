@@ -114,7 +114,7 @@ public sealed class FormDataTests
         Directory.CreateDirectory(directory);
         using var multipart = new MultipartFormDataContent("example");
         multipart.Add(new StringContent("description"), "caption");
-        var bytes = Enumerable.Repeat((byte)0xff, padding).Concat(Encoding.UTF8.GetBytes("\0\r\n--exampleXYZ\r\n--example--NO\r\nend")).ToArray();
+        var bytes = Enumerable.Repeat((byte)0xff, padding).Concat("\0\r\n--exampleXYZ\r\n--example--NO\r\nend"u8.ToArray()).ToArray();
         multipart.Add(new ByteArrayContent(bytes), "files", "../../unsafe.bin");
         multipart.Add(new ByteArrayContent([]), "files", "empty.bin");
         var request = Request(await multipart.ReadAsByteArrayAsync(), multipart.Headers.ContentType!.ToString());
@@ -191,7 +191,7 @@ public sealed class FormDataTests
     [Fact]
     public async Task RawStreamingKeepsOwnershipLimitsAndReadModesExplicit()
     {
-        using var input = new MemoryStream("body"u8.ToArray());
+        using var input = new MemoryStream([.. "body"u8]);
         await using var request = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11,
             new Headers { [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded }, input, 100);
         using var output = new MemoryStream();
@@ -222,7 +222,7 @@ public sealed class FormDataTests
     {
         var directory = Path.Combine(Path.GetTempPath(), "serval-form-cancel-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        using var input = new WaitingBodyStream();
+        await using var input = new WaitingBodyStream();
         var request = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11,
             new Headers { [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded }, input, 100000);
         request.FormOptions.MemoryThreshold = 1;
@@ -264,7 +264,7 @@ public sealed class FormDataTests
     [Fact]
     public async Task ExtendedFilenamesAndFinalBoundariesWithoutNewlinesWork()
     {
-        var             body    = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"fallback\"; filename*=utf-8''%22%E7%8B%B8%22.txt\r\n\r\ndata\r\n--example--";
+        const string             body    = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"fallback\"; filename*=utf-8''%22%E7%8B%B8%22.txt\r\n\r\ndata\r\n--example--";
         await using var request = Request(body, "multipart/form-data; boundary=\"example\"");
         var             file    = Assert.Single((await request.ReadFormAsync()).Files);
         Assert.Equal("\"狸\".txt", file.FileName);

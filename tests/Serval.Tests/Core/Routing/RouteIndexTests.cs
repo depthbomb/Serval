@@ -57,7 +57,7 @@ public sealed class RouteIndexTests
         await using var app = new SecurityTestApplication(builder =>
         {
             builder.Options.CaseSensitivePaths = caseSensitive;
-            builder.AddController<object>("GET", "/api/a%2Fb/details", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("encoded")));
+            builder.AddController<object>("GET", "/api/a%2Fb/details", null, (_, _) => ValueTask.FromResult<IActionResult>(new TextResult("encoded")));
         });
         await using var request = app.Request("http://localhost" + path);
         await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request.Context.Request, request.Response, CancellationToken.None);
@@ -72,8 +72,8 @@ public sealed class RouteIndexTests
         await using var app = new SecurityTestApplication(builder =>
         {
             builder.Options.TrailingSlashes = TrailingSlashBehavior.Strict;
-            builder.AddController<object>("GET", "/api/products/current", null, (_,  context) => ValueTask.FromResult<IActionResult>(new TextResult("without")));
-            builder.AddController<object>("GET", "/api/products/current/", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("with")));
+            builder.AddController<object>("GET", "/api/products/current", null, (_,  _) => ValueTask.FromResult<IActionResult>(new TextResult("without")));
+            builder.AddController<object>("GET", "/api/products/current/", null, (_, _) => ValueTask.FromResult<IActionResult>(new TextResult("with")));
         });
         await using var request = app.Request("http://localhost" + path);
         await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request.Context.Request, request.Response, CancellationToken.None);
@@ -85,8 +85,8 @@ public sealed class RouteIndexTests
     {
         await using var app = new SecurityTestApplication(builder =>
         {
-            builder.AddController<object>("GET", "/api/products/{id:min(1)}", null, (_,  context) => ValueTask.FromResult<IActionResult>(new TextResult("minimum")));
-            builder.AddController<object>("GET", "/api/products/{id:max(10)}", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("maximum")));
+            builder.AddController<object>("GET", "/api/products/{id:min(1)}", null, (_,  _) => ValueTask.FromResult<IActionResult>(new TextResult("minimum")));
+            builder.AddController<object>("GET", "/api/products/{id:max(10)}", null, (_, _) => ValueTask.FromResult<IActionResult>(new TextResult("maximum")));
         });
         await using var request = app.Request("http://localhost/api/products/5");
         await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request.Context.Request, request.Response, CancellationToken.None);
@@ -123,7 +123,7 @@ public sealed class RouteIndexTests
         builder.AddController<object>("GET", "/api/{category}/{slug}", null, (_,         context) => ValueTask.FromResult<IActionResult>(new TextResult($"category:{context.RouteValues["category"]}:{context.RouteValues["slug"]}")));
         builder.AddController<object>("HEAD", "/api/{category}/{slug}", null, (_,        context) => ValueTask.FromResult<IActionResult>(new TextResult($"head:{context.RouteValues["category"]}:{context.RouteValues["slug"]}")));
         builder.AddController<object>("GET", "/api/products/{id:int}/details", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("product:" + context.RouteValues["id"])));
-        builder.AddController<object>("GET", "/api/products/current", null, (_,          context) => ValueTask.FromResult<IActionResult>(new TextResult("current")));
-        builder.AddController<object>("POST", "/api/products/current", null, (_,         context) => ValueTask.FromResult<IActionResult>(new TextResult("posted")));
+        builder.AddController<object>("GET", "/api/products/current", null, (_,          _) => ValueTask.FromResult<IActionResult>(new TextResult("current")));
+        builder.AddController<object>("POST", "/api/products/current", null, (_,         _) => ValueTask.FromResult<IActionResult>(new TextResult("posted")));
     });
 }

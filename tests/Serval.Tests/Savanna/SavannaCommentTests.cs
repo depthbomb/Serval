@@ -51,7 +51,7 @@ public sealed partial class SavannaCompilerTests
                                                return normal + "\n" + development;
                                            }
                                        }
-                                       """, Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : Array.Empty<string>()), false);
+                                       """, Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []), false);
         var renders = output.Split('\n');
         Assert.Equal(2, renders.Length);
         Assert.Equal(renders[0], renders[1]);

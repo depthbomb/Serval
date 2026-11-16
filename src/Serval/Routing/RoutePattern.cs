@@ -41,7 +41,7 @@ internal sealed class RoutePattern
     }
 
     public string Signature(bool caseSensitive, bool strictSlashes)
-        => string.Join("/", Segments.Select(segment => segment.Literal is { } literal
+        => string.Join("/", Segments.Select(segment => segment.Literal is {} literal
                ? caseSensitive ? literal : literal.ToUpperInvariant()
                : $"{{{segment.CatchAll}:{string.Join(":", segment.Constraints)}:{segment.Optional}:{segment.Default}}}"))
            + (strictSlashes && TrailingSlash ? "/" : "");
@@ -84,7 +84,7 @@ internal sealed class RoutePattern
             throw new ArgumentException($"Invalid route parameter '{name}'.");
         }
 
-        return new RouteSegment(null, name, parts.Skip(1).ToArray(), optional || catchAll > 0, defaultValue, catchAll);
+        return new RouteSegment(null, name, [.. parts.Skip(1)], optional || catchAll > 0, defaultValue, catchAll);
     }
 
     private static List<string> SplitConstraints(string text)

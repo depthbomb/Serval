@@ -7,8 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using Serval.Hosting;
-using Serval.Http;
-using Serval.Http.Results;
 using Serval.Lifecycle;
 using Serval.Middleware;
 using Serval.Tests.Support;
@@ -332,7 +330,7 @@ public sealed class RequestLifecycleTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var probe = new Probe { Completed = async (_, _, _, ct) =>
         {
-            using var registration = ct.Register(() => entered.TrySetResult());
+            await using var registration = ct.Register(() => entered.TrySetResult());
             await release.Task;
         }};
         await using var app = Application(probe, options => options.CompletionTimeout = TimeSpan.FromMilliseconds(30));
@@ -397,7 +395,7 @@ public sealed class RequestLifecycleTests
         services.AddLogging();
         services.AddServal().AddRequestLifecycleHandler<Recorder<First>>();
         services.AddSingleton<Recorder<First>>();
-        using var provider = services.BuildServiceProvider();
+        await using var provider = services.BuildServiceProvider();
         var error = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IRequestHandler>());
         Assert.Contains("scoped", error.Message);
     }
@@ -429,7 +427,7 @@ public sealed class RequestLifecycleTests
     public sealed class Probe
     {
         public ConcurrentQueue<string> Events { get; } = new();
-        public ConcurrentBag<(object Instance, RequestCompletion Completion, ScopedProbe Scope, bool ScopeDisposed)> Results { get; } = new();
+        public ConcurrentBag<(object Instance, RequestCompletion Completion, ScopedProbe Scope, bool ScopeDisposed)> Results { get; } = [];
         public Func<string, RequestContext, CancellationToken, ValueTask>? Received { get; set; }
         public Func<string, RequestContext, CancellationToken, ValueTask>? Starting { get; set; }
         public Func<string, RequestContext, RequestCompletion, CancellationToken, ValueTask>? Completed { get; set; }

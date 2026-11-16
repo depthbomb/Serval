@@ -88,7 +88,7 @@ internal static class BindingEmitter
                     return false;
                 }
 
-                if (plan.ReadsBody && !plan.ReadsForm)
+                if (plan is { ReadsBody: true, ReadsForm: false })
                 {
                     error = "FromForm and FromBody cannot be combined on the same action.";
                     return false;
@@ -105,7 +105,7 @@ internal static class BindingEmitter
                 if (type.WithNullableAnnotation(NullableAnnotation.NotAnnotated).ToDisplayString() == "Serval.Http.UploadedFile")
                 {
                     var file = $"(await context.Request.ReadFormAsync(context.RequestAborted)).GetFile({formName})";
-                    plan.Statements.Add($"{typeName} {argument} = {file}" + (optional ? $" ?? {fallback};" : " ?? throw new global::Serval.Http.HttpErrorException(400, \"An uploaded file is required.\");"));
+                    plan.Statements.Add($"{typeName} {argument} = {file}" + (optional ? $" ?? {fallback};" : " ?? throw new global::Serval.Http.HttpErrorException(global::Serval.Http.Constants.StatusCodes.BadRequest, \"An uploaded file is required.\");"));
                     continue;
                 }
 
@@ -128,7 +128,7 @@ internal static class BindingEmitter
             if (source == "Route")
             {
                 var segment = pattern.Segments.FirstOrDefault(segment => string.Equals(segment.Name, name, StringComparison.OrdinalIgnoreCase));
-                if (segment is null || segment.Optional && segment.Default is null && segment.CatchAll == 0 && !optional)
+                if (segment is null || segment is { Optional: true, Default: null, CatchAll: 0 } && !optional)
                 {
                     error = segment is null
                         ? $"Route '{pattern.Text}' has no parameter named '{name}'."

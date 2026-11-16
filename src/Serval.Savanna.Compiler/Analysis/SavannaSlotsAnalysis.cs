@@ -106,7 +106,7 @@ internal static class SavannaSlotsAnalysis
                     }
                     else
                     {
-                        if (node.Required && node.Paired)
+                        if (node is { Required: true, Paired: true })
                         {
                             Error(node, "A required slot cannot have fallback content. Use a self-closing tag.");
                         }

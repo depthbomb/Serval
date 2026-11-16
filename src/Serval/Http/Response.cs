@@ -290,7 +290,7 @@ public abstract partial class Response
                     throw new ArgumentException("Invalid download filename.", nameof(downloadName));
                 }
 
-                Headers[HeaderNames.ContentDisposition] = new ContentDispositionHeaderValue("attachment")
+                Headers[HeaderNames.ContentDisposition] = new ContentDispositionHeaderValue(ContentDispositions.Attachment)
                 {
                     FileNameStar = downloadName,
                 }.ToString();

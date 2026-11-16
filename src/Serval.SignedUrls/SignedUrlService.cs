@@ -36,7 +36,7 @@ public sealed class SignedUrlService : ISignedUrlService
         options.Validate();
 
         _urls          = urls;
-        _key           = options.SigningKey.ToArray();
+        _key           = [.. options.SigningKey];
         _parameterName = options.SignatureParameterName;
         _maxUrlLength  = options.MaxUrlLength;
         _clock         = clock ?? TimeProvider.System;
@@ -170,7 +170,7 @@ public sealed class SignedUrlService : ISignedUrlService
             return SignedUrlFailure.UrlMismatch;
         }
 
-        if (payload.ExpiresAt is { } expiresAt && _clock.GetUtcNow() >= expiresAt)
+        if (payload.ExpiresAt is {} expiresAt && _clock.GetUtcNow() >= expiresAt)
         {
             return SignedUrlFailure.Expired;
         }
@@ -199,7 +199,7 @@ public sealed class SignedUrlService : ISignedUrlService
             throw new ArgumentException("The generated route path changes during URL normalization. Route values must not introduce dot segments.", nameof(path));
         }
 
-        if (expiresAt is { } expiration && expiration <= _clock.GetUtcNow())
+        if (expiresAt is {} expiration && expiration <= _clock.GetUtcNow())
         {
             throw new ArgumentOutOfRangeException(nameof(expiresAt), "Expiration must be in the future.");
         }

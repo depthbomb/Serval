@@ -51,6 +51,6 @@ public static class TemplateFormatter
             }
         }
 
-        return edits.ToArray();
+        return [.. edits];
     }
 }

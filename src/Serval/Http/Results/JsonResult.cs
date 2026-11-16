@@ -34,7 +34,7 @@ public sealed class JsonResult<T> : IActionResult
     /// <inheritdoc />
     public ValueTask ExecuteAsync(RequestContext context)
     {
-        if (StatusCode is { } status)
+        if (StatusCode is {} status)
         {
             context.Response.StatusCode = status;
         }

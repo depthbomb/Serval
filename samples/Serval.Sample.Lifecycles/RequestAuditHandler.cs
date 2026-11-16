@@ -21,9 +21,13 @@ public sealed class RequestAuditHandler : RequestLifecycleHandler
 
     public override ValueTask OnRequestCompletedAsync(RequestContext context, RequestCompletion completion, CancellationToken ct)
     {
-        _logger.LogInformation("{TraceId}: audit completed request {RequestId}: {Method} {Path}, status {StatusCode}, reason {Reason}, aborted {Aborted}, failure {Failure}.",
-            context.TraceId, _details.Id, context.Request.Method, context.Request.Url.AbsolutePath,
-            completion.StatusCode, completion.Reason, completion.IsAborted, completion.Exception?.GetType().Name ?? "none");
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("{TraceId}: audit completed request {RequestId}: {Method} {Path}, status {StatusCode}, reason {Reason}, aborted {Aborted}, failure {Failure}.",
+                context.TraceId, _details.Id, context.Request.Method, context.Request.Url.AbsolutePath,
+                completion.StatusCode, completion.Reason, completion.IsAborted, completion.Exception?.GetType().Name ?? "none");
+        }
+
         return ValueTask.CompletedTask;
     }
 }

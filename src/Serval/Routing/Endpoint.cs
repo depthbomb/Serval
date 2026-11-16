@@ -97,7 +97,7 @@ public sealed class EndpointBuilder
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(MaxRequestBodyBytes);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(MaxRequestBodyBytes, options.MaxRequestBodyBytes);
 
-        if (RequestTimeout is { } timeout       &&
+        if (RequestTimeout is {} timeout        &&
             timeout != Timeout.InfiniteTimeSpan &&
             (timeout <= TimeSpan.Zero || timeout.TotalMilliseconds > uint.MaxValue - 1))
         {

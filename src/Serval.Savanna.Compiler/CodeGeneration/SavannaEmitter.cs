@@ -23,7 +23,7 @@ internal sealed class SavannaEmitter
     private readonly        string                                    _className;
     private readonly        StringBuilder                             _code = new();
     private readonly        List<SavannaDiagnostic>                      _diagnostics;
-    private readonly        List<SavannaSourceMapping>                   _mappings = new();
+    private readonly        List<SavannaSourceMapping>                   _mappings = [];
     private readonly        string                                    _namespace;
     private readonly        IReadOnlyDictionary<string, SavannaDocument> _views;
     private static readonly Regex                                     AttributePrefix = new(@"\s+[^\s=<>/]+\s*=\s*['""]$", RegexOptions.CultureInvariant);
@@ -53,7 +53,7 @@ internal sealed class SavannaEmitter
     {
         var emitter = new SavannaEmitter(chain, views, generatedNamespace, diagnostics, cancellationToken);
         emitter.Generate();
-        return new SavannaGeneratedSource(emitter._className + ".g.cs", emitter._code.ToString(), emitter._mappings.ToArray());
+        return new SavannaGeneratedSource(emitter._className + ".g.cs", emitter._code.ToString(), [.. emitter._mappings]);
     }
 
     public static void ValidateMarkup(SavannaDocument document, List<SavannaDiagnostic> diagnostics)

@@ -90,7 +90,7 @@ internal static class ViteEntryBuilder
             AddUnique(css, cssSet, ResolveUrl(urlPrefix, globalCss.File, resolvedUrls));
         }
 
-        return new EntryAssets(scripts, css.ToArray(), preloads.ToArray());
+        return new EntryAssets(scripts, [.. css], [.. preloads]);
     }
 
     public static string ResolveUrl(string prefix, string file, Dictionary<string, string>? resolvedUrls)

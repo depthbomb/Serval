@@ -55,7 +55,7 @@ public sealed class OAuthClientTests
         Assert.Equal("https://app.test/callback", form["redirect_uri"].Single());
         if (method == OAuthClientAuthentication.ClientSecretBasic)
         {
-            Assert.Equal("Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes("client+%3A%2B:secret+%3A%2B")), request.Authorization);
+            Assert.Equal("Basic " + Convert.ToBase64String("client+%3A%2B:secret+%3A%2B"u8), request.Authorization);
             Assert.False(form.ContainsKey("client_secret"));
             Assert.False(form.ContainsKey("client_id"));
         }

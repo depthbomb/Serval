@@ -49,7 +49,7 @@ internal sealed class RequestLifecycleInvocation
         }
     }
 
-    internal async ValueTask CompleteAsync(RequestCompletion completion, CancellationToken ct, Action<Exception> report)
+    internal async ValueTask CompleteAsync(RequestCompletion completion, Action<Exception> report, CancellationToken ct)
     {
         foreach (var handler in _handlers)
         {

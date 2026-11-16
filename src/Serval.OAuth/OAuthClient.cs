@@ -164,7 +164,10 @@ public sealed class OAuthClient : IDisposable
     public ValueTask<OAuthTokenResponse> ClientCredentialsAsync(IEnumerable<string>? scopes            = null,
                                                                 CancellationToken    cancellationToken = default)
     {
-        var form = new Dictionary<string, string>(StringComparer.Ordinal) { ["grant_type"] = "client_credentials" };
+        var form = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["grant_type"] = "client_credentials"
+        };
         AddScope(form, scopes ?? _options.Scopes);
         return TokenAsync("client_credentials", form, cancellationToken);
     }
@@ -185,7 +188,10 @@ public sealed class OAuthClient : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         var endpoint = _options.RevocationEndpoint ?? throw new InvalidOperationException("A revocation endpoint is required.");
-        var form     = new Dictionary<string, string>(StringComparer.Ordinal) { ["token"] = token };
+        var form = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["token"] = token
+        };
         if (tokenTypeHint is not null)
         {
             form.Add("token_type_hint", tokenTypeHint);
@@ -208,14 +214,14 @@ public sealed class OAuthClient : IDisposable
     public async ValueTask<JsonElement> GetUserInformationAsync(OAuthTokenResponse tokens, CancellationToken cancellationToken = default)
     {
         var endpoint = _options.UserInformationEndpoint ?? throw new InvalidOperationException("A user information endpoint is required.");
-        if (!tokens.TokenType.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+        if (!tokens.TokenType.Equals(HttpAuthenticationSchemes.Bearer, StringComparison.OrdinalIgnoreCase))
         {
             throw new OAuthProtocolException("unsupported_token_type");
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
         using var timeout = CreateTimeout(cancellationToken);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens.AccessToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue(HttpAuthenticationSchemes.Bearer, tokens.AccessToken);
         return await SendAsync(request, "user_information", false, timeout.Token);
     }
 
@@ -228,7 +234,7 @@ public sealed class OAuthClient : IDisposable
         using var timeout = CreateTimeout(cancellationToken);
         var       root    = await SendAsync(request, operation, false, timeout.Token);
         timeout.Token.ThrowIfCancellationRequested();
-        var tokens = _options.ReadTokenResponse is { } readTokens ? await readTokens(root, timeout.Token) : ReadTokens(root);
+        var tokens = _options.ReadTokenResponse is {} readTokens ? await readTokens(root, timeout.Token) : ReadTokens(root);
         // A custom parser may ignore cancellation. Don't accept a result that arrived after the deadline.
         timeout.Token.ThrowIfCancellationRequested();
         if (tokens is null                      || string.IsNullOrWhiteSpace(tokens.AccessToken) || string.IsNullOrWhiteSpace(tokens.TokenType)
@@ -254,7 +260,7 @@ public sealed class OAuthClient : IDisposable
                 break;
             case OAuthClientAuthentication.ClientSecretBasic:
                 var credentials = FormEncode(_options.ClientId) + ":" + FormEncode(_options.ClientSecret!);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes(credentials)));
+                request.Headers.Authorization = new AuthenticationHeaderValue(HttpAuthenticationSchemes.Basic, Convert.ToBase64String(Encoding.UTF8.GetBytes(credentials)));
                 break;
         }
 
@@ -317,7 +323,10 @@ public sealed class OAuthClient : IDisposable
         JsonDocument document;
         try
         {
-            document = JsonDocument.Parse(content.GetBuffer().AsMemory(0, (int)content.Length), new JsonDocumentOptions { MaxDepth = 32 });
+            document = JsonDocument.Parse(content.GetBuffer().AsMemory(0, (int)content.Length), new JsonDocumentOptions
+            {
+                MaxDepth = 32
+            });
         }
         catch (JsonException)
         {

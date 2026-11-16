@@ -12,7 +12,7 @@ internal sealed class RequestLifecycleRegistry
 {
     private Type[]? _frozen;
 
-    private readonly IServiceCollection             _services;
+    private readonly IServiceCollection              _services;
     private readonly List<(Type Type, int Priority)> _registrations = [];
 
     internal RequestLifecycleRegistry(IServiceCollection services)

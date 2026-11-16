@@ -143,8 +143,10 @@ internal sealed class RequestHandler : IRequestHandler
                 reason = RequestCompletionReason.Aborted;
             }
 
-            var completion = lifecycle is null ? null : new RequestCompletion(response.StatusCode, response.HasStarted, response.IsAborted,
-                Stopwatch.GetElapsedTime(startedAt), reason, failure);
+            var completion = lifecycle is null
+                ? null
+                : new RequestCompletion(response.StatusCode, response.HasStarted, response.IsAborted,
+                    Stopwatch.GetElapsedTime(startedAt), reason, failure);
             try
             {
                 ServalDiagnostics.Complete(request, response, context, activity, startedAt, failure);
@@ -158,11 +160,11 @@ internal sealed class RequestHandler : IRequestHandler
                 ? new CancellationTokenSource(_options.CompletionTimeout)
                 : null;
             var completionToken = completionTimeout?.Token ?? CancellationToken.None;
-            await response.RunCompletedAsync(completionToken, exception => ReportCleanupFailure(exception, "Response completion callback", context?.TraceId));
+            await response.RunCompletedAsync(exception => ReportCleanupFailure(exception, "Response completion callback", context?.TraceId), completionToken);
             if (lifecycle is not null)
             {
-                await lifecycle.CompleteAsync(completion!, completionToken,
-                    exception => ReportCleanupFailure(exception, "Request lifecycle completion hook", context?.TraceId));
+                await lifecycle.CompleteAsync(completion!,
+                    exception => ReportCleanupFailure(exception, "Request lifecycle completion hook", context?.TraceId), completionToken);
             }
 
             if (response.HasResources)
@@ -170,7 +172,7 @@ internal sealed class RequestHandler : IRequestHandler
                 await response.DisposeResourcesAsync(exception => ReportCleanupFailure(exception, "Request resource disposal", context?.TraceId));
             }
 
-            if (scope is { } requestScope)
+            if (scope is {} requestScope)
             {
                 try
                 {
@@ -257,7 +259,10 @@ internal sealed class RequestHandler : IRequestHandler
 
     // Keep a successful ID if scope creation failed. A broken generator must not run again during error handling.
     private RequestContext CreateFailureContext(Request request, Response response, CancellationTokenSource timeout, string? traceId)
-        => new(request, response, UnavailableRequestServices.Instance, _router, traceId ?? RequestContext.CreateDefaultTraceId(), timeout.Token) { TimeoutSource = timeout };
+        => new(request, response, UnavailableRequestServices.Instance, _router, traceId ?? RequestContext.CreateDefaultTraceId(), timeout.Token)
+        {
+            TimeoutSource = timeout
+        };
 
     private async ValueTask<bool> RedirectCanonicalPathAsync(RequestContext context)
     {

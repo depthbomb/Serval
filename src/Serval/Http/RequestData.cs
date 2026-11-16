@@ -36,7 +36,7 @@ public sealed class RequestData
     {
         _document   = document;
         _properties = properties;
-        Files       = Array.Empty<UploadedFile>();
+        Files       = [];
     }
 
     /// <summary>Whether a field or JSON property is present, including an explicit JSON null.</summary>
@@ -56,7 +56,7 @@ public sealed class RequestData
     public bool TryGet<T>(string name, [MaybeNullWhen(false)] out T value) where T : IParsable<T>
     {
         value = default;
-        if (!TryGetStrings(name, out var values) || values.Length != 1 || values[0] is not { } text)
+        if (!TryGetStrings(name, out var values) || values is not [{} text])
         {
             return false;
         }
@@ -80,7 +80,7 @@ public sealed class RequestData
         var result = new T[values.Length];
         for (var index = 0; index < values.Length; index++)
         {
-            if (values[index] is not { } text || !T.TryParse(text, CultureInfo.InvariantCulture, out var value))
+            if (values[index] is not {} text || !T.TryParse(text, CultureInfo.InvariantCulture, out var value))
             {
                 throw Invalid(name);
             }
@@ -124,7 +124,7 @@ public sealed class RequestData
 
     /// <summary>Gets every uploaded file with the specified name, preserving submission order.</summary>
     public IReadOnlyList<UploadedFile> GetFiles(string name)
-        => Files.Where(file => string.Equals(file.Name, name, StringComparison.OrdinalIgnoreCase)).ToArray();
+        => [.. Files.Where(file => string.Equals(file.Name, name, StringComparison.OrdinalIgnoreCase))];
 
     internal void Dispose() => _document?.Dispose();
 

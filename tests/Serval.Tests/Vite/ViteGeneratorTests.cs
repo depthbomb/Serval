@@ -20,8 +20,8 @@ public sealed class ViteGeneratorTests
     private const           string             ManifestPath   = "/project/dist/.vite/manifest.json";
     private const           string             SimpleManifest = """{"src/main.ts":{"file":"assets/main-123.js","isEntry":true}}""";
     private static readonly CSharpParseOptions ParseOptions   = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
-    private static readonly MetadataReference[] References = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-                                                                                                                         .Append(typeof(ViteEntry).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase).Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path)).ToArray();
+    private static readonly MetadataReference[] References = [.. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
+                                                                                                                         .Append(typeof(ViteEntry).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase).Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))];
 
     [Fact]
     public void EntryGraphPreservesCssOrderAndKeepsDynamicImportsLazy()

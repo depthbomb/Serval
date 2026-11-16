@@ -19,9 +19,9 @@ namespace Serval.Tests.Savanna;
 public sealed partial class SavannaCompilerTests
 {
     private static readonly CSharpParseOptions Options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp15);
-    private static readonly MetadataReference[] References = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
+    private static readonly MetadataReference[] References = [.. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
                                                                                                                          .Append(typeof(SavannaView<>).Assembly.Location).Append(typeof(RequestContext).Assembly.Location).Distinct()
-                                                                                                                         .Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path)).ToArray();
+                                                                                                                         .Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))];
 
     [Fact]
     public async Task ThreeLevelsPreserveModelsImportsAndParentOrder()
@@ -340,7 +340,7 @@ public sealed partial class SavannaCompilerTests
     }
 
     private static SavannaCompilation Compile(Dictionary<string, string> templates)
-        => SavannaCompiler.Compile(templates.Select(pair => SavannaParser.Parse("/Templates/" + pair.Key, pair.Key, SourceText.From(pair.Value))).ToArray(), "TestViews");
+        => SavannaCompiler.Compile([.. templates.Select(pair => SavannaParser.Parse("/Templates/" + pair.Key, pair.Key, SourceText.From(pair.Value)))], "TestViews");
 
     private static CSharpCompilation CreateCompilation(SavannaCompilation result, string code, CSharpParseOptions? options = null)
     {

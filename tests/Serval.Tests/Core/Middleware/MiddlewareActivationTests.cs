@@ -79,11 +79,14 @@ public sealed class MiddlewareActivationTests
 
         public MultipleConstructorsMiddleware(ScopedProbe probe)
         {
+            Assert.NotNull(probe);
             _selected = "short";
         }
 
         public MultipleConstructorsMiddleware(ScopedProbe probe, ExtraService extra)
         {
+            Assert.NotNull(probe);
+            Assert.NotNull(extra);
             _selected = "long";
         }
 

@@ -27,7 +27,7 @@ internal static partial class FormDataParser
             throw Malformed("Invalid Content-Type.");
         }
 
-        if (type.CharSet is { } charset && !Unquote(charset).Equals("utf-8", StringComparison.OrdinalIgnoreCase))
+        if (type.CharSet is {} charset && !Unquote(charset).Equals("utf-8", StringComparison.OrdinalIgnoreCase))
         {
             throw new HttpErrorException(StatusCodes.UnsupportedMediaType, "Form and POST helpers require UTF-8.");
         }
@@ -395,7 +395,7 @@ internal static partial class FormDataParser
         internal async ValueTask DrainAsync(CancellationToken ct)
         {
             _start = _end;
-            while (await _stream.ReadAsync(_buffer, ct) != 0) { }
+            while (await _stream.ReadAsync(_buffer, ct) != 0) {}
         }
 
         private async ValueTask<(int Consumed, bool Final)> ReadBoundaryEndingAsync(int length, int paddingLimit, CancellationToken ct)

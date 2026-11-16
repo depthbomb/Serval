@@ -14,6 +14,9 @@ public static class StatusCodes
     /// <summary>HTTP 101 (Switching Protocols).</summary>
     public const int SwitchingProtocols = 101;
 
+    /// <summary>HTTP 102 (Processing).</summary>
+    public const int Processing = 102;
+
     /// <summary>HTTP 103 (Early Hints).</summary>
     public const int EarlyHints = 103;
 
@@ -26,11 +29,26 @@ public static class StatusCodes
     /// <summary>HTTP 202 (Accepted).</summary>
     public const int Accepted = 202;
 
+    /// <summary>HTTP 203 (Non-Authoritative Information).</summary>
+    public const int NonAuthoritativeInformation = 203;
+
     /// <summary>HTTP 204 (No Content).</summary>
     public const int NoContent = 204;
 
+    /// <summary>HTTP 205 (Reset Content).</summary>
+    public const int ResetContent = 205;
+
     /// <summary>HTTP 206 (Partial Content).</summary>
     public const int PartialContent = 206;
+
+    /// <summary>HTTP 207 (Multi-Status).</summary>
+    public const int MultiStatus = 207;
+
+    /// <summary>HTTP 208 (Already Reported).</summary>
+    public const int AlreadyReported = 208;
+
+    /// <summary>HTTP 226 (IM Used).</summary>
+    public const int ImUsed = 226;
 
     /// <summary>HTTP 300 (Multiple Choices).</summary>
     public const int MultipleChoices = 300;
@@ -59,6 +77,9 @@ public static class StatusCodes
     /// <summary>HTTP 401 (Unauthorized).</summary>
     public const int Unauthorized = 401;
 
+    /// <summary>HTTP 402 (Payment Required), reserved for future use.</summary>
+    public const int PaymentRequired = 402;
+
     /// <summary>HTTP 403 (Forbidden).</summary>
     public const int Forbidden = 403;
 
@@ -70,6 +91,9 @@ public static class StatusCodes
 
     /// <summary>HTTP 406 (Not Acceptable).</summary>
     public const int NotAcceptable = 406;
+
+    /// <summary>HTTP 407 (Proxy Authentication Required).</summary>
+    public const int ProxyAuthenticationRequired = 407;
 
     /// <summary>HTTP 408 (Request Timeout).</summary>
     public const int RequestTimeout = 408;
@@ -89,6 +113,9 @@ public static class StatusCodes
     /// <summary>HTTP 413 (Payload Too Large).</summary>
     public const int PayloadTooLarge = 413;
 
+    /// <summary>HTTP 413 (Content Too Large), the current name for <see cref="PayloadTooLarge"/>.</summary>
+    public const int ContentTooLarge = PayloadTooLarge;
+
     /// <summary>HTTP 414 (Uri Too Long).</summary>
     public const int UriTooLong = 414;
 
@@ -98,14 +125,41 @@ public static class StatusCodes
     /// <summary>HTTP 416 (Range Not Satisfiable).</summary>
     public const int RangeNotSatisfiable = 416;
 
+    /// <summary>HTTP 417 (Expectation Failed).</summary>
+    public const int ExpectationFailed = 417;
+
+    /// <summary>HTTP 418 (I'm a teapot), a historical status reserved as unused by HTTP Semantics.</summary>
+    public const int ImATeapot = 418;
+
+    /// <summary>HTTP 421 (Misdirected Request).</summary>
+    public const int MisdirectedRequest = 421;
+
     /// <summary>HTTP 422 (Unprocessable Content).</summary>
     public const int UnprocessableContent = 422;
+
+    /// <summary>HTTP 423 (Locked).</summary>
+    public const int Locked = 423;
+
+    /// <summary>HTTP 424 (Failed Dependency).</summary>
+    public const int FailedDependency = 424;
+
+    /// <summary>HTTP 425 (Too Early).</summary>
+    public const int TooEarly = 425;
+
+    /// <summary>HTTP 426 (Upgrade Required).</summary>
+    public const int UpgradeRequired = 426;
+
+    /// <summary>HTTP 428 (Precondition Required).</summary>
+    public const int PreconditionRequired = 428;
 
     /// <summary>HTTP 429 (Too Many Requests).</summary>
     public const int TooManyRequests = 429;
 
     /// <summary>HTTP 431 (Request Header Fields Too Large).</summary>
     public const int RequestHeaderFieldsTooLarge = 431;
+
+    /// <summary>HTTP 451 (Unavailable For Legal Reasons).</summary>
+    public const int UnavailableForLegalReasons = 451;
 
     /// <summary>HTTP 500 (Internal Server Error).</summary>
     public const int InternalServerError = 500;
@@ -124,4 +178,16 @@ public static class StatusCodes
 
     /// <summary>HTTP 505 (Http Version Not Supported).</summary>
     public const int HttpVersionNotSupported = 505;
+
+    /// <summary>HTTP 506 (Variant Also Negotiates).</summary>
+    public const int VariantAlsoNegotiates = 506;
+
+    /// <summary>HTTP 507 (Insufficient Storage).</summary>
+    public const int InsufficientStorage = 507;
+
+    /// <summary>HTTP 508 (Loop Detected).</summary>
+    public const int LoopDetected = 508;
+
+    /// <summary>HTTP 511 (Network Authentication Required).</summary>
+    public const int NetworkAuthenticationRequired = 511;
 }

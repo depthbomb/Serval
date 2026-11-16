@@ -18,7 +18,7 @@ public sealed class SerializationTests
             var packets = PacketCodec.Encode(2, "/", index, new object[] { "binary", value }, options);
             Assert.Contains("packet_data", packets[0].PollingText);
             var decoded = PacketCodec.Decode(packets[0].PollingText[1..], options);
-            var arguments = new SocketIOArguments(decoded.Data, packets.Skip(1).Select(packet => packet.Data).ToArray(), options.Json, 1);
+            var arguments = new SocketIOArguments(decoded.Data, [.. packets.Skip(1).Select(packet => packet.Data)], options.Json, 1);
             var result = arguments.Get<Payload>(0)!;
             Assert.Equal(value.PacketData, result.PacketData);
             Assert.Equal(value.NestedData[0], result.NestedData[0]);
@@ -67,8 +67,8 @@ public sealed class SerializationTests
 
     private sealed class Payload
     {
-        public byte[] PacketData { get; set; } = [];
-        public byte[][] NestedData { get; set; } = [];
+        public byte[] PacketData { get; init; } = [];
+        public byte[][] NestedData { get; init; } = [];
     }
 
     private sealed class ReentrantValue {}

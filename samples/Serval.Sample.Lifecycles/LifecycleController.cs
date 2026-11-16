@@ -58,12 +58,18 @@ public sealed class LifecycleController : ControllerBase
         context.Response.OnStarting(() =>
         {
             context.Response.Headers["X-Action"] = "callback";
-            _logger.LogInformation("{TraceId}: action starting.", context.TraceId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("{TraceId}: action starting.", context.TraceId);
+            }
             return ValueTask.CompletedTask;
         });
         context.Response.OnCompleted(() =>
         {
-            _logger.LogInformation("{TraceId}: action completed.", context.TraceId);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("{TraceId}: action completed.", context.TraceId);
+            }
             return ValueTask.CompletedTask;
         });
         return TextAsync("Watch the console for local callbacks running before lifecycle hooks.");

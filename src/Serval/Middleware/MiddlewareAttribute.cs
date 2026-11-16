@@ -91,7 +91,7 @@ public sealed class UseMiddlewareAttribute : MiddlewareAttribute
         // A single constructor has a fixed argument mapping that can be compiled once.
         if (middlewareType.GetConstructors().Length == 1 && arguments.All(argument => argument is not null))
         {
-            _argumentTypes = arguments.Select(argument => argument.GetType()).ToArray();
+            _argumentTypes = [.. arguments.Select(argument => argument.GetType())];
             _factory       = ActivatorUtilities.CreateFactory(middlewareType, _argumentTypes);
         }
     }

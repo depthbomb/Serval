@@ -45,7 +45,7 @@ public sealed class ProtocolTests
         var value = new BinaryEnvelope
         {
             Data   = [0, 128, 255],
-            Nested = [[42], []]
+            Nested = [[42], []],
         };
         var encoded = PacketCodec.Encode(2, "/chat", 7, new object[] { "binary", value }, options);
         Assert.StartsWith("453-/chat,7", encoded[0].PollingText);
@@ -53,7 +53,7 @@ public sealed class ProtocolTests
         Assert.All(encoded.Skip(1), packet => Assert.True(packet.Binary));
         value.Data[0] = 99;
         var packet  = PacketCodec.Decode(encoded[0].PollingText[1..], options);
-        var args    = new SocketIOArguments(packet.Data, encoded.Skip(1).Select(part => part.Data).ToArray(), options.Json, 1);
+        var args    = new SocketIOArguments(packet.Data, [.. encoded.Skip(1).Select(part => part.Data)], options.Json, 1);
         var decoded = args.Get<BinaryEnvelope>(0)!;
         Assert.Equal(new byte[] { 0, 128, 255 }, decoded.Data);
         Assert.Equal(new byte[] { 42 }, decoded.Nested[0]);
@@ -76,7 +76,7 @@ public sealed class ProtocolTests
     {
         var options = new SocketIOOptions
         {
-            MaxPayloadBytes = 100
+            MaxPayloadBytes = 100,
         };
         Assert.Throws<InvalidOperationException>(() => PacketCodec.Encode(2, "/", null, new object[] { "event", new byte[100] }, options));
         options.MaxPayloadBytes = 200;
@@ -89,15 +89,15 @@ public sealed class ProtocolTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new SocketIOOptions
         {
-            PingInterval = TimeSpan.Zero
+            PingInterval = TimeSpan.Zero,
         }.Validate());
         Assert.Throws<ArgumentOutOfRangeException>(() => new SocketIOOptions
         {
-            MaxQueuedBytes = 0
+            MaxQueuedBytes = 0,
         }.Validate());
         Assert.Throws<ArgumentException>(() => new SocketIOOptions
         {
-            Path = "/{any}"
+            Path = "/{any}",
         }.Validate());
         var options = new SocketIOOptions();
         options.AllowedOrigins.Add("*");

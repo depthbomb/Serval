@@ -43,7 +43,7 @@ internal sealed class Http2Response : Response
         await StartAsync(cancellationToken);
         if (!_ended)
         {
-            if (_contentLength is { } expected && expected != _written)
+            if (_contentLength is {} expected && expected != _written)
             {
                 throw new Http2ProtocolException(Http2Error.Protocol, "Response Content-Length does not match the body.", _request.Id);
             }
@@ -66,7 +66,7 @@ internal sealed class Http2Response : Response
 
     protected override async ValueTask OnStartAsync(CancellationToken cancellationToken)
     {
-        if (Headers[HeaderNames.ContentLength] is { } length)
+        if (Headers[HeaderNames.ContentLength] is {} length)
         {
             if (!long.TryParse(length, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed))
             {
@@ -88,7 +88,7 @@ internal sealed class Http2Response : Response
             return;
         }
 
-        if (_contentLength is { } expected && bytes.Length > expected - _written)
+        if (_contentLength is {} expected && bytes.Length > expected - _written)
         {
             throw new Http2ProtocolException(Http2Error.Protocol, "Response DATA exceeds Content-Length.", _request.Id);
         }

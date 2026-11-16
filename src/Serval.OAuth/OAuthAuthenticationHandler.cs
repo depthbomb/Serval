@@ -109,7 +109,11 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
             ExpiresUtc      = expiry,
             Properties      = properties ?? new AuthenticationProperties(),
         }, context.RequestAborted);
-        context.Response.Cookies.Set(_options.CorrelationCookiePrefix + authorization.State, correlation, _options.CorrelationCookie with { MaxAge = _options.StateLifetime, Expires = expiry });
+        context.Response.Cookies.Set(_options.CorrelationCookiePrefix + authorization.State, correlation, _options.CorrelationCookie with
+        {
+            MaxAge = _options.StateLifetime,
+            Expires = expiry
+        });
 
         SetPrivateResponse(context);
 

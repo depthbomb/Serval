@@ -31,7 +31,7 @@ public sealed class AsyncMiddlewareTests
         await using var app = new SecurityTestApplication(builder =>
         {
             builder.Services.AddSingleton(lifetime);
-            builder.AddController<object>("GET", "/", null, (_, context) => fail
+            builder.AddController<object>("GET", "/", null, (_, _) => fail
                     ? ValueTask.FromException<IActionResult>(new InvalidOperationException("Action failed."))
                     : ValueTask.FromResult<IActionResult>(new TextResult("done")),
                 new UseMiddlewareAttribute(typeof(PendingCleanupMiddleware)));

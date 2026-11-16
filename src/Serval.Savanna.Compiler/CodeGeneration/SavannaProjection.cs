@@ -306,7 +306,7 @@ public static class SavannaProjection
         }
 
         code.AppendLine("await Task.CompletedTask;\n}\n}");
-        return new SavannaGeneratedSource("__SavannaEditorProjection.cs", code.ToString(), mappings.ToArray());
+        return new SavannaGeneratedSource("__SavannaEditorProjection.cs", code.ToString(), [.. mappings]);
 
         void CloseScope(string scope)
         {

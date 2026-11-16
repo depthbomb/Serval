@@ -61,12 +61,12 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
         var ticket = await _store.FindAsync(key, context.RequestAborted);
         var now    = _time.GetUtcNow();
         if (
-            ticket is null                                  ||
-            ticket.Scheme != scheme                         ||
-            ticket.Properties.IssuedUtc is not { } issued   ||
-            issued > now                                    ||
-            ticket.Properties.ExpiresUtc is not { } expires ||
-            expires                           <= now        ||
+            ticket is null                                 ||
+            ticket.Scheme != scheme                        ||
+            ticket.Properties.IssuedUtc is not {} issued   ||
+            issued > now                                   ||
+            ticket.Properties.ExpiresUtc is not {} expires ||
+            expires                           <= now       ||
             issued + _options.MaximumLifetime <= now
         )
         {
@@ -83,14 +83,23 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             }
 
             // Validation can replace claims, but cannot extend a credential's original lifetime.
-            ticket = ticket with { Principal = result.Ticket!.Principal };
+            ticket = ticket with
+            {
+                Principal = result.Ticket!.Principal
+            };
         }
 
         if (_options.SlidingExpiration && ticket.Properties.AllowRefresh && expires - now < _options.Lifetime / 2 && !context.Response.HasStarted)
         {
             var renewedExpiry = now    + _options.Lifetime;
             var maximumExpiry = issued + _options.MaximumLifetime;
-            var renewed       = ticket with { Properties = ticket.Properties with { ExpiresUtc = renewedExpiry < maximumExpiry ? renewedExpiry : maximumExpiry } };
+            var renewed = ticket with
+            {
+                Properties = ticket.Properties with
+                {
+                    ExpiresUtc = renewedExpiry < maximumExpiry ? renewedExpiry : maximumExpiry
+                }
+            };
             if (!await _store.RenewAsync(key, renewed, context.RequestAborted))
             {
                 return AuthenticationResult.Fail("The session was revoked.");
@@ -139,8 +148,13 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
         {
             [CsrfProperty] = NewToken(),
         };
-        var ticket = new AuthenticationTicket(principal, scheme, properties with { IssuedUtc = issued, ExpiresUtc = expires, Items = items }).Copy();
-        var token  = NewToken();
+        var ticket = new AuthenticationTicket(principal, scheme, properties with
+        {
+            IssuedUtc = issued,
+            ExpiresUtc = expires,
+            Items = items
+        }).Copy();
+        var token = NewToken();
         await _store.StoreAsync(Key(scheme, token), ticket, context.RequestAborted);
         // Store the replacement before revoking the old credential so a failed store leaves the old session usable.
         var previous = GetToken(context);
@@ -177,7 +191,10 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             : context.Request.Cookies.GetValueOrDefault(_options.CookieName);
 
     private void SetCookie(RequestContext context, string token, AuthenticationProperties properties)
-        => context.Response.Cookies.Set(_options.CookieName, token, _options.Cookie with { Expires = properties.IsPersistent ? properties.ExpiresUtc : null });
+        => context.Response.Cookies.Set(_options.CookieName, token, _options.Cookie with
+        {
+            Expires = properties.IsPersistent ? properties.ExpiresUtc : null
+        });
 
     private static void EnsureWritable(RequestContext context)
     {

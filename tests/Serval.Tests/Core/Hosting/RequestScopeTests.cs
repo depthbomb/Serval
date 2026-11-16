@@ -24,7 +24,7 @@ public sealed class RequestScopeTests
     public async Task ScopeCreationFailuresReachTheCentralHandlerWithoutResolvingRootScopedServices()
     {
         var calls = 0;
-        await using var services = Application((_, context) => ValueTask.FromResult<IActionResult>(new TextResult("unreachable")), options => options.TraceIdGenerator = () =>
+        await using var services = Application((_, _) => ValueTask.FromResult<IActionResult>(new TextResult("unreachable")), options => options.TraceIdGenerator = () =>
         {
             calls++;
             return "scope-failure";
@@ -55,7 +55,7 @@ public sealed class RequestScopeTests
     [InlineData(true)]
     public async Task CleanupFailuresAreReportedAfterSuccessfulResponsesWithoutRewritingThem(bool empty)
     {
-        await using var services = Application((_, context) => empty
+        await using var services = Application((_, _) => empty
             ? ValueTask.FromResult<IActionResult>(new StatusCodeResult(204))
             : ValueTask.FromResult<IActionResult>(new TextResult("success")));
         var failure  = new InvalidOperationException("Cleanup failed.");

@@ -27,7 +27,11 @@ public sealed class RequestTimingHandler : RequestLifecycleHandler
     {
         _startedAt  = Stopwatch.GetTimestamp();
         _details.Id = Guid.NewGuid().ToString("N");
-        _logger.LogInformation("{TraceId}: timing received request {RequestId}.", context.TraceId, _details.Id);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("{TraceId}: timing received request {RequestId}.", context.TraceId, _details.Id);
+        }
+
         return ValueTask.CompletedTask;
     }
 
@@ -37,14 +41,22 @@ public sealed class RequestTimingHandler : RequestLifecycleHandler
         context.Response.Headers["Server-Timing"] = $"app;dur={elapsed}";
         context.Response.Headers["X-Request-Id"]  = _details.Id;
         context.Response.Headers["X-Trace-Id"]    = context.TraceId;
-        _logger.LogInformation("{TraceId}: timing starting ({StatusCode}).", context.TraceId, context.Response.StatusCode);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("{TraceId}: timing starting ({StatusCode}).", context.TraceId, context.Response.StatusCode);
+        }
+
         return ValueTask.CompletedTask;
     }
 
     public override ValueTask OnRequestCompletedAsync(RequestContext context, RequestCompletion completion, CancellationToken ct)
     {
-        _logger.LogInformation("{TraceId}: timing completed request {RequestId} after {ElapsedMs:F1} ms.",
-            context.TraceId, _details.Id, completion.Elapsed.TotalMilliseconds);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("{TraceId}: timing completed request {RequestId} after {ElapsedMs:F1} ms.",
+                context.TraceId, _details.Id, completion.Elapsed.TotalMilliseconds);
+        }
+
         return ValueTask.CompletedTask;
     }
 }

@@ -71,7 +71,7 @@ internal sealed partial class Http2Connection
             while (!_closed.IsCancellationRequested)
             {
                 var readTimeout = _http2Options.IdleTimeout;
-                if (_pendingHeaders is { } pending && _options.RequestTimeout != Timeout.InfiniteTimeSpan)
+                if (_pendingHeaders is {} pending && _options.RequestTimeout != Timeout.InfiniteTimeSpan)
                 {
                     var remaining = _options.RequestTimeout - Stopwatch.GetElapsedTime(pending.Started);
                     if (remaining <= TimeSpan.Zero)
@@ -135,7 +135,7 @@ internal sealed partial class Http2Connection
             }
 
             _requests.Clear();
-            if (_pendingHeaders is { } pendingHeaders)
+            if (_pendingHeaders is {} pendingHeaders)
             {
                 await pendingHeaders.Block.DisposeAsync();
             }

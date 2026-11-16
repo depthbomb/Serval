@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Serval.Hosting;
 using Serval.SocketIO.Internal;
+using Serval.Http.Constants;
 
 namespace Serval.SocketIO;
 
@@ -73,7 +74,7 @@ public static class SocketIOBuilderExtensions
                     endpoint.MaxRequestBodyBytes = options.MaxPayloadBytes;
                 }
             });
-            foreach (var method in new[] { "GET", "POST", "OPTIONS" })
+            foreach (var method in new[] { HttpMethods.Get, HttpMethods.Post, HttpMethods.Options })
             {
                 builder.AddController<SocketIOEndpoint>(method, options.Path, null, (endpoint, context) => endpoint.HandleAsync(context));
             }

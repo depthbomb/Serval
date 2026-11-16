@@ -32,8 +32,8 @@ These ten projects produce NuGet packages. Build them locally or consume them th
 | [Serval.Authentication](src/Serval.Authentication)                 | Authentication, sessions, authorization, password hashing, and CSRF helpers.           |
 | [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and provider sign-in, including authorization code flows with PKCE.  |
 | [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed route URLs, verified payload data, request validation, and optional expiration. |
-| [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, binary payloads, acknowledgements, namespaces, and in-memory rooms. |
-| [Serval.Savanna](src/Serval.Savanna)                                     | Compiled HTML templates with typed models, layouts, includes, and components.          |
+| [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, binary payloads, acknowledgements, namespaces, and in-memory rooms.  |
+| [Serval.Savanna](src/Serval.Savanna)                               | Compiled HTML templates with typed models, layouts, includes, and components.          |
 | [Serval.Vite](src/Serval.Vite)                                     | Asset lookups generated from Vite manifests, plus development URLs for HMR.            |
 | [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets through `System.Net.HttpListener`; the default in most samples.    |
 | [Serval.Transport.Http2](src/Serval.Transport.Http2)               | Experimental HTTP/2 transport using TCP and TLS.                                       |
@@ -537,26 +537,26 @@ patterns, custom parsers, and serving the JavaScript client from the protocol en
 
 Run any sample with `dotnet run --project samples/<project-name>`.
 
-| Sample                                                         | What it demonstrates                                                              | Port |
-|----------------------------------------------------------------|-----------------------------------------------------------------------------------|------|
-| [Routing](samples/Serval.Sample.Routing)                       | Route constraints, typed bindings, URL helpers, and controller helpers.           | 8101 |
-| [TodoApi](samples/Serval.Sample.TodoApi)                       | JSON APIs, body binding, validation, and generated JSON metadata.                 | 8102 |
-| [Middleware](samples/Serval.Sample.Middleware)                 | Wrapping application and route execution, ordering, and short-circuiting.         | 8103 |
-| [Files](samples/Serval.Sample.Files)                           | Static files, downloads, and buffered raw uploads.                                | 8104 |
-| [Streaming](samples/Serval.Sample.Streaming)                   | Interactive SSE reconnection and WebSocket echo clients, plus streamed JSON.      | 8105 |
+| Sample                                                         | What it demonstrates                                                                   | Port |
+|----------------------------------------------------------------|----------------------------------------------------------------------------------------|------|
+| [Routing](samples/Serval.Sample.Routing)                       | Route constraints, typed bindings, URL helpers, and controller helpers.                | 8101 |
+| [TodoApi](samples/Serval.Sample.TodoApi)                       | JSON APIs, body binding, validation, and generated JSON metadata.                      | 8102 |
+| [Middleware](samples/Serval.Sample.Middleware)                 | Wrapping application and route execution, ordering, and short-circuiting.              | 8103 |
+| [Files](samples/Serval.Sample.Files)                           | Static files, downloads, and buffered raw uploads.                                     | 8104 |
+| [Streaming](samples/Serval.Sample.Streaming)                   | Interactive SSE reconnection and WebSocket echo clients, plus streamed JSON.           | 8105 |
 | [SocketIO](samples/Serval.Sample.SocketIO)                     | Room chat, namespace selection, binary echo, acknowledgements, and transport upgrades. | 8119 |
-| [CookieAuth](samples/Serval.Sample.CookieAuth)                 | Session cookies, sign-in, sign-out, and CSRF checks.                              | 8106 |
-| [BearerAuth](samples/Serval.Sample.BearerAuth)                 | Bearer authentication, policies, and resource authorization.                      | 8107 |
-| [OAuth](samples/Serval.Sample.OAuth)                           | Provider configuration and sign-in backed by cookie sessions.                     | 8108 |
-| [Exceptions](samples/Serval.Sample.Exceptions)                 | Custom error handling across actions, middleware, and responses.                  | 8109 |
-| [Transports](samples/Serval.Sample.Transports)                 | HTTP transport selection and protocol examples.                                   | 8110 |
-| [EntityFramework](samples/Serval.Sample.EntityFramework)       | Request-scoped database access with EF Core and SQLite.                           | 8111 |
-| [BackgroundServices](samples/Serval.Sample.BackgroundServices) | Startup work, background imports, and shared state.                               | 8112 |
-| [Savanna](samples/Serval.Sample.Savanna)                             | Typed templates, nested layouts, includes, and components.                        | 8113 |
-| [Vite](samples/Serval.Sample.Vite)                             | Generated asset references, Savanna rendering, and frontend HMR.                     | 8114 |
-| [SignedUrls](samples/Serval.Sample.SignedUrls)                 | Permanent and expiring links, signed payloads, middleware, and manual validation. | 8115 |
-| [Forms](samples/Serval.Sample.Forms)                           | Browser forms, JSON POST values, multipart files, and route/query helpers.        | 8116 |
-| [Lifecycles](samples/Serval.Sample.Lifecycles)                 | Request initialization, final headers, completion outcomes, and local callbacks.  | 8117 |
+| [CookieAuth](samples/Serval.Sample.CookieAuth)                 | Session cookies, sign-in, sign-out, and CSRF checks.                                   | 8106 |
+| [BearerAuth](samples/Serval.Sample.BearerAuth)                 | Bearer authentication, policies, and resource authorization.                           | 8107 |
+| [OAuth](samples/Serval.Sample.OAuth)                           | Provider configuration and sign-in backed by cookie sessions.                          | 8108 |
+| [Exceptions](samples/Serval.Sample.Exceptions)                 | Custom error handling across actions, middleware, and responses.                       | 8109 |
+| [Transports](samples/Serval.Sample.Transports)                 | HTTP transport selection and protocol examples.                                        | 8110 |
+| [EntityFramework](samples/Serval.Sample.EntityFramework)       | Request-scoped database access with EF Core and SQLite.                                | 8111 |
+| [BackgroundServices](samples/Serval.Sample.BackgroundServices) | Startup work, background imports, and shared state.                                    | 8112 |
+| [Savanna](samples/Serval.Sample.Savanna)                       | Typed templates, nested layouts, includes, and components.                             | 8113 |
+| [Vite](samples/Serval.Sample.Vite)                             | Generated asset references, Savanna rendering, and frontend HMR.                       | 8114 |
+| [SignedUrls](samples/Serval.Sample.SignedUrls)                 | Permanent and expiring links, signed payloads, middleware, and manual validation.      | 8115 |
+| [Forms](samples/Serval.Sample.Forms)                           | Browser forms, JSON POST values, multipart files, and route/query helpers.             | 8116 |
+| [Lifecycles](samples/Serval.Sample.Lifecycles)                 | Request initialization, final headers, completion outcomes, and local callbacks.       | 8117 |
 
 Run `dotnet run --project samples/Serval.Sample.Streaming` and open <http://localhost:8105/> to try SSE and WebSockets.
 The page uses native `EventSource` and `WebSocket` clients with no frontend dependencies. Start the event feed to

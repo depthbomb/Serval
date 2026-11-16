@@ -92,7 +92,7 @@ public sealed class PasswordAuthenticationTests
     private sealed class AccountStore : IPasswordAccountStore
     {
         public PasswordAccount? Account     { get; set; }
-        public bool             AllowUpdate { get; set; } = true;
+        public bool             AllowUpdate { get; init; } = true;
         public int              Updates     { get; private set; }
 
         public ValueTask<PasswordAccount?> FindAsync(string login, CancellationToken cancellationToken = default) => ValueTask.FromResult(Account);

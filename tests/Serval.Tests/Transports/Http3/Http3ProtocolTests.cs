@@ -46,6 +46,23 @@ public sealed class Http3ProtocolTests
     }
 
     [Theory]
+    [InlineData(30, "accept", "application/dns-message")]
+    [InlineData(31, "accept-encoding", "gzip, deflate, br")]
+    [InlineData(36, "cache-control", "max-age=0")]
+    [InlineData(41, "cache-control", "public, max-age=31536000")]
+    [InlineData(44, "content-type", "application/dns-message")]
+    [InlineData(45, "content-type", "application/javascript")]
+    [InlineData(52, "content-type", "text/html; charset=utf-8")]
+    [InlineData(53, "content-type", "text/plain")]
+    [InlineData(54, "content-type", "text/plain;charset=utf-8")]
+    public void StaticTablePreservesRfc9204FieldValues(int index, string name, string value)
+    {
+        // A zero dynamic-table prefix followed by an indexed static field from RFC 9204 Appendix A.
+        var fields = QPack.Decode([0, 0, (byte)(0xc0 | index)], 1024);
+        Assert.Equal((name, value), Assert.Single(fields));
+    }
+
+    [Theory]
     [InlineData("", 1024)]
     [InlineData("00", 1024)]
     [InlineData("0100", 1024)]

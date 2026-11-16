@@ -36,7 +36,7 @@ public sealed class HardeningTests
         using var wire = new MemoryStream();
         await H3.Frames.WriteAsync(wire, H3.Frames.Headers, FieldSection((name, value)), CancellationToken.None);
         wire.Position = 0;
-        using var body  = new H3.Http3BodyStream(wire, 1024, 1024, 0);
+        await using var body  = new H3.Http3BodyStream(wire, 1024, 1024, 0);
         var       error = await Assert.ThrowsAsync<H3.Http3ProtocolException>(() => body.CopyToAsync(Stream.Null));
         Assert.Equal(H3.Http3Error.Message, error.ErrorCode);
     }
@@ -48,7 +48,7 @@ public sealed class HardeningTests
         await H3.Frames.WriteAsync(wire, H3.Frames.Data, "abc"u8.ToArray(), CancellationToken.None);
         await H3.Frames.WriteAsync(wire, H3.Frames.Headers, FieldSection(("x-checksum", "abc")), CancellationToken.None);
         wire.Position = 0;
-        using var body   = new H3.Http3BodyStream(wire, 1024, 1024, 3);
+        await using var body   = new H3.Http3BodyStream(wire, 1024, 1024, 3);
         using var result = new MemoryStream();
         await body.CopyToAsync(result);
         Assert.Equal("abc", Encoding.UTF8.GetString(result.ToArray()));
@@ -132,7 +132,7 @@ public sealed class HardeningTests
             return EmptyResult.Instance;
         });
         await using var provider = services.BuildServiceProvider();
-        using var       body     = new StalledReadStream();
+        await using var body     = new StalledReadStream();
         var             request  = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers(), body, 1024);
         var             response = new MemoryResponse();
         await provider.GetRequiredService<IRequestHandler>().HandleAsync(request, response, CancellationToken.None).AsTask().WaitAsync(TimeSpan.FromSeconds(3));
@@ -189,12 +189,12 @@ public sealed class HardeningTests
         var registry = new ControllerRegistry();
         for (var index = 0; index < 3; index++)
         {
-            registry.Add<object>("GET", $"/a/{{id:probe({index})}}", null, (_, context) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
+            registry.Add<object>("GET", $"/a/{{id:probe({index})}}", null, (_, _) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
         }
 
         var       router   = new Router(registry, options);
         var       request  = new Request("GET", new Uri("http://localhost/a/value"), HttpVersion.Version11, new Headers(), Stream.Null, 1024);
-        using var services = new ServiceCollection().BuildServiceProvider();
+        await using var services = new ServiceCollection().BuildServiceProvider();
         var       context  = new RequestContext(request, new MemoryResponse(), services, router, cancellation.Token);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => router.TryDispatchAsync(context).AsTask());
         Assert.Equal(1, calls);
@@ -266,7 +266,7 @@ public sealed class HardeningTests
             bytes.AddRange(Encoding.Latin1.GetBytes(value));
         }
 
-        return bytes.ToArray();
+        return [.. bytes];
 
         void WriteInteger(int value, int prefix, byte flags)
         {

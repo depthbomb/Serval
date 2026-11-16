@@ -44,4 +44,16 @@ public static class CacheControlDirectives
 
     /// <summary>The time in seconds stale data may be served after an error; append a value.</summary>
     public const string StaleIfError = "stale-if-error";
+
+    /// <summary>Allows stale responses; optionally append the maximum staleness in seconds.</summary>
+    public const string MaxStale = "max-stale";
+
+    /// <summary>The required remaining freshness in seconds; append a value.</summary>
+    public const string MinFresh = "min-fresh";
+
+    /// <summary>Requires the cache to understand the response status's caching requirements before storing it.</summary>
+    public const string MustUnderstand = "must-understand";
+
+    /// <summary>Requests a stored response without contacting the origin server.</summary>
+    public const string OnlyIfCached = "only-if-cached";
 }

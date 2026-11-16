@@ -11,7 +11,7 @@ public sealed class MultipartStreamingTests
     [InlineData(true)]
     public async Task InvalidHeaderControlsReturnBadRequestInBothModes(bool streaming)
     {
-        using var       input   = new MemoryStream("--test\r\nContent-Disposition: form-data; name=file; filename=test\r\nX-Test: bad\x7fvalue\r\n\r\ndata\r\n--test--\r\n"u8.ToArray());
+        using var       input   = new MemoryStream([.. "--test\r\nContent-Disposition: form-data; name=file; filename=test\r\nX-Test: bad\u007fvalue\r\n\r\ndata\r\n--test--\r\n"u8]);
         await using var request = Create(input);
         var error = await Assert.ThrowsAsync<HttpErrorException>(async () =>
         {
@@ -34,8 +34,8 @@ public sealed class MultipartStreamingTests
     [InlineData(32768)]
     public async Task SectionsPreserveBinaryDataAndFalseBoundaryPrefixes(int chunkSize)
     {
-        byte[]          payload  = [0, 255, .. Encoding.UTF8.GetBytes("hello\r\n--testXYZ\r\n--test--oops"), 128];
-        using var       input    = new ChunkStream([.. Encoding.UTF8.GetBytes("--test\r\nContent-Disposition: form-data; name=title\r\n\r\né\r\n--test\r\nContent-Disposition: form-data; name=file; filename=sample.bin\r\nContent-Type: application/octet-stream\r\n\r\n"), .. payload, .. "\r\n--test--\r\n"u8], chunkSize);
+        byte[]          payload  = [0, 255, .. "hello\r\n--testXYZ\r\n--test--oops"u8, 128];
+        await using var input    = new ChunkStream([.. "--test\r\nContent-Disposition: form-data; name=title\r\n\r\né\r\n--test\r\nContent-Disposition: form-data; name=file; filename=sample.bin\r\nContent-Type: application/octet-stream\r\n\r\n"u8, .. payload, .. "\r\n--test--\r\n"u8], chunkSize);
         await using var request  = Create(input);
         var             sections = new List<(string Name, string? FileName, byte[] Bytes)>();
         Stream?         retained = null;
@@ -59,7 +59,7 @@ public sealed class MultipartStreamingTests
     public async Task StreamingStartsBeforeTheBodyFinishesAndDoesNotUseTemporaryStorage()
     {
         var             bytes   = new byte[2 * 1024 * 1024];
-        using var       input   = new ChunkStream(FileBody(bytes), 4096);
+        await using var input   = new ChunkStream(FileBody(bytes), 4096);
         await using var request = Create(input, input.Length + 1);
         request.FormOptions.MemoryThreshold = 0;
         request.FormOptions.TempDirectory   = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing");
@@ -106,7 +106,7 @@ public sealed class MultipartStreamingTests
     [InlineData("éé", 413)]
     public async Task StreamingFieldsEnforceDecodedCharacterLimits(string value, int expected)
     {
-        using var       input   = new ChunkStream(Encoding.UTF8.GetBytes("--test\r\nContent-Disposition: form-data; name=title\r\n\r\n" + value + "\r\n--test--\r\n"), 1);
+        await using var input   = new ChunkStream(Encoding.UTF8.GetBytes("--test\r\nContent-Disposition: form-data; name=title\r\n\r\n" + value + "\r\n--test--\r\n"), 1);
         await using var request = Create(input);
         request.FormOptions.MaxValueLength = 1;
         if (expected == 200)
@@ -141,7 +141,7 @@ public sealed class MultipartStreamingTests
     [Fact]
     public async Task EpiloguesCountTowardTheRequestLimitAndCancellationStopsReads()
     {
-        using var       input   = new ChunkStream([.. FileBody([1]), .. new byte[200]], 1);
+        await using var input   = new ChunkStream([.. FileBody([1]), .. new byte[200]], 1);
         await using var request = Create(input, 150);
         Assert.Equal(413, (await Assert.ThrowsAsync<HttpErrorException>(async () => await request.ReadMultipartAsync((_, _) => ValueTask.CompletedTask))).StatusCode);
 

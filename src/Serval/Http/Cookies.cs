@@ -98,12 +98,12 @@ public sealed class ResponseCookies
             result.Append("; Domain=").Append(options.Domain);
         }
 
-        if (options.Expires is { } expires)
+        if (options.Expires is {} expires)
         {
             result.Append("; Expires=").Append(expires.UtcDateTime.ToString("R", CultureInfo.InvariantCulture));
         }
 
-        if (options.MaxAge is { } maxAge)
+        if (options.MaxAge is {} maxAge)
         {
             result.Append("; Max-Age=").Append(Math.Max(0, (long)maxAge.TotalSeconds).ToString(CultureInfo.InvariantCulture));
         }
@@ -129,7 +129,11 @@ public sealed class ResponseCookies
     /// <exception cref="ArgumentException">The name or attributes violate cookie validation rules.</exception>
     /// <exception cref="InvalidOperationException">The response headers are already frozen.</exception>
     public void Delete(string name, CookieOptions? options = null)
-        => Set(name, "", (options ?? new CookieOptions()) with { MaxAge = TimeSpan.Zero, Expires = DateTimeOffset.UnixEpoch });
+        => Set(name, "", (options ?? new CookieOptions()) with
+        {
+            MaxAge = TimeSpan.Zero,
+            Expires = DateTimeOffset.UnixEpoch
+        });
 
     private static void ValidateAttribute(string? value)
     {

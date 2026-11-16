@@ -149,7 +149,7 @@ public sealed class MemoryAuthenticationSessionStore : IAuthenticationSessionSto
 
     private void Validate(AuthenticationTicket ticket)
     {
-        if (ticket.Properties.ExpiresUtc is not { } expires || expires <= _time.GetUtcNow())
+        if (ticket.Properties.ExpiresUtc is not {} expires || expires <= _time.GetUtcNow())
         {
             throw new ArgumentException("A future session expiration is required.", nameof(ticket));
         }

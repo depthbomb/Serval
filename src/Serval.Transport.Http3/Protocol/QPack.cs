@@ -70,7 +70,11 @@ internal static class QPack
 
     public static byte[] Encode(int statusCode, Headers headers)
     {
-        var bytes = new List<byte> { 0, 0 };
+        var bytes = new List<byte>
+        {
+            0,
+            0
+        };
         WriteLiteral(bytes, ":status", statusCode.ToString(CultureInfo.InvariantCulture));
 
         foreach (var header in headers)

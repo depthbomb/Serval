@@ -46,7 +46,7 @@ public sealed class ProtocolTests
             await writer.WriteAsync(new { value });
         }
 
-        using var input  = new ChunkedStream(bytes.ToArray(), chunkSize);
+        await using var input  = new ChunkedStream(bytes.ToArray(), chunkSize);
         var       reader = new Protocol(input, Stream.Null);
         foreach (var value in values)
         {

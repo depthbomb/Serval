@@ -65,7 +65,7 @@ public sealed class BearerAuthenticationHandler : AuthenticationHandler
             return ValueTask.FromResult(AuthenticationResult.Fail("Invalid authorization header."));
         }
 
-        if (!header.Scheme.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+        if (!header.Scheme.Equals(HttpAuthenticationSchemes.Bearer, StringComparison.OrdinalIgnoreCase))
         {
             return ValueTask.FromResult(AuthenticationResult.Missing());
         }
@@ -92,7 +92,7 @@ public sealed class BearerAuthenticationHandler : AuthenticationHandler
             return _options.OnChallenge(context);
         }
 
-        context.Response.Headers[HeaderNames.WwwAuthenticate] = "Bearer";
+        context.Response.Headers[HeaderNames.WwwAuthenticate] = HttpAuthenticationSchemes.Bearer;
         return base.ChallengeAsync(context, scheme, properties);
     }
 

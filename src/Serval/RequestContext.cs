@@ -65,7 +65,7 @@ public sealed class RequestContext
                           IServiceProvider  services,
                           IUrlGenerator     urls,
                           CancellationToken requestAborted)
-        : this(request, response, services, urls, CreateDefaultTraceId(), requestAborted) { }
+        : this(request, response, services, urls, CreateDefaultTraceId(), requestAborted) {}
 
     internal RequestContext(Request           request,
                             Response          response,
@@ -96,7 +96,7 @@ public sealed class RequestContext
     {
         Endpoint = endpoint;
         Request.ApplyBodyPolicy(endpoint.MaxRequestBodyBytes, endpoint.Forms);
-        if (endpoint.RequestTimeout is { } timeout)
+        if (endpoint.RequestTimeout is {} timeout)
         {
             var infinite  = timeout == Timeout.InfiniteTimeSpan;
             var remaining = infinite ? timeout : timeout - Stopwatch.GetElapsedTime(StartedAt);

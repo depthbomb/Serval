@@ -18,6 +18,9 @@ public static class MimeTypes
     /// <summary>The <c>text/plain</c> media type with UTF-8 encoding.</summary>
     public const string Text = "text/plain; charset=utf-8";
 
+    /// <summary>Plain text without a charset parameter, for media type matching and negotiation.</summary>
+    public const string PlainText = "text/plain";
+
     /// <summary>The <c>text/html</c> media type with UTF-8 encoding.</summary>
     public const string Html = "text/html; charset=utf-8";
 
@@ -56,6 +59,12 @@ public static class MimeTypes
 
     /// <summary>The <c>text/javascript</c> media type.</summary>
     public const string JavaScript = "text/javascript";
+
+    /// <summary>The legacy JavaScript media type, retained for protocol compatibility. Prefer <see cref="JavaScript"/>.</summary>
+    public const string LegacyJavaScript = "application/javascript";
+
+    /// <summary>A DNS wire-format message, as used by DNS over HTTPS.</summary>
+    public const string DnsMessage = "application/dns-message";
 
     /// <summary>The <c>image/gif</c> media type.</summary>
     public const string Gif = "image/gif";

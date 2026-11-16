@@ -64,9 +64,9 @@ internal static partial class FormDataParser
             ct.ThrowIfCancellationRequested();
             var headers = await ReadPartHeadersAsync(cursor, options, ct);
             if (!ContentDispositionHeaderValue.TryParse(headers[HeaderNames.ContentDisposition], out var disposition)
-                || !disposition.DispositionType.Equals("form-data", StringComparison.OrdinalIgnoreCase)
+                || !disposition.DispositionType.Equals(ContentDispositions.FormData, StringComparison.OrdinalIgnoreCase)
                 || disposition.Parameters.GroupBy(parameter => parameter.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1)
-                || disposition.Name is null || headers["Content-Transfer-Encoding"] is not null)
+                || disposition.Name is null || headers[HeaderNames.ContentTransferEncoding] is not null)
             {
                 throw Malformed("A multipart part needs a form-data disposition and a name, without transfer encoding.");
             }
@@ -97,7 +97,7 @@ internal static partial class FormDataParser
                     throw Limit();
                 }
 
-                if (headers[HeaderNames.ContentType] is { } fieldType)
+                if (headers[HeaderNames.ContentType] is {} fieldType)
                 {
                     ContentType(fieldType);
                 }
@@ -131,8 +131,8 @@ internal static partial class FormDataParser
             }
 
             var colon = line.IndexOf(':');
-            if (colon <= 0                                                                                                                                                                             || line[..colon].Any(character => !char.IsAsciiLetterOrDigit(character) && !"!#$%&'*+-.^_`|~".Contains(character))
-                                                                                                                                                                                                       || line.Any(character => character == '\x7f' || character < ' ' && character != '\t') || headers[line[..colon]] is not null)
+            if (colon <= 0                                                                                       || line[..colon].Any(character => !char.IsAsciiLetterOrDigit(character) && !"!#$%&'*+-.^_`|~".Contains(character))
+                                                                                                                 || line.Any(character => character == '\x7f' || character < ' ' && character != '\t') || headers[line[..colon]] is not null)
             {
                 throw Malformed("Invalid or repeated multipart header.");
             }

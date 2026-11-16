@@ -54,7 +54,7 @@ public sealed class PasswordAuthenticator
     /// <summary>Creates an authenticator and a dummy hash for unknown-account checks.</summary>
     /// <param name="store">The application's account store.</param>
     /// <param name="hasher">The hasher used for verification and upgrades.</param>
-    public PasswordAuthenticator(IPasswordAccountStore store, IPasswordHasher hasher) : this(store, hasher, PasswordDummyHash.Create(hasher)) { }
+    public PasswordAuthenticator(IPasswordAccountStore store, IPasswordHasher hasher) : this(store, hasher, PasswordDummyHash.Create(hasher)) {}
 
     internal PasswordAuthenticator(IPasswordAccountStore store, IPasswordHasher hasher, string dummyHash)
     {

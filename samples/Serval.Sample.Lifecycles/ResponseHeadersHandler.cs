@@ -21,7 +21,11 @@ public sealed class ResponseHeadersHandler : RequestLifecycleHandler
     {
         // This also covers error responses after the exception handler has replaced the headers.
         context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-        _logger.LogInformation("{TraceId}: headers starting ({StatusCode}).", context.TraceId, context.Response.StatusCode);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("{TraceId}: headers starting ({StatusCode}).", context.TraceId, context.Response.StatusCode);
+        }
+
         return ValueTask.CompletedTask;
     }
 }

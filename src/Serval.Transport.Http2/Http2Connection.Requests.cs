@@ -211,7 +211,7 @@ internal sealed partial class Http2Connection
 
             var data = RemovePadding(frame);
             request.ReceivedBytes += data.Length;
-            if (request.Head.ContentLength is { } expected && request.ReceivedBytes > expected)
+            if (request.Head.ContentLength is {} expected && request.ReceivedBytes > expected)
             {
                 throw new Http2ProtocolException(Http2Error.Protocol, "DATA exceeds Content-Length.", frame.StreamId);
             }
@@ -259,7 +259,7 @@ internal sealed partial class Http2Connection
 
     private void EndInput(Http2RequestStream request)
     {
-        if (request.Head.ContentLength is { } expected && request.ReceivedBytes != expected)
+        if (request.Head.ContentLength is {} expected && request.ReceivedBytes != expected)
         {
             throw new Http2ProtocolException(Http2Error.Protocol, "Content-Length does not match the request body.", request.Id);
         }
@@ -311,7 +311,7 @@ internal sealed partial class Http2Connection
             }
 
             // Stop unread uploads once the response is complete so half-open streams cannot retain server state indefinitely.
-            if (!request.RemoteEnded && !request.IsReset && !_closed.IsCancellationRequested)
+            if (request is { RemoteEnded: false, IsReset: false } && !_closed.IsCancellationRequested)
             {
                 await ResetStreamAsync(request.Id, Http2Error.NoError);
             }

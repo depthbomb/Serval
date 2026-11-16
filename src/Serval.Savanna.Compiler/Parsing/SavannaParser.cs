@@ -283,7 +283,7 @@ public static class SavannaParser
                     blockSpan = valueSpan;
                     required  = parts.Length == 2;
                     // Keep a placeholder in the outer body; the selected override is resolved later.
-                    body      = new List<SavannaNode>();
+                    body      = [];
                     root.Add(new SavannaNode(SavannaNodeKind.Block, blockName, valueSpan));
                     contentSeen = true;
                     break;
@@ -309,7 +309,7 @@ public static class SavannaParser
                         Error("A required block cannot have default content.", blockSpan);
                     }
 
-                    blocks.Add(new SavannaBlock(blockName, required, blockSpan, body.ToArray()));
+                    blocks.Add(new SavannaBlock(blockName, required, blockSpan, [.. body]));
                     blockName = null;
                     body      = root;
                     break;
@@ -591,10 +591,10 @@ public static class SavannaParser
             Error("An extending template may render content only inside named blocks.", document.Parent.Span);
         }
 
-        document.Body    = root.ToArray();
-        document.Blocks  = blocks.ToArray();
+        document.Body    = [.. root];
+        document.Blocks  = [.. blocks];
         document.Imports = imports;
-        document.Usings  = usings.Distinct(StringComparer.Ordinal).ToArray();
+        document.Usings  = [.. usings.Distinct(StringComparer.Ordinal)];
         if (document.IsImports && (modelSeen || document.IsLayout || document.Parent is not null || blocks.Count > 0 || imports.Count > 0 || contentSeen))
         {
             Error("An _Imports.svn file may contain only namespace imports and comments.", default);
@@ -606,7 +606,7 @@ public static class SavannaParser
             SavannaSlotsAnalysis.Analyze(document, diagnostics);
         }
 
-        document.Diagnostics = diagnostics.ToArray();
+        document.Diagnostics = [.. diagnostics];
         return document;
     }
 

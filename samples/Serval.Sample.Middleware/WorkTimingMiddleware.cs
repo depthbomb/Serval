@@ -21,15 +21,21 @@ public sealed class WorkTimingMiddleware : IMiddleware
     public async ValueTask InvokeAsync(RequestContext context, RequestDelegate next)
     {
         var start = Stopwatch.GetTimestamp();
-        _logger.LogInformation("{TraceId}: route middleware entered.", context.TraceId);
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            _logger.LogInformation("{TraceId}: route middleware entered.", context.TraceId);
+        }
         try
         {
             await next(context);
         }
         finally
         {
-            _logger.LogInformation("{TraceId}: route middleware exited after {ElapsedMs:F1} ms.",
-                context.TraceId, Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("{TraceId}: route middleware exited after {ElapsedMs:F1} ms.",
+                    context.TraceId, Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+            }
         }
     }
 }

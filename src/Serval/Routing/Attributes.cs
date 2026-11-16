@@ -63,7 +63,7 @@ public sealed class GetAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public GetAttribute(string template = "") : base(HttpMethods.Get, template) { }
+    public GetAttribute(string template = "") : base(HttpMethods.Get, template) {}
 }
 
 /// <summary>Maps an action to the POST method.</summary>
@@ -73,7 +73,7 @@ public sealed class PostAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public PostAttribute(string template = "") : base(HttpMethods.Post, template) { }
+    public PostAttribute(string template = "") : base(HttpMethods.Post, template) {}
 }
 
 /// <summary>Maps an action to the PUT method.</summary>
@@ -83,7 +83,7 @@ public sealed class PutAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public PutAttribute(string template = "") : base(HttpMethods.Put, template) { }
+    public PutAttribute(string template = "") : base(HttpMethods.Put, template) {}
 }
 
 /// <summary>Maps an action to the PATCH method.</summary>
@@ -93,7 +93,7 @@ public sealed class PatchAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public PatchAttribute(string template = "") : base(HttpMethods.Patch, template) { }
+    public PatchAttribute(string template = "") : base(HttpMethods.Patch, template) {}
 }
 
 /// <summary>Maps an action to the DELETE method.</summary>
@@ -103,7 +103,7 @@ public sealed class DeleteAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public DeleteAttribute(string template = "") : base(HttpMethods.Delete, template) { }
+    public DeleteAttribute(string template = "") : base(HttpMethods.Delete, template) {}
 }
 
 /// <summary>Maps an action to the HEAD method.</summary>
@@ -113,7 +113,7 @@ public sealed class HeadAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public HeadAttribute(string template = "") : base(HttpMethods.Head, template) { }
+    public HeadAttribute(string template = "") : base(HttpMethods.Head, template) {}
 }
 
 /// <summary>Maps an action to the OPTIONS method.</summary>
@@ -123,5 +123,5 @@ public sealed class OptionsAttribute : HttpRouteAttribute
     /// <param name="template">
     ///     The action route template, relative to its controller prefix; defaults to an empty suffix.
     /// </param>
-    public OptionsAttribute(string template = "") : base(HttpMethods.Options, template) { }
+    public OptionsAttribute(string template = "") : base(HttpMethods.Options, template) {}
 }

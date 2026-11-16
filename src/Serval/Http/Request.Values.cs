@@ -26,7 +26,7 @@ public sealed partial class Request
 
     /// <summary>Gets repeated query values in order, or an empty array when absent. Invalid values return 400.</summary>
     public T[] QueryValues<T>(string name) where T : IParsable<T>
-        => Query.TryGetValue(name, out var values) ? values.Select(value => RequestBinding.Parse<T>(value, "Query", name)).ToArray() : [];
+        => Query.TryGetValue(name, out var values) ? [.. values.Select(value => RequestBinding.Parse<T>(value, "Query", name))] : [];
 
     /// <summary>Gets a required query enum. Names ignore case; repeated or invalid values return 400.</summary>
     public T QueryEnum<T>(string name) where T : struct, Enum => RequestBinding.ParseEnum<T>(QueryValue(name), "Query", name);

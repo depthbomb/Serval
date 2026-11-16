@@ -9,11 +9,11 @@ namespace Serval.Savanna;
 
 public sealed partial class SavannaWriter
 {
-    private static readonly byte[] AttributeQuote = "\""u8.ToArray();
-    private static readonly byte[] JsonStart      = "<script type=\"application/json\" id=\""u8.ToArray();
-    private static readonly byte[] JsonValueStart = "\">"u8.ToArray();
-    private static readonly byte[] JsonEnd        = "</script>"u8.ToArray();
-    private static readonly byte[] JsonLessThan   = "\\u003C"u8.ToArray();
+    private static readonly byte[] AttributeQuote = [.. "\""u8];
+    private static readonly byte[] JsonStart      = [.. "<script type=\"application/json\" id=\""u8];
+    private static readonly byte[] JsonValueStart = [.. "\">"u8];
+    private static readonly byte[] JsonEnd        = [.. "</script>"u8];
+    private static readonly byte[] JsonLessThan   = [.. "\\u003C"u8];
 
     /// <summary>Writes a valueless HTML attribute only when the value is true.</summary>
     /// <param name="name">The validated attribute name or name to validate.</param>
@@ -168,7 +168,7 @@ public sealed partial class SavannaWriter
         }
 
         // Check before emitting any part of the attribute.
-        if (context.UrlPolicy is { } policy && !policy.IsAllowed(value))
+        if (context.UrlPolicy is {} policy && !policy.IsAllowed(value))
         {
             throw new InvalidOperationException("The application URL policy rejected a template URL.");
         }

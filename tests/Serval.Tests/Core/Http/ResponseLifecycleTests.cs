@@ -36,12 +36,12 @@ public sealed class ResponseLifecycleTests
     {
         var events = new List<string>();
         var response = new UpgradeResponse();
-        response.OnStarting(ct =>
+        response.OnStarting(_ =>
         {
             events.Add("local");
             return ValueTask.CompletedTask;
         });
-        response.LifecycleStarting = ct =>
+        response.LifecycleStarting = _ =>
         {
             events.Add("lifecycle");
             response.Headers["X-Upgrade"] = "yes";

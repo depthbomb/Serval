@@ -51,9 +51,9 @@ internal sealed class TestServer : IAsyncDisposable
         {
             await context.AuthenticateAsync();
             await next(context);
-        }).AddSocketIO(socketIO =>
+        }).AddSocketIO(socketIo =>
         {
-            socketIO.MapNamespace<TestHandler>("/").MapNamespace<TestHandler>("/chat").MapNamespace<TestHandler>("/private");
+            socketIo.MapNamespace<TestHandler>("/").MapNamespace<TestHandler>("/chat").MapNamespace<TestHandler>("/private");
         }, options =>
         {
             options.PingInterval    = TimeSpan.FromMilliseconds(200);
@@ -143,7 +143,7 @@ internal sealed class TestHandler : SocketIOHandler
         switch (message.Name)
         {
             case "echo":
-                await message.AcknowledgeAsync(Enumerable.Range(0, message.Arguments.Count).Select(index => (object?)message.Arguments[index]).ToArray());
+                await message.AcknowledgeAsync([.. Enumerable.Range(0, message.Arguments.Count).Select(index => (object?)message.Arguments[index])]);
                 break;
             case "binary":
                 await message.AcknowledgeAsync(message.Arguments.Get<BinaryEnvelope>(0));
@@ -152,7 +152,7 @@ internal sealed class TestHandler : SocketIOHandler
                 await message.Socket.EmitAsync("binary-event", new BinaryEnvelope
                 {
                     Data   = [0, 1, 255],
-                    Nested = [[7, 8], []]
+                    Nested = [[7, 8], []],
                 });
                 await message.AcknowledgeAsync("sent");
                 break;
@@ -188,7 +188,7 @@ internal sealed class TestHandler : SocketIOHandler
                 await message.AcknowledgeAsync(new
                 {
                     id               = _scope.Id,
-                    previousDisposed = message.Arguments.Count > 0 && _tracker.Scopes.GetValueOrDefault(message.Arguments.Get<string>(0)!)
+                    previousDisposed = message.Arguments.Count > 0 && _tracker.Scopes.GetValueOrDefault(message.Arguments.Get<string>(0)!),
                 });
                 break;
             case "user":

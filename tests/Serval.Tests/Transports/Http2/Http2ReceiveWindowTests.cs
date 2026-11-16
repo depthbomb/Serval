@@ -37,7 +37,7 @@ public sealed class Http2ReceiveWindowTests : IAsyncLifetime
             var body = await context.Request.ReadBodyAsync();
             return new TextResult(body.Length.ToString(CultureInfo.InvariantCulture));
         });
-        app.AddController<object>("GET", "/early", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("early")));
+        app.AddController<object>("GET", "/early", null, (_, _) => ValueTask.FromResult<IActionResult>(new TextResult("early")));
         app.AddHttp2(options =>
         {
             options.EndPoint = new IPEndPoint(IPAddress.Loopback, _port);

@@ -49,7 +49,7 @@ public sealed partial class SavannaCompilerTests
                                        public static class Entry {
                                            public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(0);
                                        }
-                                       """, Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : Array.Empty<string>()));
+                                       """, Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []));
         Assert.Contains("<p>shared</p>", output);
         Assert.Contains(debug ? "<span>debug</span>" : "<span>release</span>", output);
         Assert.Contains(debug ? "<b>nested debug</b>" : "<b>nested release</b>", output);
@@ -156,7 +156,7 @@ public sealed partial class SavannaCompilerTests
                             </#switch>
                             """,
         });
-        var options = Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : Array.Empty<string>());
+        var options = Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []);
         const string code = """
                             public static class Entry {
                                 public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(1);

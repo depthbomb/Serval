@@ -36,19 +36,19 @@ public sealed class SavannaDocument
     public SavannaNode? Parent { get; internal set; }
 
     /// <summary>Local namespace imports, or merged imports after SavannaImports.Apply.</summary>
-    public IReadOnlyList<string> Usings { get; internal set; } = Array.Empty<string>();
+    public IReadOnlyList<string> Usings { get; internal set; } = [];
 
     /// <summary>Case-sensitive view aliases mapped to exact relative template paths.</summary>
     public IReadOnlyDictionary<string, string> Imports { get; internal set; } = new Dictionary<string, string>();
 
     /// <summary>The top-level body nodes in source order.</summary>
-    public IReadOnlyList<SavannaNode> Body { get; internal set; } = Array.Empty<SavannaNode>();
+    public IReadOnlyList<SavannaNode> Body { get; internal set; } = [];
 
     /// <summary>Named block declarations and overrides.</summary>
-    public IReadOnlyList<SavannaBlock> Blocks { get; internal set; } = Array.Empty<SavannaBlock>();
+    public IReadOnlyList<SavannaBlock> Blocks { get; internal set; } = [];
 
     /// <summary>Syntax diagnostics collected while parsing the document.</summary>
-    public IReadOnlyList<SavannaDiagnostic> Diagnostics { get; internal set; } = Array.Empty<SavannaDiagnostic>();
+    public IReadOnlyList<SavannaDiagnostic> Diagnostics { get; internal set; } = [];
 
     /// <summary>Creates an unparsed document container with an object model default.</summary>
     /// <param name="path">The diagnostic source path.</param>

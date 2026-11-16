@@ -39,7 +39,7 @@ internal sealed class HPack
         (":status", "404"),
         (":status", "500"),
         ("accept-charset", ""),
-        ("accept-encoding", "gzip, deflate"),
+        ("accept-encoding", ContentEncodings.Gzip + ", " + ContentEncodings.Deflate),
         ("accept-language", ""),
         ("accept-ranges", ""),
         ("accept", ""),
@@ -143,7 +143,10 @@ internal sealed class HPack
     public static byte[] Encode(int statusCode, Headers headers, long maximumBytes, int streamId)
     {
         // Responses never use a dynamic table. Declaring capacity zero also honors peer reductions.
-        var bytes  = new List<byte> { 0x20 };
+        var bytes = new List<byte>
+        {
+            0x20
+        };
         var status = statusCode.ToString(CultureInfo.InvariantCulture);
         var total  = ":status".Length + status.Length + 32L;
 

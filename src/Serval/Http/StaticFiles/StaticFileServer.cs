@@ -81,7 +81,7 @@ internal sealed class StaticFileServer
     {
         _options = options;
         options.StaticFiles.Validate();
-        if (options.StaticFiles.DirectoryPath is { } directory)
+        if (options.StaticFiles.DirectoryPath is {} directory)
         {
             var info = new DirectoryInfo(Path.GetFullPath(directory));
             _root = Path.TrimEndingDirectorySeparator(info.ResolveLinkTarget(true)?.FullName ?? info.FullName);

@@ -42,8 +42,8 @@ public sealed class ViteEntry
         ArgumentNullException.ThrowIfNull(stylesheets);
         ArgumentNullException.ThrowIfNull(modulePreloads);
 
-        Scripts        = Array.AsReadOnly(scripts.ToArray());
-        Stylesheets    = Array.AsReadOnly(stylesheets.ToArray());
-        ModulePreloads = Array.AsReadOnly(modulePreloads.ToArray());
+        Scripts        = Array.AsReadOnly<string>([.. scripts]);
+        Stylesheets    = Array.AsReadOnly<string>([.. stylesheets]);
+        ModulePreloads = Array.AsReadOnly<string>([.. modulePreloads]);
     }
 }

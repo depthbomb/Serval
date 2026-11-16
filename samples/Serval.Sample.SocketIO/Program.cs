@@ -27,9 +27,9 @@ public static class Program
         host.Services.AddServal(options =>
         {
             options.StaticFiles.DirectoryPath = Path.Combine(AppContext.BaseDirectory, "Public");
-        }).AddGeneratedControllers().AddSocketIO(socketIO =>
+        }).AddGeneratedControllers().AddSocketIO(socketIo =>
         {
-            socketIO.MapNamespace<ChatHandler>("/").MapNamespace<ChatHandler>("/chat");
+            socketIo.MapNamespace<ChatHandler>("/").MapNamespace<ChatHandler>("/chat");
         }).AddHttpListener(options =>
         {
             options.Prefixes.Clear();

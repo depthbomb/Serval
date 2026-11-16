@@ -252,7 +252,7 @@ public sealed partial class Request : IAsyncDisposable
         {
             foreach (var pair in repeated)
             {
-                parsed[pair.Key] = pair.Value.ToArray();
+                parsed[pair.Key] = [.. pair.Value];
             }
         }
 

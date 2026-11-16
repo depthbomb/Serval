@@ -64,8 +64,8 @@ public static class TemplateFeatures
             if (offset <= start + tag.Name.Length)
             {
                 var partial = document.Text.ToString(TextSpan.FromBounds(start, Math.Max(start, offset)));
-                return SavannaTagRules.Attributes.Keys.Where(name => name.StartsWith(partial, StringComparison.Ordinal))
-                                   .Select(name => Item(name, name, "Savanna " + name + " tag", 14, new TextSpan(start, partial.Length))).ToArray();
+                return [.. SavannaTagRules.Attributes.Keys.Where(name => name.StartsWith(partial, StringComparison.Ordinal))
+                                   .Select(name => Item(name, name, "Savanna " + name + " tag", 14, new TextSpan(start, partial.Length)))];
             }
 
             var attribute = tag.Attributes.Values.FirstOrDefault(value => value.Span.Start <= offset && offset <= value.Span.End);
@@ -75,17 +75,17 @@ public static class TemplateFeatures
                 var range   = new TextSpan(attribute.Span.Start, partial.Length);
                 if (attribute.Name == "view")
                 {
-                    return snapshot.Templates.Where(view => !view.IsImports && view.Name != document.Name && view.Name.StartsWith(partial, StringComparison.Ordinal))
+                    return [.. snapshot.Templates.Where(view => !view.IsImports && view.Name != document.Name && view.Name.StartsWith(partial, StringComparison.Ordinal))
                                    .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, range))
                                    .Concat(document.Imports.Where(pair => pair.Key.StartsWith(partial, StringComparison.Ordinal))
-                                                   .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, range))).ToArray();
+                                                   .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, range)))];
                 }
 
                 if (tag.Name == "block" && attribute.Name == "name")
                 {
-                    return Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
+                    return [.. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
                                               .Where(block => block.Name.StartsWith(partial, StringComparison.Ordinal))
-                                              .Select(block => Item(block.Name, block.Name, "Inherited block", 6, range)).ToArray();
+                                              .Select(block => Item(block.Name, block.Name, "Inherited block", 6, range))];
                 }
 
                 return null;
@@ -98,8 +98,8 @@ public static class TemplateFeatures
             }
 
             var prefixText = document.Text.ToString(TextSpan.FromBounds(wordStart, offset));
-            return SavannaTagRules.Attributes.GetValueOrDefault(tag.Name, []).Where(name => !tag.Attributes.ContainsKey(name) && name.StartsWith(prefixText, StringComparison.Ordinal))
-                               .Select(name => Item(name, name is "required" or "await" ? name : name + "=\"\"", "Savanna " + tag.Name + " attribute", 10, new TextSpan(wordStart, prefixText.Length))).ToArray();
+            return [.. SavannaTagRules.Attributes.GetValueOrDefault(tag.Name, []).Where(name => !tag.Attributes.ContainsKey(name) && name.StartsWith(prefixText, StringComparison.Ordinal))
+                               .Select(name => Item(name, name is "required" or "await" ? name : name + "=\"\"", "Savanna " + tag.Name + " attribute", 10, new TextSpan(wordStart, prefixText.Length)))];
         }
 
         if (token?.Kind != SavannaTokenKind.Directive)
@@ -111,8 +111,8 @@ public static class TemplateFeatures
         var split  = prefix.IndexOfAny([' ', '\t', '\r', '\n']);
         if (split < 0)
         {
-            return Directives.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal))
-                             .Select(pair => Item(pair.Key, pair.Key, pair.Value, 14, new TextSpan(token.Span.Start, prefix.Length))).ToArray();
+            return [.. Directives.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal))
+                             .Select(pair => Item(pair.Key, pair.Key, pair.Value, 14, new TextSpan(token.Span.Start, prefix.Length)))];
         }
 
         var command       = prefix[..split];
@@ -128,22 +128,22 @@ public static class TemplateFeatures
             if (argument.StartsWith('"') && argument.AsSpan(1).IndexOf('"') < 0)
             {
                 var partial = argument[1..];
-                return snapshot.Templates.Where(view => view.Name != document.Name && (command != "extends" || view.IsLayout) && view.Name.StartsWith(partial, StringComparison.Ordinal))
-                               .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, new TextSpan(argumentStart + 1, partial.Length))).ToArray();
+                return [.. snapshot.Templates.Where(view => view.Name != document.Name && (command != "extends" || view.IsLayout) && view.Name.StartsWith(partial, StringComparison.Ordinal))
+                               .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, new TextSpan(argumentStart + 1, partial.Length)))];
             }
 
             if (command != "import" && !argument.Contains(' ') && !argument.StartsWith('"'))
             {
-                return document.Imports.Where(pair => pair.Key.StartsWith(argument, StringComparison.Ordinal))
-                               .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, new TextSpan(argumentStart, argument.Length))).ToArray();
+                return [.. document.Imports.Where(pair => pair.Key.StartsWith(argument, StringComparison.Ordinal))
+                               .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, new TextSpan(argumentStart, argument.Length)))];
             }
         }
 
         if (command == "block" && !argument.Contains(' '))
         {
-            return Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
+            return [.. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
                                       .Where(block => block.Name.StartsWith(argument, StringComparison.Ordinal))
-                                      .Select(block => Item(block.Name, block.Name, block.Required ? "Required inherited block" : "Inherited block", 6, new TextSpan(argumentStart, argument.Length))).ToArray();
+                                      .Select(block => Item(block.Name, block.Name, block.Required ? "Required inherited block" : "Inherited block", 6, new TextSpan(argumentStart, argument.Length)))];
         }
 
         return null;

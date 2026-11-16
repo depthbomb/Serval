@@ -171,7 +171,7 @@ public sealed class ControllerGenerator : IIncrementalGenerator
     private static bool IsActionResult(ITypeSymbol type) => type.NullableAnnotation != NullableAnnotation.Annotated && (type.ToDisplayString() == "Serval.Http.IActionResult" || type.AllInterfaces.Any(contract => contract.ToDisplayString() == "Serval.Http.IActionResult"));
 
     private static bool IsSupportedParameter(IParameterSymbol parameter)
-        => parameter.RefKind == RefKind.None && parameter.Type is not INamedTypeSymbol { IsRefLikeType: true }
+        => parameter is { RefKind: RefKind.None, Type: not INamedTypeSymbol { IsRefLikeType: true } }
                                              && parameter.Type.TypeKind is not (TypeKind.Pointer or TypeKind.FunctionPointer)
                                              && (parameter.Type.ToDisplayString() is "Serval.RequestContext" or "System.Threading.CancellationToken"
                                                  || parameter.GetAttributes().Any(BindingEmitter.IsBinding));

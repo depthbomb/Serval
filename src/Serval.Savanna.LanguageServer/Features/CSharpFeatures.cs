@@ -58,7 +58,7 @@ public sealed partial class CSharpFeatures
             });
         }
 
-        return items.ToArray();
+        return [.. items];
     }
 
     public async Task<object?> HoverAsync(int offset, CancellationToken cancellationToken)
@@ -144,7 +144,7 @@ public sealed partial class CSharpFeatures
     public async Task<object[]> DiagnosticsAsync(CancellationToken cancellationToken)
     {
         var model = await _document.GetSemanticModelAsync(cancellationToken);
-        return model!.GetDiagnostics(cancellationToken: cancellationToken)
+        return [.. model!.GetDiagnostics(cancellationToken: cancellationToken)
                      .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning && diagnostic.Location.SourceTree == model.SyntaxTree)
                      .Select(diagnostic => (Diagnostic: diagnostic, Span: MapSpan(diagnostic.Location.SourceSpan)))
                      .Where(item => item.Span is not null)
@@ -152,7 +152,7 @@ public sealed partial class CSharpFeatures
                      {
                          range = Position.Range(_template.Text, item.Span!.Value), severity = item.Diagnostic.Severity == DiagnosticSeverity.Error ? 1 : 2,
                          code  = item.Diagnostic.Id, source                                 = "C#", message = item.Diagnostic.GetMessage(),
-                     }).ToArray();
+                     })];
     }
 
     private async Task<(ISymbol? Symbol, TextSpan Span)> SymbolAtAsync(int offset, CancellationToken cancellationToken)

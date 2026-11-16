@@ -193,7 +193,7 @@ internal sealed class Http3Connection
                 var       payload = await Frames.ReadPayloadAsync(stream, first.Value.Length, _options.MaxRequestHeaderBytes, cancellationToken);
                 using var values  = new MemoryStream(payload);
                 var       seen    = new HashSet<long>();
-                while (await Frames.ReadIntegerAsync(values, cancellationToken) is { } setting)
+                while (await Frames.ReadIntegerAsync(values, cancellationToken) is {} setting)
                 {
                     _ = await Frames.ReadIntegerAsync(values, cancellationToken) ?? throw new Http3ProtocolException(Http3Error.Settings, "Missing setting value.");
                     if (!seen.Add(setting) || setting is 2 or 3 or 4 or 5)
@@ -202,7 +202,7 @@ internal sealed class Http3Connection
                     }
                 }
 
-                while (await Frames.ReadAsync(stream, cancellationToken) is { } frame)
+                while (await Frames.ReadAsync(stream, cancellationToken) is {} frame)
                 {
                     if (frame.Type is Frames.Settings or Frames.Data or Frames.Headers or 2 or 5 or 6 or 8 or 9)
                     {

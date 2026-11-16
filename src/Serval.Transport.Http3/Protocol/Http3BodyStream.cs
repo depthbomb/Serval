@@ -49,7 +49,7 @@ internal sealed class Http3BodyStream : Stream
             if (frame is null)
             {
                 _ended = true;
-                if (_contentLength is { } expected && _received != expected)
+                if (_contentLength is {} expected && _received != expected)
                 {
                     throw new Http3ProtocolException(Http3Error.Message, "Content-Length does not match the DATA payload.");
                 }
@@ -71,7 +71,7 @@ internal sealed class Http3BodyStream : Stream
                         throw new HttpErrorException(StatusCodes.PayloadTooLarge);
                     }
 
-                    if (_contentLength is { } expected && _remaining > expected - _received)
+                    if (_contentLength is {} expected && _remaining > expected - _received)
                     {
                         throw new Http3ProtocolException(Http3Error.Message, "DATA exceeds Content-Length.");
                     }

@@ -173,7 +173,7 @@ internal sealed class RequestBodyStorage : IAsyncDisposable
             return _position = position;
         }
 
-        public override void Flush() { }
+        public override void Flush() {}
 
         public override void SetLength(long value) => throw new NotSupportedException();
 

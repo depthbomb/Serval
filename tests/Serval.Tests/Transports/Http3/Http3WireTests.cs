@@ -47,7 +47,7 @@ public sealed class Http3WireTests
         var builder = Host.CreateApplicationBuilder();
         builder.Logging.ClearProviders();
         builder.Services.AddServal()
-               .AddController<object>("GET", "/ok", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("healthy")))
+               .AddController<object>("GET", "/ok", null, (_, _) => ValueTask.FromResult<IActionResult>(new TextResult("healthy")))
                .AddController<object>("GET", "/short", null, (_, context) =>
                {
                    context.Response.Headers[HeaderNames.ContentLength] = "10";
@@ -90,7 +90,7 @@ public sealed class Http3WireTests
                 fields.Add(("x-bad", "value\r\ninjection"));
             }
 
-            await Frames.WriteAsync(invalid, Frames.Headers, HardeningTests.FieldSection(fields.ToArray()), timeout.Token);
+            await Frames.WriteAsync(invalid, Frames.Headers, HardeningTests.FieldSection([.. fields]), timeout.Token);
             invalid.CompleteWrites();
             var error = await Assert.ThrowsAsync<QuicException>(() => invalid.CopyToAsync(Stream.Null, timeout.Token));
             Assert.Equal(QuicError.StreamAborted, error.QuicError);

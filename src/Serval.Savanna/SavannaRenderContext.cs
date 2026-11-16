@@ -62,11 +62,11 @@ public sealed class SavannaRenderContext
     /// <param name="urlPolicy">An optional URL policy; null resolves IUrlPolicy from services when available.</param>
     /// <param name="slots">Named render fragments, or null for an empty set.</param>
     public SavannaRenderContext(IServiceProvider? services          = null,
-                             CancellationToken cancellationToken = default,
-                             IFormatProvider?  formatProvider    = null,
-                             bool?             development       = null,
-                             IUrlPolicy?       urlPolicy         = null,
-                             SavannaSlots?        slots             = null)
+                                CancellationToken cancellationToken = default,
+                                IFormatProvider?  formatProvider    = null,
+                                bool?             development       = null,
+                                IUrlPolicy?       urlPolicy         = null,
+                                SavannaSlots?     slots             = null)
     {
         Services          = services;
         CancellationToken = cancellationToken;

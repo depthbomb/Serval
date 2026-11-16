@@ -155,7 +155,7 @@ public sealed partial class SavannaWriter : IDisposable
     /// <exception cref="InvalidOperationException">The application URL policy rejects the value.</exception>
     public ValueTask WriteUrlAsync(string? value, SavannaRenderContext context)
     {
-        if (value is not null && context.UrlPolicy is { } policy && !policy.IsAllowed(value))
+        if (value is not null && context.UrlPolicy is {} policy && !policy.IsAllowed(value))
         {
             throw new InvalidOperationException("The application URL policy rejected a template URL.");
         }
@@ -248,7 +248,7 @@ public sealed partial class SavannaWriter : IDisposable
     public readonly struct WhitespaceScope : IDisposable
     {
         private readonly SavannaWriter? _writer;
-        private readonly bool        _previous;
+        private readonly bool           _previous;
 
         internal WhitespaceScope(SavannaWriter writer)
         {

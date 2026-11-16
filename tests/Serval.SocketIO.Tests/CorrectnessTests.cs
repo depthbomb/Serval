@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Net.WebSockets;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Channels;
 using Serval.Http;
 using Serval.SocketIO.Internal;

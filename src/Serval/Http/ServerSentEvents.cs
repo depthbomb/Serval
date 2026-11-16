@@ -56,7 +56,7 @@ public sealed class ServerSentEvents
             message.Append("id: ").Append(id).Append('\n');
         }
 
-        if (retry is { } interval)
+        if (retry is {} interval)
         {
             ArgumentOutOfRangeException.ThrowIfNegative(interval.Ticks);
             message.Append("retry: ").Append(((long)interval.TotalMilliseconds).ToString(CultureInfo.InvariantCulture)).Append('\n');

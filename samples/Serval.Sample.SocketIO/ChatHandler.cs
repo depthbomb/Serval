@@ -27,7 +27,7 @@ public sealed class ChatHandler : SocketIOHandler
                 {
                     await message.AcknowledgeAsync(new
                     {
-                        error = "Choose a room name with 1 to 64 characters."
+                        error = "Choose a room name with 1 to 64 characters.",
                     });
                     break;
                 }
@@ -36,7 +36,7 @@ public sealed class ChatHandler : SocketIOHandler
                 await message.AcknowledgeAsync(new
                 {
                     room,
-                    id = message.Socket.Id
+                    id = message.Socket.Id,
                 });
                 break;
             }
@@ -48,7 +48,7 @@ public sealed class ChatHandler : SocketIOHandler
                 {
                     await message.AcknowledgeAsync(new
                     {
-                        error = "Join the room and send 1 to 1000 characters."
+                        error = "Join the room and send 1 to 1000 characters.",
                     });
                     break;
                 }
@@ -58,12 +58,12 @@ public sealed class ChatHandler : SocketIOHandler
                     {
                         from = message.Socket.Id,
                         room,
-                        text
-                    }
+                        text,
+                    },
                 ], room);
                 await message.AcknowledgeAsync(new
                 {
-                    sent = true
+                    sent = true,
                 });
                 break;
             }
@@ -73,7 +73,7 @@ public sealed class ChatHandler : SocketIOHandler
                 await message.Socket.EmitAsync("binary", bytes);
                 await message.AcknowledgeAsync(new
                 {
-                    bytes = bytes.Length
+                    bytes = bytes.Length,
                 });
                 break;
             }

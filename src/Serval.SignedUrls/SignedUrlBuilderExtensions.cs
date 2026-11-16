@@ -36,7 +36,7 @@ public static class SignedUrlBuilderExtensions
 
             var snapshot = new SignedUrlOptions
             {
-                SigningKey             = options.SigningKey.ToArray(),
+                SigningKey             = [.. options.SigningKey],
                 SignatureParameterName = options.SignatureParameterName,
                 MaxUrlLength           = options.MaxUrlLength,
             };

@@ -277,4 +277,52 @@ public static class HeaderNames
 
     /// <summary>The legacy policy controlling whether a page can be displayed in a frame.</summary>
     public const string XFrameOptions = "X-Frame-Options";
+
+    /// <summary>The legacy accepted character sets field.</summary>
+    public const string AcceptCharset = "Accept-Charset";
+
+    /// <summary>The MIME transfer encoding of a multipart part; Serval rejects encoded form parts.</summary>
+    public const string ContentTransferEncoding = "Content-Transfer-Encoding";
+
+    /// <summary>The maximum number of forwarding hops for TRACE or OPTIONS.</summary>
+    public const string MaxForwards = "Max-Forwards";
+
+    /// <summary>The legacy timed navigation field.</summary>
+    public const string Refresh = "Refresh";
+
+    /// <summary>The obsolete HTTP cache warning field, retained for protocol compatibility.</summary>
+    public const string Warning = "Warning";
+
+    /// <summary>The obsolete Certificate Transparency policy field, retained for protocol compatibility.</summary>
+    public const string ExpectCt = "Expect-CT";
+
+    /// <summary>The legacy request purpose field, such as prefetch.</summary>
+    public const string Purpose = "Purpose";
+
+    /// <summary>The client's preference for an encrypted and authenticated response.</summary>
+    public const string UpgradeInsecureRequests = "Upgrade-Insecure-Requests";
+
+    /// <summary>The legacy browser XSS filter control; modern applications should use Content-Security-Policy.</summary>
+    public const string XXssProtection = "X-XSS-Protection";
+
+    /// <summary>Distributed tracing application context.</summary>
+    public const string Baggage = "baggage";
+
+    /// <summary>The HTTP extensible priority parameters.</summary>
+    public const string Priority = "Priority";
+
+    /// <summary>The browser data to clear for this origin.</summary>
+    public const string ClearSiteData = "Clear-Site-Data";
+
+    /// <summary>A digest of the HTTP message content.</summary>
+    public const string ContentDigest = "Content-Digest";
+
+    /// <summary>A digest of the selected representation.</summary>
+    public const string ReprDigest = "Repr-Digest";
+
+    /// <summary>The original port recorded by a proxy; only trust known proxies.</summary>
+    public const string XForwardedPort = "X-Forwarded-Port";
+
+    /// <summary>A conventional client identification field, commonly XMLHttpRequest.</summary>
+    public const string XRequestedWith = "X-Requested-With";
 }

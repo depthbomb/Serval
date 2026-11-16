@@ -22,7 +22,7 @@ namespace Serval.Tests.SignedUrls;
 
 public sealed class SignedUrlTests
 {
-    private static readonly byte[] Key = Enumerable.Range(0, 32).Select(value => (byte)value).ToArray();
+    private static readonly byte[] Key = [.. Enumerable.Range(0, 32).Select(value => (byte)value)];
 
     [Fact]
     public async Task NamedRoutesIncludeReadableAuthenticatedRouteAndQueryValues()
@@ -609,9 +609,9 @@ public sealed class SignedUrlTests
                 options.SigningKey = Key;
                 configure?.Invoke(options);
             });
-            builder.AddController<object>(HttpMethods.Get, "/signed/download/{id:int:min(1)}", "signed.download", (_, context) => ValueTask.FromResult<IActionResult>(new TextResult("download")));
-            builder.AddController<object>(HttpMethods.Get, "/signed/pages/{page:int=2}", "signed.pages", (_,          context) => ValueTask.FromResult<IActionResult>(new TextResult("page")));
-            builder.AddController<object>(HttpMethods.Get, "/signed/files/{**path}", "signed.files", (_,              context) => ValueTask.FromResult<IActionResult>(new TextResult("file")));
+            builder.AddController<object>(HttpMethods.Get, "/signed/download/{id:int:min(1)}", "signed.download", (_, _) => ValueTask.FromResult<IActionResult>(new TextResult("download")));
+            builder.AddController<object>(HttpMethods.Get, "/signed/pages/{page:int=2}", "signed.pages", (_,          _) => ValueTask.FromResult<IActionResult>(new TextResult("page")));
+            builder.AddController<object>(HttpMethods.Get, "/signed/files/{**path}", "signed.files", (_,              _) => ValueTask.FromResult<IActionResult>(new TextResult("file")));
         });
 
     private static string Token(string url) => url[(url.IndexOf("signature=", StringComparison.Ordinal) + "signature=".Length)..];

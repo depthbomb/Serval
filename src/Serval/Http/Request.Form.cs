@@ -59,7 +59,7 @@ public sealed partial class Request
                     {
                         (await task).Dispose();
                     }
-                    catch (Exception) when (task.IsFaulted || task.IsCanceled) { }
+                    catch (Exception) when (task.IsFaulted || task.IsCanceled) {}
                 }
             }
             finally
@@ -169,7 +169,7 @@ public sealed partial class Request
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, RequestAborted);
         try
         {
-            await ReadChunksAsync((bytes, token) => destination.WriteAsync(bytes, token), linked.Token);
+            await ReadChunksAsync(destination.WriteAsync, linked.Token);
         }
         finally
         {
@@ -199,7 +199,7 @@ public sealed partial class Request
 
             _maxBodyBytes = Math.Min(_maxBodyBytes, maxBytes);
             FormOptions   = forms;
-            if (Headers[HeaderNames.ContentLength] is { } length && long.TryParse(length, out var declared) && declared > _maxBodyBytes)
+            if (Headers[HeaderNames.ContentLength] is {} length && long.TryParse(length, out var declared) && declared > _maxBodyBytes)
             {
                 throw new HttpErrorException(StatusCodes.PayloadTooLarge, "The request body is too large.");
             }

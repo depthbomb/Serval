@@ -22,8 +22,8 @@ internal sealed class ForwardedHeadersMiddleware
         ArgumentOutOfRangeException.ThrowIfGreaterThan(options.ForwardLimit, 128);
 
         _limit    = options.ForwardLimit;
-        _proxies  = options.KnownProxies.Select(Normalize).ToHashSet();
-        _networks = options.KnownNetworks.ToArray();
+        _proxies  = [.. options.KnownProxies.Select(Normalize)];
+        _networks = [.. options.KnownNetworks];
         _hosts    = [with(StringComparer.OrdinalIgnoreCase), .. options.AllowedHosts];
         foreach (var host in _hosts)
         {
@@ -119,7 +119,7 @@ internal sealed class ForwardedHeadersMiddleware
     private static IPAddress Normalize(IPAddress address) => address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
 
     private static string[] Values(Headers headers, string name)
-        => headers.GetValues(name).SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries)).ToArray();
+        => [.. headers.GetValues(name).SelectMany(value => value.Split(',', StringSplitOptions.TrimEntries))];
 
     private static Uri ValidateHost(string host, string scheme)
     {

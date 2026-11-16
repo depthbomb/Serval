@@ -187,7 +187,7 @@ public sealed class Http2ProtocolTests
     public async Task StalledWritesCancelTheWholeConnection()
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new StalledWriteStream();
+        await using var stream     = new StalledWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromMilliseconds(60));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => writer.WriteAsync(Frames.Data, 0, 1, new byte[16], CancellationToken.None).AsTask().WaitAsync(TimeSpan.FromSeconds(3)));
         Assert.True(connection.IsCancellationRequested);
@@ -198,7 +198,7 @@ public sealed class Http2ProtocolTests
     {
         using var       connection = new CancellationTokenSource();
         using var       request    = new CancellationTokenSource();
-        using var       stream     = new CancelAfterHeaderStream(request);
+        await using var stream     = new CancelAfterHeaderStream(request);
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(3));
         await writer.WriteAsync(Frames.Data, 0, 1, "complete"u8.ToArray(), request.Token);
         stream.Position = 0;
@@ -211,7 +211,7 @@ public sealed class Http2ProtocolTests
     public async Task ConcurrentFrameWritesRetainTheirPayloadUntilTheTransportCompletes()
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new DelayedWriteStream();
+        await using var stream     = new DelayedWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         await Task.WhenAll(Enumerable.Range(1, 32).Select(id => writer.WriteAsync(Frames.Data, 0, id,
             Enumerable.Repeat((byte)id, 1000 + id).ToArray(), CancellationToken.None).AsTask()));
@@ -233,7 +233,7 @@ public sealed class Http2ProtocolTests
     public async Task LargeHeaderBlocksKeepContinuationFramesTogetherDuringConcurrentWrites(int length)
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new DelayedWriteStream();
+        await using var stream     = new DelayedWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         var             block      = new byte[length];
         Random.Shared.NextBytes(block);
@@ -262,7 +262,7 @@ public sealed class Http2ProtocolTests
     public async Task ReadyFramesAreBatchedWithoutCompletingBeforeTheyAreWritten()
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new PausedWriteStream();
+        await using var stream     = new PausedWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         var             first      = writer.WriteAsync(Frames.Data, 0, 1, new byte[100], CancellationToken.None).AsTask();
         await stream.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
@@ -283,7 +283,7 @@ public sealed class Http2ProtocolTests
     {
         using var       connection   = new CancellationTokenSource();
         using var       cancellation = new CancellationTokenSource();
-        using var       stream       = new PausedWriteStream();
+        await using var stream       = new PausedWriteStream();
         await using var writer       = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         var             first        = writer.WriteAsync(Frames.Data, 0, 1, new byte[100], CancellationToken.None).AsTask();
         await stream.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
@@ -303,14 +303,15 @@ public sealed class Http2ProtocolTests
     public async Task ConnectionCancellationReleasesWritersBeyondTheQueueCapacity()
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new StalledWriteStream();
+        await using var stream     = new StalledWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         var             pending    = Enumerable.Range(1, 300).Select(id => writer.WriteAsync(Frames.Data, 0, id, new byte[100], CancellationToken.None).AsTask()).ToArray();
         await connection.CancelAsync();
         foreach (var task in pending)
         {
             var exception = await Record.ExceptionAsync(() => task.WaitAsync(TimeSpan.FromSeconds(3)));
-            Assert.True(exception is IOException or OperationCanceledException, exception?.ToString());
+            Assert.NotNull(exception);
+            Assert.True(exception is IOException or OperationCanceledException, exception.ToString());
         }
     }
 
@@ -318,7 +319,7 @@ public sealed class Http2ProtocolTests
     public async Task ControlFramesDoNotWaitForBlockedApplicationWritesAndOwnTheirPayload()
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new PausedWriteStream();
+        await using var stream     = new PausedWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         var             first      = writer.WriteAsync(Frames.Data, 0, 1, new byte[100], CancellationToken.None).AsTask();
         await stream.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));
@@ -346,7 +347,7 @@ public sealed class Http2ProtocolTests
     public async Task ABlockedPeerCannotAccumulateAnUnboundedControlQueue()
     {
         using var       connection = new CancellationTokenSource();
-        using var       stream     = new PausedWriteStream();
+        await using var stream     = new PausedWriteStream();
         await using var writer     = new FrameWriter(stream, connection, TimeSpan.FromSeconds(5));
         var             first      = writer.WriteAsync(Frames.Data, 0, 1, new byte[100], CancellationToken.None).AsTask();
         await stream.Started.Task.WaitAsync(TimeSpan.FromSeconds(3));

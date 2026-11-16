@@ -366,7 +366,7 @@ internal static class JsonExtensions
             var value = element.GetValueOrDefault(property);
             if (value.ValueKind != JsonValueKind.String || value.GetString() is not { } text)
             {
-                throw new ArgumentException($"'{property}' must be a string.", nameof(element));
+                throw new ArgumentException($"'{property}' must be a string.", nameof(property));
             }
 
             return text;

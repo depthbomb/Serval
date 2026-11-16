@@ -23,7 +23,7 @@ public sealed class Http2FrameReaderTests
             await input.WriteAsync(Enumerable.Repeat((byte)index, lengths[index]).ToArray());
         }
 
-        using var stream = new FragmentedReadStream(input.ToArray(), chunkSize);
+        await using var stream = new FragmentedReadStream(input.ToArray(), chunkSize);
         var       reader = new FrameReader(stream);
         for (var index = 0; index < lengths.Length; index++)
         {

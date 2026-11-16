@@ -69,7 +69,7 @@ public sealed class ControllerRegistry
     internal IReadOnlyList<Endpoint> Freeze(ServalOptions options)
     {
         _frozen = true;
-        return _endpoints.Select(create => create(options)).ToArray();
+        return [.. _endpoints.Select(create => create(options))];
     }
 
     internal void EnsureMutable()

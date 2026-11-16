@@ -204,7 +204,7 @@ public sealed class AuthenticationTests
             fields.Add(("_csrf", token));
         }
 
-        var body = multipart ? FormDataTests.Multipart(fields.ToArray()) : string.Join('&', fields.Select(field => field.Name + "=" + Uri.EscapeDataString(field.Value)));
+        var body = multipart ? FormDataTests.Multipart([.. fields]) : string.Join('&', fields.Select(field => field.Name + "=" + Uri.EscapeDataString(field.Value)));
         var headers = new Headers
         {
             [HeaderNames.ContentType] = multipart ? "multipart/form-data; boundary=example" : MimeTypes.FormUrlEncoded,

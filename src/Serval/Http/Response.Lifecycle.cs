@@ -8,11 +8,11 @@ namespace Serval.Http;
 public abstract partial class Response
 {
     internal Func<CancellationToken, ValueTask>? LifecycleStarting { get; set; }
-    internal bool                               IsAborted        { get; private set; }
-    internal bool                               ReceivingRequest { get; set; }
+    internal bool                                IsAborted         { get; private set; }
+    internal bool                                ReceivingRequest  { get; set; }
 
     internal bool HasCompletionCallbacks => _completedCallbacks is { Count: > 0 };
-    internal bool HasResources           => _resources is { Count: > 0 };
+    internal bool HasResources           => _resources is { Count         : > 0 };
 
     private bool _starting;
     private bool _completed;
@@ -21,7 +21,7 @@ public abstract partial class Response
 
     private List<Func<CancellationToken, ValueTask>>? _startingCallbacks;
     private List<Func<CancellationToken, ValueTask>>? _completedCallbacks;
-    private List<IAsyncDisposable>?                  _resources;
+    private List<IAsyncDisposable>?                   _resources;
 
     /// <summary>Whether the response has completed or been aborted.</summary>
     protected bool HasEnded => _ended;
@@ -93,12 +93,12 @@ public abstract partial class Response
 
     internal void EndProcessing(bool aborted = false)
     {
-        _ended = true;
+        _ended    =  true;
         IsAborted |= aborted;
         Headers.Freeze();
     }
 
-    internal async ValueTask RunCompletedAsync(CancellationToken ct, Action<Exception> report)
+    internal async ValueTask RunCompletedAsync(Action<Exception> report, CancellationToken ct)
     {
         if (_completed)
         {
@@ -163,7 +163,7 @@ public abstract partial class Response
                 await callback(ct);
             }
 
-            if (LifecycleStarting is { } starting)
+            if (LifecycleStarting is {} starting)
             {
                 await starting(ct);
             }

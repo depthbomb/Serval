@@ -13,8 +13,21 @@ internal static class OAuthProtocol
 {
     private static readonly HashSet<string> Reserved = new(StringComparer.OrdinalIgnoreCase)
     {
-        "client_id", "client_secret", "redirect_uri", "response_type", "response_mode", "scope", "state",
-        "code_challenge", "code_challenge_method", "code_verifier", "grant_type", "code", "refresh_token", "token", "token_type_hint",
+        "client_id",
+        "client_secret",
+        "redirect_uri",
+        "response_type",
+        "response_mode",
+        "scope",
+        "state",
+        "code_challenge",
+        "code_challenge_method",
+        "code_verifier",
+        "grant_type",
+        "code",
+        "refresh_token",
+        "token",
+        "token_type_hint",
     };
 
     internal static string RandomToken() => Base64Url(RandomNumberGenerator.GetBytes(32));

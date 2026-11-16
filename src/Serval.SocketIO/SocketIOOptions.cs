@@ -11,7 +11,7 @@ namespace Serval.SocketIO;
 public sealed class SocketIOOptions
 {
     /// <summary>The HTTP endpoint, relative to the Serval builder's route group.</summary>
-    public string Path { get; set; } = "/socket.io/";
+    public string Path { get; init; } = "/socket.io/";
 
     /// <summary>Whether to accept and advertise WebSocket connections and upgrades.</summary>
     public bool EnableWebSockets { get; set; } = true;
@@ -70,7 +70,10 @@ public sealed class SocketIOOptions
 
     internal void Validate()
     {
-        if (string.IsNullOrWhiteSpace(Path) || !Path.StartsWith('/') || Path.StartsWith("//", StringComparison.Ordinal) || Path.IndexOfAny(['?', '#', '{', '}']) >= 0)
+        if (string.IsNullOrWhiteSpace(Path)                 ||
+            !Path.StartsWith('/')                           ||
+            Path.StartsWith("//", StringComparison.Ordinal) ||
+            Path.IndexOfAny(['?', '#', '{', '}']) >= 0)
         {
             throw new ArgumentException("Socket.IO requires a literal application-relative endpoint path.", nameof(Path));
         }

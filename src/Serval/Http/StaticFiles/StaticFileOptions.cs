@@ -63,6 +63,9 @@ public sealed class StaticFileOptions
             throw new ArgumentException("The public-files directory must exist.", nameof(DirectoryPath));
         }
 
-        _ = new Headers { [HeaderNames.CacheControl] = CacheControl };
+        _ = new Headers
+        {
+            [HeaderNames.CacheControl] = CacheControl
+        };
     }
 }

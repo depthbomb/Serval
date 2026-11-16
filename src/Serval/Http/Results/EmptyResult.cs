@@ -11,7 +11,7 @@ public sealed class EmptyResult : IActionResult
     /// <summary>The shared stateless empty result.</summary>
     public static EmptyResult Instance { get; } = new();
 
-    private EmptyResult() { }
+    private EmptyResult() {}
 
     /// <inheritdoc />
     public ValueTask ExecuteAsync(RequestContext context) => ValueTask.CompletedTask;

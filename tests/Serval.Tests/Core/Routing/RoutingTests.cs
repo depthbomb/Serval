@@ -100,8 +100,8 @@ public sealed class RoutingTests
     public void DuplicateRoutesFailDuringRouterConstruction()
     {
         var registry = new ControllerRegistry();
-        registry.Add<TestController>(HttpMethods.Get, "/a/{id:int}", "one", (_,    context) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
-        registry.Add<TestController>(HttpMethods.Get, "/a/{value:int}", "two", (_, context) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
+        registry.Add<TestController>(HttpMethods.Get, "/a/{id:int}", "one", (_,    _) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
+        registry.Add<TestController>(HttpMethods.Get, "/a/{value:int}", "two", (_, _) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
         Assert.Throws<InvalidOperationException>(() => new Router(registry, new ServalOptions()));
     }
 
