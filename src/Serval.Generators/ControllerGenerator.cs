@@ -166,7 +166,7 @@ public sealed class ControllerGenerator : IIncrementalGenerator
         context.AddSource("Serval.Controllers.g.cs", code.ToString());
     }
 
-    private static bool IsRoute(AttributeData attribute) => attribute.AttributeClass?.ContainingNamespace.ToDisplayString() == "Serval.Routing" && attribute.AttributeClass.Name is "HttpRouteAttribute" or "GetAttribute" or "PostAttribute" or "PutAttribute" or "PatchAttribute" or "DeleteAttribute" or "HeadAttribute" or "OptionsAttribute";
+    private static bool IsRoute(AttributeData attribute) => attribute.AttributeClass?.ContainingNamespace.ToDisplayString() == "Serval.Routing" && attribute.AttributeClass.Name is "HttpRouteAttribute" or "GetAttribute" or "QueryAttribute" or "PostAttribute" or "PutAttribute" or "PatchAttribute" or "DeleteAttribute" or "HeadAttribute" or "OptionsAttribute";
 
     private static bool IsActionResult(ITypeSymbol type) => type.NullableAnnotation != NullableAnnotation.Annotated && (type.ToDisplayString() == "Serval.Http.IActionResult" || type.AllInterfaces.Any(contract => contract.ToDisplayString() == "Serval.Http.IActionResult"));
 

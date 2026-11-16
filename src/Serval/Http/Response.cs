@@ -103,7 +103,7 @@ public abstract partial class Response
                             name.Equals(HeaderNames.Upgrade, StringComparison.OrdinalIgnoreCase)          ||
                             name.Equals(HeaderNames.KeepAlive, StringComparison.OrdinalIgnoreCase)        ||
                             name.Equals(HeaderNames.ProxyConnection, StringComparison.OrdinalIgnoreCase)  ||
-                            name.Equals(HeaderNames.TE, StringComparison.OrdinalIgnoreCase)               ||
+                            name.Equals(HeaderNames.Te, StringComparison.OrdinalIgnoreCase)               ||
                             name.Equals(HeaderNames.Trailer, StringComparison.OrdinalIgnoreCase);
             if (forbidden)
             {

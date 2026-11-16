@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net.Http.Headers;
 using Serval.Http;
 using Serval.Http.Constants;
 using Serval.Http.StaticFiles;
@@ -96,6 +97,16 @@ internal sealed class RequestHandler : IRequestHandler
                 finally
                 {
                     response.ReceivingRequest = false;
+                }
+            }
+
+            if (request.Method == HttpMethods.Query)
+            {
+                var contentTypes = request.Headers.GetValues(HeaderNames.ContentType);
+                if (contentTypes.Count != 1 || !MediaTypeHeaderValue.TryParse(contentTypes[0], out var contentType)
+                    || contentType.Parameters.GroupBy(parameter => parameter.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
+                {
+                    throw new HttpErrorException(StatusCodes.BadRequest, "QUERY requires a valid Content-Type.");
                 }
             }
 
@@ -249,19 +260,16 @@ internal sealed class RequestHandler : IRequestHandler
     private string CreateTraceId()
     {
         var traceId = _options.TraceIdGenerator();
-        if (string.IsNullOrWhiteSpace(traceId))
-        {
-            throw new InvalidOperationException("TraceIdGenerator must return a non-empty, non-whitespace trace ID.");
-        }
-
-        return traceId;
+        return string.IsNullOrWhiteSpace(traceId)
+            ? throw new InvalidOperationException("TraceIdGenerator must return a non-empty, non-whitespace trace ID.")
+            : traceId;
     }
 
     // Keep a successful ID if scope creation failed. A broken generator must not run again during error handling.
     private RequestContext CreateFailureContext(Request request, Response response, CancellationTokenSource timeout, string? traceId)
         => new(request, response, UnavailableRequestServices.Instance, _router, traceId ?? RequestContext.CreateDefaultTraceId(), timeout.Token)
         {
-            TimeoutSource = timeout
+            TimeoutSource = timeout,
         };
 
     private async ValueTask<bool> RedirectCanonicalPathAsync(RequestContext context)

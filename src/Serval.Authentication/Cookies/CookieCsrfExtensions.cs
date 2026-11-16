@@ -60,7 +60,7 @@ public static class CookieCsrfExtensions
     }
 }
 
-/// <summary>Requires a matching CSRF header or form field on requests other than GET, HEAD, and OPTIONS.</summary>
+/// <summary>Requires a matching CSRF header or form field on requests other than GET, HEAD, OPTIONS, and QUERY.</summary>
 public sealed class RequireCsrfAttribute : MiddlewareAttribute
 {
     /// <summary>The cookie scheme, or null for the authentication default.</summary>
@@ -76,7 +76,7 @@ public sealed class RequireCsrfAttribute : MiddlewareAttribute
     /// <remarks>Invalid or missing tokens produce status 403 without running the remaining pipeline.</remarks>
     public override async ValueTask InvokeAsync(RequestContext context, RequestDelegate next)
     {
-        var safe = context.Request.Method is HttpMethods.Get or HttpMethods.Head or HttpMethods.Options;
+        var safe = context.Request.Method is HttpMethods.Get or HttpMethods.Query or HttpMethods.Head or HttpMethods.Options;
         if (safe)
         {
             await next(context);

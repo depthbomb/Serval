@@ -13,11 +13,11 @@ public sealed class SignedUrlOptions
     public byte[] SigningKey { get; set; } = [];
 
     /// <summary>The reserved, case-insensitive query parameter carrying the token. Defaults to signature.</summary>
-    public string SignatureParameterName { get; init; } = "signature";
+    public string SignatureParameterName { get; set; } = "signature";
 
     /// <summary>The maximum escaped path and query length in characters, including the token. Defaults to 32768.</summary>
     /// <remarks>The scheme and authority of an absolute URL do not count toward this limit.</remarks>
-    public int MaxUrlLength { get; init; } = 32_768;
+    public int MaxUrlLength { get; set; } = 32_768;
 
     internal void Validate()
     {

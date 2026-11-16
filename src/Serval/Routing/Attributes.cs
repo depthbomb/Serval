@@ -66,6 +66,21 @@ public sealed class GetAttribute : HttpRouteAttribute
     public GetAttribute(string template = "") : base(HttpMethods.Get, template) {}
 }
 
+/// <summary>Maps an action to the safe, idempotent QUERY method.</summary>
+/// <remarks>
+///     QUERY actions must not request changes to the target resource. Serval requires a valid Content-Type;
+///     actions must validate the content using a parser for their supported query format, such as JSON body binding.
+///     Advertise supported formats with <see cref="HeaderNames.AcceptQuery" /> when needed.
+///     Cross-origin browser requests require a CORS preflight that allows QUERY.
+///     Any response cache must include the request content and its metadata in the cache key.
+/// </remarks>
+public sealed class QueryAttribute : HttpRouteAttribute
+{
+    /// <summary>Sets the route template for a QUERY action.</summary>
+    /// <param name="template">The action route template, relative to its controller prefix; defaults to an empty suffix.</param>
+    public QueryAttribute(string template = "") : base(HttpMethods.Query, template) {}
+}
+
 /// <summary>Maps an action to the POST method.</summary>
 public sealed class PostAttribute : HttpRouteAttribute
 {

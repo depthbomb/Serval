@@ -78,5 +78,5 @@ public static class ServalDiagnostics
     }
 
     private static string Method(string method)
-        => method is HttpMethods.Get or HttpMethods.Head or HttpMethods.Post or HttpMethods.Put or HttpMethods.Delete or HttpMethods.Connect or HttpMethods.Options or HttpMethods.Trace or HttpMethods.Patch ? method : "_OTHER";
+        => method is HttpMethods.Get or HttpMethods.Query or HttpMethods.Head or HttpMethods.Post or HttpMethods.Put or HttpMethods.Delete or HttpMethods.Connect or HttpMethods.Options or HttpMethods.Trace or HttpMethods.Patch ? method : "_OTHER";
 }

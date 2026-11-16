@@ -11,6 +11,9 @@ public static class HttpMethods
     /// <summary>The <c>GET</c> HTTP method.</summary>
     public const string Get = "GET";
 
+    /// <summary>The safe, idempotent <c>QUERY</c> HTTP method for queries carried in request content.</summary>
+    public const string Query = "QUERY";
+
     /// <summary>The <c>HEAD</c> HTTP method.</summary>
     public const string Head = "HEAD";
 

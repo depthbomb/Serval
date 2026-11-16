@@ -20,6 +20,13 @@ public static class HeaderNames
     /// <summary>The patch document formats a resource accepts.</summary>
     public const string AcceptPatch = "Accept-Patch";
 
+    /// <summary>The query formats a resource accepts, encoded as a Structured Fields list.</summary>
+    /// <remarks>
+    ///     For example, <c>"application/json"</c>. Media type parameters use Structured Field parameters,
+    ///     such as <c>"application/json";charset="UTF-8"</c>. This is not an Accept-style header value.
+    /// </remarks>
+    public const string AcceptQuery = "Accept-Query";
+
     /// <summary>The range units supported by a resource.</summary>
     public const string AcceptRanges = "Accept-Ranges";
 
@@ -105,7 +112,7 @@ public static class HeaderNames
     public const string CrossOriginResourcePolicy = "Cross-Origin-Resource-Policy";
 
     /// <summary>The legacy Do Not Track preference; clients and servers may ignore it.</summary>
-    public const string DNT = "DNT";
+    public const string Dnt = "DNT";
 
     /// <summary>The <c>Date</c> HTTP header name.</summary>
     public const string Date = "Date";
@@ -228,7 +235,7 @@ public static class HeaderNames
     public const string StrictTransportSecurity = "Strict-Transport-Security";
 
     /// <summary>The accepted transfer codings; HTTP/2 and HTTP/3 allow only <c>trailers</c>.</summary>
-    public const string TE = "TE";
+    public const string Te = "TE";
 
     /// <summary>The origins allowed to read detailed resource timing information.</summary>
     public const string TimingAllowOrigin = "Timing-Allow-Origin";
