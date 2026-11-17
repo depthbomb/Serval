@@ -481,6 +481,11 @@ cached form data or streaming multipart are rejected. JSON, forms, and multipart
 
 ### Choose an authentication result explicitly
 
+`EvaluateAuthenticationAsync(scheme)` caches and returns a result while preserving `context.User`. Evaluate the schemes
+your application accepts, choose a successful result, and call `context.ApplyAuthentication(result)`. Applying a failed
+or missing result makes the principal anonymous. `AuthenticateAsync` remains the convenience operation that evaluates
+and immediately applies a result. Cookie evaluation can still renew a session and write its cookie.
+
 Register only the services needed with `AddAuthenticationCore`, `AddAuthorization`, and `AddPasswordHashing`.
 `AddAuthentication` composes all three for existing applications. Authorization can evaluate a supplied principal
 without registering authentication schemes or password services.

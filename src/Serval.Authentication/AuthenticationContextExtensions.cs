@@ -13,6 +13,17 @@ public static class AuthenticationContextExtensions
 {
     extension(RequestContext context)
     {
+        /// <summary>Evaluates a scheme without changing the current principal. Cookie handlers may renew sessions.</summary>
+        public ValueTask<AuthenticationResult> EvaluateAuthenticationAsync(string? scheme = null)
+            => context.Services.GetRequiredService<IAuthenticationService>().EvaluateAsync(context, scheme);
+
+        /// <summary>Explicitly selects a result as the request identity. Missing or failed results select an anonymous identity.</summary>
+        public void ApplyAuthentication(AuthenticationResult result)
+        {
+            ArgumentNullException.ThrowIfNull(result);
+            context.User = result.Ticket?.Copy().Principal ?? new ClaimsPrincipal(new ClaimsIdentity());
+        }
+
         /// <summary>Authenticates the request and updates its principal.</summary>
         /// <param name="scheme">An explicit scheme, or null for the authentication default.</param>
         /// <returns>The successful, missing, or failed authentication result.</returns>

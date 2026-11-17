@@ -27,6 +27,27 @@ public sealed class CompositionTests
     }
 
     [Fact]
+    public async Task EvaluationCachesResultsWithoutChangingTheChosenPrincipal()
+    {
+        var calls = 0;
+        await using var app = new SecurityTestApplication(builder => builder.AddAuthenticationCore().AddBearer("token", options =>
+            options.ValidateToken = (_, _) =>
+            {
+                calls++;
+                return ValueTask.FromResult(SecurityTestApplication.Success("token"));
+            }).AddBearer("missing", options => options.ValidateToken = (_, _) => ValueTask.FromResult(AuthenticationResult.Fail("rejected"))));
+        await using var request = app.Request(headers: headers => headers["Authorization"] = "Bearer value");
+        request.Context.User = SecurityTestApplication.User("original");
+        var result = await request.Context.EvaluateAuthenticationAsync("token");
+        Assert.Same(result, await request.Context.EvaluateAuthenticationAsync("token"));
+        Assert.False((await request.Context.EvaluateAuthenticationAsync("missing")).Succeeded);
+        Assert.Equal("original", request.Context.User.Identity!.Name);
+        Assert.Equal(1, calls);
+        request.Context.ApplyAuthentication(result);
+        Assert.Equal("alice", request.Context.User.Identity!.Name);
+    }
+
+    [Fact]
     public async Task RegistrationPiecesCanBeUsedIndependently()
     {
         await using var auth = new SecurityTestApplication(builder => builder.AddAuthenticationCore());

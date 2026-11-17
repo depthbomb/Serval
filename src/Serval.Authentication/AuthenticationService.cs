@@ -11,6 +11,11 @@ namespace Serval.Authentication;
 /// <summary>Resolves registered schemes and coordinates authentication for a request.</summary>
 public interface IAuthenticationService
 {
+    /// <summary>Returns a cached scheme result without assigning RequestContext.User.</summary>
+    /// <remarks>Handlers may still renew credentials. Implementations must explicitly support principal-independent authentication.</remarks>
+    public ValueTask<AuthenticationResult> EvaluateAsync(RequestContext context, string? scheme = null)
+        => ValueTask.FromException<AuthenticationResult>(new NotSupportedException("This authentication service does not support evaluation without principal assignment."));
+
     /// <summary>Authenticates the request and updates its principal.</summary>
     /// <param name="context">The current request and its scoped services.</param>
     /// <param name="scheme">An explicit scheme, or null for the authentication default.</param>
@@ -87,6 +92,14 @@ public sealed class AuthenticationService : IAuthenticationService
     /// <inheritdoc />
     public async ValueTask<AuthenticationResult> AuthenticateAsync(RequestContext context, string? scheme = null)
     {
+        var result = await EvaluateAsync(context, scheme);
+        context.ApplyAuthentication(result);
+        return result;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<AuthenticationResult> EvaluateAsync(RequestContext context, string? scheme = null)
+    {
         scheme = Resolve(scheme, _options.DefaultAuthenticateScheme);
 
         var cache = GetCache(context);
@@ -97,9 +110,7 @@ public sealed class AuthenticationService : IAuthenticationService
             cache.Add(scheme, task);
         }
 
-        var result = await task;
-        context.User = result.Ticket?.Copy().Principal ?? new ClaimsPrincipal(new ClaimsIdentity());
-        return result;
+        return await task;
     }
 
     /// <inheritdoc />
