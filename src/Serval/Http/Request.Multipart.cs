@@ -26,32 +26,9 @@ public sealed partial class Request
             throw new HttpErrorException(StatusCodes.UnsupportedMediaType, "A multipart form content type is required.");
         }
 
-        lock (_bodyGate)
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            if (_rawBodyRead || _readingBody || _dataTask is not null)
-            {
-                throw new InvalidOperationException("Choose streaming multipart before consuming the request body.");
-            }
-
-            FormOptions.Validate();
-            _rawBodyRead       = true;
-            _readingBody       = true;
-            _streamedMultipart = true;
-        }
-
-        try
-        {
-            await using var input = new MultipartInputStream(this);
-            await FormDataParser.StreamMultipartAsync(input, type, FormOptions, readSection, linked.Token);
-        }
-        finally
-        {
-            lock (_bodyGate)
-            {
-                _readingBody = false;
-            }
-        }
+        FormOptions.Validate();
+        await using var input = OpenBodyStreamCore(linked.Token, true);
+        await FormDataParser.StreamMultipartAsync(input, type, FormOptions, readSection, linked.Token);
     }
 
     private async ValueTask<int> ReadBodyChunkAsync(Memory<byte> buffer, CancellationToken ct)
@@ -74,37 +51,4 @@ public sealed partial class Request
         return read;
     }
 
-    private sealed class MultipartInputStream : Stream
-    {
-        public override bool CanRead  => true;
-        public override bool CanSeek  => false;
-        public override bool CanWrite => false;
-        public override long Length   => throw new NotSupportedException();
-        public override long Position
-        {
-            get => throw new NotSupportedException();
-            set => throw new NotSupportedException();
-        }
-
-        private readonly Request _request;
-
-        internal MultipartInputStream(Request request)
-        {
-            _request = request;
-        }
-
-        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken ct = default) => _request.ReadBodyChunkAsync(buffer, ct);
-
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken ct) => ReadAsync(buffer.AsMemory(offset, count), ct).AsTask();
-
-        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-
-        public override void Flush() => throw new NotSupportedException();
-
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-
-        public override void SetLength(long value) => throw new NotSupportedException();
-
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-    }
 }

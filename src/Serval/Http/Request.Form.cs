@@ -152,32 +152,8 @@ public sealed partial class Request
     public async ValueTask CopyBodyToAsync(Stream destination, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        ct.ThrowIfCancellationRequested();
-        RequestAborted.ThrowIfCancellationRequested();
-        lock (_bodyGate)
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            if (_dataTask is not null || _readingBody || _streamedMultipart)
-            {
-                throw new InvalidOperationException("The body is already being read or has been reserved for parsed POST data.");
-            }
-
-            _readingBody = true;
-            _rawBodyRead = true;
-        }
-
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, RequestAborted);
-        try
-        {
-            await ReadChunksAsync(destination.WriteAsync, linked.Token);
-        }
-        finally
-        {
-            lock (_bodyGate)
-            {
-                _readingBody = false;
-            }
-        }
+        await using var body = OpenBodyStream(ct);
+        await body.CopyToAsync(destination, ct);
     }
 
     internal IReadOnlyList<string> ParsedFormValues(string name)
@@ -211,7 +187,8 @@ public sealed partial class Request
         _storage = new RequestBodyStorage(FormOptions);
         try
         {
-            await ReadChunksAsync(_storage.AppendAsync, ct);
+            await using var body = new BodyReadStream(this, ct, false);
+            await ReadChunksAsync(body, _storage.AppendAsync, ct);
             var data = await FormDataParser.ParseAsync(_storage, type, FormOptions, JsonOptions, ct);
             if (data.Files.Count == 0)
             {
@@ -227,7 +204,7 @@ public sealed partial class Request
         }
     }
 
-    private async ValueTask ReadChunksAsync(Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> consume, CancellationToken ct)
+    private async ValueTask ReadChunksAsync(Stream body, Func<ReadOnlyMemory<byte>, CancellationToken, ValueTask> consume, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         if (_bodyTooLarge)
@@ -240,7 +217,7 @@ public sealed partial class Request
         {
             while (true)
             {
-                var read = await ReadBodyChunkAsync(buffer.AsMemory(), ct);
+                var read = await body.ReadAsync(buffer.AsMemory(), ct);
                 if (read == 0)
                 {
                     break;

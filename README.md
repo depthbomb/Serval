@@ -445,6 +445,24 @@ matching endpoints, handles automatic OPTIONS and 405, and returns false only fo
 `automaticOptions: false` to disable synthesized OPTIONS responses. HEAD selection follows `ServalOptions.AutomaticHead`.
 `CanonicalPathMiddleware.TryRedirectAsync` provides the default slash redirect behavior as a separate step.
 
+### Feed a custom parser from the request body
+
+```csharp
+public static async ValueTask ReadLinesAsync(RequestContext context)
+{
+    await using var body = context.Request.OpenBodyStream(context.RequestAborted);
+    using var reader = new StreamReader(body, leaveOpen: true);
+    while (await reader.ReadLineAsync(context.RequestAborted) is {} line)
+    {
+        // Process each line here. Add a parser-specific line limit if the body limit is too broad.
+    }
+}
+```
+
+The lease enforces cumulative body limits and request cancellation and leaves the transport stream open. Dispose it
+before using another raw reader, which continues at the current position. Concurrent reads and mixing raw reads with
+cached form data or streaming multipart are rejected. JSON, forms, and multipart use the same bounded reader.
+
 ## Signed URLs
 
 Run the [signed URL sample](samples/Serval.Sample.SignedUrls) with

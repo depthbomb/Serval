@@ -132,13 +132,15 @@ public sealed partial class Request : IAsyncDisposable
             throw new HttpErrorException(StatusCodes.UnsupportedMediaType, "A JSON content type is required.");
         }
 
-        using var body = await ReadBodyBufferAsync(cancellationToken);
+        await using var body = OpenBodyStream(cancellationToken);
         try
         {
-            return JsonSerializer.Deserialize(body.GetBuffer().AsSpan(0, (int)body.Length), typeInfo) ?? throw new HttpErrorException(StatusCodes.BadRequest, "A JSON value is required.");
+            return await JsonSerializer.DeserializeAsync(body, typeInfo, cancellationToken) ?? throw new HttpErrorException(StatusCodes.BadRequest, "A JSON value is required.");
         }
         catch (JsonException exception)
         {
+            // Preserve cumulative limit enforcement even when the parser rejects an early prefix.
+            await body.CopyToAsync(Stream.Null, cancellationToken);
             throw new HttpErrorException(StatusCodes.BadRequest, "The JSON body is invalid.", innerException: exception);
         }
     }
