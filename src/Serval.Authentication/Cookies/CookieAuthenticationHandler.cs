@@ -4,8 +4,6 @@
 #endregion
 
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Serval.Authentication.Cookies;
 
@@ -16,12 +14,11 @@ namespace Serval.Authentication.Cookies;
 /// </remarks>
 public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignInHandler
 {
-    internal const string CsrfProperty = "Serval.CsrfToken";
+    internal const string CsrfProperty = CsrfTokens.PropertyName;
 
     private readonly object                      _currentTokenKey = new();
     private readonly CookieAuthenticationOptions _options;
-    private readonly IAuthenticationSessionStore _store;
-    private readonly TimeProvider                _time;
+    private readonly AuthenticationSessionService _sessions;
 
     /// <summary>Creates a cookie handler with a session store and clock.</summary>
     /// <param name="options">Validated cookie and lifetime settings.</param>
@@ -35,8 +32,11 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
     {
         options.Validate();
         _options = options;
-        _store   = store;
-        _time    = timeProvider;
+        _sessions = new AuthenticationSessionService(store, timeProvider, new AuthenticationSessionOptions
+        {
+            Lifetime        = options.Lifetime,
+            MaximumLifetime = options.MaximumLifetime,
+        });
     }
 
     /// <inheritdoc />
@@ -52,25 +52,15 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             return AuthenticationResult.Missing();
         }
 
-        if (!ValidToken(token) || _options.Cookie.Secure && context.Request.Url.Scheme != Uri.UriSchemeHttps)
+        if (_options.Cookie.Secure && context.Request.Url.Scheme != Uri.UriSchemeHttps)
         {
-            return AuthenticationResult.Fail("Invalid session credential.");
+            return AuthenticationResult.Fail("Secure session cookies require HTTPS.");
         }
 
-        var key    = Key(scheme, token);
-        var ticket = await _store.FindAsync(key, context.RequestAborted);
-        var now    = _time.GetUtcNow();
-        if (
-            ticket is null                                 ||
-            ticket.Scheme != scheme                        ||
-            ticket.Properties.IssuedUtc is not {} issued   ||
-            issued > now                                   ||
-            ticket.Properties.ExpiresUtc is not {} expires ||
-            expires                           <= now       ||
-            issued + _options.MaximumLifetime <= now
-        )
+        var validation = await _sessions.ValidateAsync(scheme, token, context.RequestAborted);
+        if (validation.Ticket is not {} ticket)
         {
-            return AuthenticationResult.Fail("The session has expired or was revoked.");
+            return validation;
         }
 
         if (_options.ValidateTicket is not null)
@@ -78,7 +68,7 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             var result = await _options.ValidateTicket(context, ticket);
             if (!result.Succeeded)
             {
-                await _store.RemoveAsync(key, context.RequestAborted);
+                await _sessions.RevokeAsync(scheme, token, context.RequestAborted);
                 return result;
             }
 
@@ -89,23 +79,15 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             };
         }
 
-        if (_options.SlidingExpiration && ticket.Properties.AllowRefresh && expires - now < _options.Lifetime / 2 && !context.Response.HasStarted)
+        if (_options.SlidingExpiration && _sessions.NeedsRenewal(ticket) && !context.Response.HasStarted)
         {
-            var renewedExpiry = now    + _options.Lifetime;
-            var maximumExpiry = issued + _options.MaximumLifetime;
-            var renewed = ticket with
+            var renewed = await _sessions.RenewAsync(scheme, token, ticket.Principal, context.RequestAborted);
+            if (renewed.Ticket is not {} renewal)
             {
-                Properties = ticket.Properties with
-                {
-                    ExpiresUtc = renewedExpiry < maximumExpiry ? renewedExpiry : maximumExpiry
-                }
-            };
-            if (!await _store.RenewAsync(key, renewed, context.RequestAborted))
-            {
-                return AuthenticationResult.Fail("The session was revoked.");
+                return renewed;
             }
 
-            ticket = renewed;
+            ticket = renewal;
             SetCookie(context, token, ticket.Properties);
         }
 
@@ -136,32 +118,11 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             throw new InvalidOperationException("Secure session cookies require an HTTPS request.");
         }
 
-        var now     = _time.GetUtcNow();
-        var issued  = properties.IssuedUtc  ?? now;
-        var expires = properties.ExpiresUtc ?? now + _options.Lifetime;
-        if (issued > now || issued + _options.MaximumLifetime <= now || expires <= now || expires > issued + _options.MaximumLifetime)
-        {
-            throw new ArgumentException("The session lifetime is invalid.", nameof(properties));
-        }
-
-        var items = new Dictionary<string, string>(properties.Items, StringComparer.Ordinal)
-        {
-            [CsrfProperty] = NewToken(),
-        };
-        var ticket = new AuthenticationTicket(principal, scheme, properties with
-        {
-            IssuedUtc = issued,
-            ExpiresUtc = expires,
-            Items = items
-        }).Copy();
-        var token = NewToken();
-        await _store.StoreAsync(Key(scheme, token), ticket, context.RequestAborted);
-        // Store the replacement before revoking the old credential so a failed store leaves the old session usable.
-        var previous = GetToken(context);
-        if (previous is not null && ValidToken(previous))
-        {
-            await _store.RemoveAsync(Key(scheme, previous), context.RequestAborted);
-        }
+        var items = new Dictionary<string, string>(properties.Items, StringComparer.Ordinal);
+        CsrfTokens.Rotate(items);
+        var session = await _sessions.IssueAsync(scheme, principal, properties with { Items = items }, GetToken(context), context.RequestAborted);
+        var token = session.Credential;
+        var ticket = session.Ticket;
 
         context.Items[_currentTokenKey] = token;
         SetCookie(context, token, ticket.Properties);
@@ -174,10 +135,7 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
     {
         EnsureWritable(context);
         var token = GetToken(context);
-        if (token is not null && ValidToken(token))
-        {
-            await _store.RemoveAsync(Key(scheme, token), context.RequestAborted);
-        }
+        await _sessions.RevokeAsync(scheme, token, context.RequestAborted);
 
         context.Items[_currentTokenKey] = null;
         context.Response.Cookies.Delete(_options.CookieName, _options.Cookie);
@@ -204,9 +162,4 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
         }
     }
 
-    private static string NewToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-
-    private static bool ValidToken(string token) => token.Length == 43 && token.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
-
-    private static string Key(string scheme, string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(scheme + "\0" + token)));
 }

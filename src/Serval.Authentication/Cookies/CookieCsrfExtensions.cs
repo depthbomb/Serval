@@ -3,8 +3,6 @@
 // Copyright (c) 2026 Caprine Logic
 #endregion
 
-using System.Security.Cryptography;
-using System.Text;
 using Serval.Http.Constants;
 using Serval.Middleware;
 
@@ -26,7 +24,7 @@ public static class CookieCsrfExtensions
         public async ValueTask<string> GetCsrfTokenAsync(string? scheme = null)
         {
             var result = await context.AuthenticateAsync(scheme);
-            if (result.Ticket is not {} ticket || !ticket.Properties.Items.TryGetValue(CookieAuthenticationHandler.CsrfProperty, out var token))
+            if (result.Ticket is not {} ticket || !ticket.Properties.Items.TryGetValue(CsrfTokens.PropertyName, out var token))
             {
                 throw new InvalidOperationException("An authenticated cookie session is required.");
             }
@@ -50,12 +48,12 @@ public static class CookieCsrfExtensions
             }
 
             var result = await context.AuthenticateAsync(scheme);
-            if (result.Ticket is not {} ticket || !ticket.Properties.Items.TryGetValue(CookieAuthenticationHandler.CsrfProperty, out var expected))
+            if (result.Ticket is not {} ticket || !ticket.Properties.Items.TryGetValue(CsrfTokens.PropertyName, out var expected))
             {
                 return false;
             }
 
-            return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(token), Encoding.UTF8.GetBytes(expected));
+            return CsrfTokens.Validate(expected, token);
         }
     }
 }

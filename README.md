@@ -490,6 +490,25 @@ Register only the services needed with `AddAuthenticationCore`, `AddAuthorizatio
 `AddAuthentication` composes all three for existing applications. Authorization can evaluate a supplied principal
 without registering authentication schemes or password services.
 
+### Own session and CSRF policy
+
+`AuthenticationSessionService` accepts an `IAuthenticationSessionStore`, clock, and `AuthenticationSessionOptions`.
+`IssueAsync` returns an opaque credential and ticket; supplying `previousCredential` rotates it. `ValidateAsync`
+checks scheme and lifetime, `NeedsRenewal` reports the default renewal threshold, `RenewAsync` preserves the original
+absolute lifetime, and `RevokeAsync` prevents later reuse. These operations do not access cookies or assign a principal.
+Applications choose how to transmit the credential securely. Cookie authentication composes this service with its
+cookie and ticket-validation policies. The session service does not create CSRF state implicitly.
+
+`CsrfTokens.Rotate(state)` creates or replaces a synchronizer token in an application-owned dictionary, and
+`CsrfTokens.Validate(state, submitted)` verifies it. This also works for anonymous browser state. Load that state using
+a trusted session identifier, keep it server-side, and expose only its CSRF token in the form or a response. An unrelated
+browser must not be able to select another browser's state. Rotate the token and session identifier when authentication
+changes. The cookie adapter stores its token under `CsrfTokens.PropertyName` and retains the existing CSRF helpers.
+
+For example, a login form can use anonymous state, validate its submitted token, verify credentials, then issue a fresh
+authenticated session and discard the anonymous state. Existing `[RequireCsrf]` endpoints continue using authenticated
+cookie-session state.
+
 ## Signed URLs
 
 Run the [signed URL sample](samples/Serval.Sample.SignedUrls) with
