@@ -41,6 +41,7 @@ public sealed class DocumentsController : ControllerBase
         }
 
         var document = _documents.Find(RouteValue<int>("id"));
+
         AbortIf(document is null, StatusCodes.NotFound, "Document not found.");
 
         var decision = await context.AuthorizeAsync(document, permission);
@@ -48,8 +49,7 @@ public sealed class DocumentsController : ControllerBase
         {
             if (_logger.IsEnabled(LogLevel.Information))
             {
-                _logger.LogInformation("Document {DocumentId} permission {Permission} denied: {Kind}, {Reason}.",
-                    document.Id, permission, decision.FailureKind, decision.FailureReason);
+                _logger.LogInformation("Document {DocumentId} permission {Permission} denied: {Kind}, {Reason}.", document.Id, permission, decision.FailureKind, decision.FailureReason);
             }
 
             // Diagnostic reasons stay in the log. The application chooses the public error.
@@ -57,6 +57,11 @@ public sealed class DocumentsController : ControllerBase
         }
 
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
-        return Json(new { document, permission = permission.ToString(), message = "Permission granted. No document was changed." });
+        return Json(new
+        {
+            document,
+            permission = permission.ToString(),
+            message    = "Permission granted. No document was changed."
+        });
     }
 }

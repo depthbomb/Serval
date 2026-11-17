@@ -50,7 +50,10 @@ public sealed class CompositionTests
         await using var app = new TestApplication(configureBuilder: builder => builder.AddGroup("/delegate", group =>
             group.AddEndpoint("GET", "/{name}", context => context.Response.WriteTextAsync(context.RouteValues["name"]), "hello")));
         Assert.Equal("alice", (await app.SendAsync("/delegate/alice")).Text);
-        Assert.Equal("/delegate/bob", app.Services.GetRequiredService<IUrlGenerator>().Path("hello", new Dictionary<string, object?> { ["name"] = "bob" }));
+        Assert.Equal("/delegate/bob", app.Services.GetRequiredService<IUrlGenerator>().Path("hello", new Dictionary<string, object?>
+        {
+            ["name"] = "bob"
+        }));
         Assert.Equal(204, (await app.SendAsync("/delegate/alice", "OPTIONS")).StatusCode);
         Assert.Equal(405, (await app.SendAsync("/delegate/alice", "DELETE")).StatusCode);
     }

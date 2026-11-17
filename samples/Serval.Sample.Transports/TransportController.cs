@@ -28,5 +28,9 @@ public sealed class TransportController : ControllerBase
 
     [Get("/protocol")]
     public ValueTask<IActionResult> ProtocolAsync(RequestContext context)
-        => JsonAsync(new { protocol = context.Request.ProtocolVersion.ToString(), scheme = context.Request.Url.Scheme });
+        => JsonAsync(new
+        {
+            protocol = context.Request.ProtocolVersion.ToString(),
+            scheme   = context.Request.Url.Scheme
+        });
 }

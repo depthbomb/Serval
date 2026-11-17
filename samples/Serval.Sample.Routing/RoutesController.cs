@@ -38,7 +38,10 @@ public sealed class RoutesController : ControllerBase
 
     [Get("/products/{id:int:min(1)}", Name = "products.show")]
     public ValueTask<IActionResult> ProductAsync([FromRoute] int id)
-        => JsonAsync(new { id });
+        => JsonAsync(new
+        {
+            id
+        });
 
     [Get("/products/featured")]
     public ValueTask<IActionResult> FeaturedAsync() => TextAsync("The literal route wins.");
@@ -48,7 +51,10 @@ public sealed class RoutesController : ControllerBase
 
     [Get("/archive/{year:int:range(2000,2100)=2026}", Name = "archive.show")]
     public ValueTask<IActionResult> ArchiveAsync([FromRoute] int year)
-        => JsonAsync(new { year });
+        => JsonAsync(new
+        {
+            year
+        });
 
     [Get("/hello/{name?}", Name = "hello.show")]
     public ValueTask<IActionResult> HelloAsync([FromRoute] string name = "visitor")
@@ -56,7 +62,10 @@ public sealed class RoutesController : ControllerBase
 
     [Get("/tree/{**path}", Name = "tree.show")]
     public ValueTask<IActionResult> TreeAsync([FromRoute] string path)
-        => JsonAsync(new { path });
+        => JsonAsync(new
+        {
+            path
+        });
 
     [Get("/search")]
     public ValueTask<IActionResult> SearchAsync([FromQuery("tag")] string[] tags, [FromQuery] int page = 1)

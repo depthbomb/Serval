@@ -48,7 +48,7 @@ internal sealed class SampleApplication : IAsyncDisposable
         return name switch
         {
             "Routing"    => Program.Build(args),
-            "Savanna"       => Sample.Savanna.Program.Build(args),
+            "Savanna"    => Sample.Savanna.Program.Build(args),
             "Vite"       => Sample.Vite.Program.Build(args),
             "TodoApi"    => Sample.TodoApi.Program.Build(args),
             "Middleware" => Sample.Middleware.Program.Build(args),

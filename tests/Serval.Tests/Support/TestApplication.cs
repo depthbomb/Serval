@@ -26,14 +26,21 @@ internal sealed class TestApplication : IAsyncDisposable
         var builder = services.AddServal(configure).AddGeneratedControllers();
         configureBuilder?.Invoke(builder);
         configureServices?.Invoke(services);
-        Services = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        Services = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes  = true,
+            ValidateOnBuild = true
+        });
     }
 
     public ValueTask DisposeAsync() => Services.DisposeAsync();
 
     public async Task<MemoryResponse> SendAsync(string path, string method = HttpMethods.Get, string? body = null, string? contentType = null, Action<Headers>? configureHeaders = null, CancellationToken cancellationToken = default)
     {
-        var headers = new Headers { [HeaderNames.ContentType] = contentType };
+        var headers = new Headers
+        {
+            [HeaderNames.ContentType] = contentType
+        };
         configureHeaders?.Invoke(headers);
         var response = new MemoryResponse();
         var request  = new Request(method, new Uri("http://localhost" + path), HttpVersion.Version11, headers, new MemoryStream(Encoding.UTF8.GetBytes(body ?? "")), Services.GetRequiredService<ServalOptions>().MaxRequestBodyBytes);

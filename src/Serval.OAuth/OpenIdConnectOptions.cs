@@ -18,7 +18,10 @@ public sealed class OpenIdConnectOptions
     public Uri? MetadataAddress { get; set; }
 
     /// <summary>Accepted asymmetric signing algorithms. Defaults to RS256; unsigned and HMAC tokens are unsupported.</summary>
-    public ISet<string> SigningAlgorithms { get; } = new HashSet<string>(StringComparer.Ordinal) { "RS256" };
+    public ISet<string> SigningAlgorithms { get; } = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "RS256"
+    };
 
     /// <summary>Additional trusted audiences. The client ID must still be present and azp must identify the client.</summary>
     public ISet<string> AdditionalAudiences { get; } = new HashSet<string>(StringComparer.Ordinal);
@@ -50,7 +53,10 @@ public sealed class OpenIdConnectOptions
 
         options.ValidateUri(issuer, nameof(Issuer));
         options.ValidateUri(MetadataAddress ?? new Uri(Issuer.TrimEnd('/') + "/.well-known/openid-configuration"), nameof(MetadataAddress));
-        if (options.AuthorizationEndpoint is not null || options.TokenEndpoint is not null || options.UserInformationEndpoint is not null || options.RevocationEndpoint is not null)
+        if (options.AuthorizationEndpoint is not null   ||
+            options.TokenEndpoint is not null           ||
+            options.UserInformationEndpoint is not null ||
+            options.RevocationEndpoint is not null)
         {
             throw new ArgumentException("OIDC endpoints come from discovery; configure the issuer and metadata address instead.");
         }
@@ -60,10 +66,11 @@ public sealed class OpenIdConnectOptions
             throw new ArgumentException("OIDC requires an explicitly allowed RSA or ECDSA signing algorithm.");
         }
 
-        if (ClockSkew < TimeSpan.Zero || ClockSkew > TimeSpan.FromMinutes(5) ||
-            MaxAge is { } age && (age < TimeSpan.Zero || age.TotalSeconds > int.MaxValue || age.Ticks % TimeSpan.TicksPerSecond != 0) ||
-            RefreshInterval < TimeSpan.FromMinutes(1) || RefreshInterval > TimeSpan.FromDays(7) ||
-            RefreshCooldown < TimeSpan.FromSeconds(1) || RefreshCooldown > RefreshInterval ||
+        if (ClockSkew < TimeSpan.Zero                                                                                                ||
+            ClockSkew > TimeSpan.FromMinutes(5)                                                                                      ||
+            MaxAge is {} age && (age < TimeSpan.Zero || age.TotalSeconds > int.MaxValue || age.Ticks % TimeSpan.TicksPerSecond != 0) ||
+            RefreshInterval < TimeSpan.FromMinutes(1)                                                                                || RefreshInterval > TimeSpan.FromDays(7) ||
+            RefreshCooldown < TimeSpan.FromSeconds(1)                                                                                || RefreshCooldown > RefreshInterval      ||
             MaximumTokenBytes is < 1024 or > 1024 * 1024)
         {
             throw new ArgumentOutOfRangeException(nameof(OpenIdConnectOptions), "Invalid OIDC time or size limits.");
@@ -84,7 +91,7 @@ public sealed class OpenIdConnectOptions
 
     internal static void ValidateParameters(IEnumerable<KeyValuePair<string, string>>? parameters)
     {
-        if (parameters?.Any(pair => pair.Key.Equals("nonce", StringComparison.OrdinalIgnoreCase) ||
+        if (parameters?.Any(pair => pair.Key.Equals("nonce", StringComparison.OrdinalIgnoreCase)   ||
                                     pair.Key.Equals("max_age", StringComparison.OrdinalIgnoreCase) ||
                                     pair.Key.Equals("request", StringComparison.OrdinalIgnoreCase) ||
                                     pair.Key.Equals("request_uri", StringComparison.OrdinalIgnoreCase)) == true)

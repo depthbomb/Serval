@@ -14,8 +14,11 @@ public sealed class EarlyHintsTests
     [Fact]
     public async Task HintsOwnTheirHeadersAndLeaveTheFinalResponseWritable()
     {
-        var release  = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var response = new HintResponse { Send = (_, ct) => new ValueTask(release.Task.WaitAsync(ct)) };
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var response = new HintResponse
+        {
+            Send = (_, ct) => new ValueTask(release.Task.WaitAsync(ct))
+        };
         response.StatusCode         = StatusCodes.Created;
         response.Headers["X-Final"] = "before";
         response.Cookies.Set("session", "private");
@@ -50,8 +53,14 @@ public sealed class EarlyHintsTests
     [Fact]
     public async Task UnsupportedTransportsLeaveTheFinalResponseUntouched()
     {
-        var response = new MemoryResponse { StatusCode  = StatusCodes.Created };
-        var hints    = new Headers { [HeaderNames.Link] = "</site.css>; rel=preload; as=style" };
+        var response = new MemoryResponse
+        {
+            StatusCode = StatusCodes.Created
+        };
+        var hints = new Headers
+        {
+            [HeaderNames.Link] = "</site.css>; rel=preload; as=style"
+        };
         Assert.False(response.SupportsEarlyHints);
         Assert.False(await response.SendEarlyHintsAsync(hints));
         Assert.False(response.HasStarted);
@@ -74,7 +83,10 @@ public sealed class EarlyHintsTests
     public async Task HintsRejectFramingAndConnectionFieldsBeforeWriting(string name)
     {
         var response = new HintResponse();
-        await Assert.ThrowsAsync<ArgumentException>(() => response.SendEarlyHintsAsync(new Headers { [name] = "0" }).AsTask());
+        await Assert.ThrowsAsync<ArgumentException>(() => response.SendEarlyHintsAsync(new Headers
+        {
+            [name] = "0"
+        }).AsTask());
         Assert.Empty(response.Sent);
         Assert.False(response.HasStarted);
         await response.CompleteAsync();
@@ -98,8 +110,11 @@ public sealed class EarlyHintsTests
     [InlineData(true)]
     public async Task FailedOrCanceledHeaderWritesPreventAReplacementResponse(bool cancel)
     {
-        Exception failure  = cancel ? new OperationCanceledException() : new IOException("partial header write");
-        var       response = new HintResponse { Send = (_, _) => ValueTask.FromException(failure) };
+        Exception failure = cancel ? new OperationCanceledException() : new IOException("partial header write");
+        var response = new HintResponse
+        {
+            Send = (_, _) => ValueTask.FromException(failure)
+        };
         Assert.Same(failure, await Record.ExceptionAsync(() => response.SendEarlyHintsAsync(new Headers()).AsTask()));
         Assert.True(response.HasStarted);
         Assert.Throws<InvalidOperationException>(() => response.Headers["X-Final"] = "unsafe");

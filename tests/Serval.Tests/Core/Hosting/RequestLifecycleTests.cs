@@ -62,10 +62,10 @@ public sealed class RequestLifecycleTests
     [InlineData("/test/partial", "GET", 200, RequestCompletionReason.Aborted, true)]
     public async Task HooksCoverDispatchErrorsAndAborts(string path, string method, int status, RequestCompletionReason reason, bool aborted)
     {
-        var probe = new Probe();
-        await using var app = Application(probe);
-        var response = await app.SendAsync(path, method);
-        var result = Assert.Single(probe.Results);
+        var             probe    = new Probe();
+        await using var app      = Application(probe);
+        var             response = await app.SendAsync(path, method);
+        var             result   = Assert.Single(probe.Results);
         Assert.Equal(status, response.StatusCode);
         Assert.Equal(status, result.Completion.StatusCode);
         Assert.Equal(reason, result.Completion.Reason);
@@ -89,7 +89,7 @@ public sealed class RequestLifecycleTests
         await using var app = Application(probe, options =>
         {
             options.StaticFiles.DirectoryPath = directory;
-            options.TrailingSlashes = TrailingSlashBehavior.RedirectToWithoutSlash;
+            options.TrailingSlashes           = TrailingSlashBehavior.RedirectToWithoutSlash;
         });
         Assert.Equal("hello", (await app.SendAsync("/hello.txt")).Text);
         Assert.Equal(308, (await app.SendAsync("/hello.txt/")).StatusCode);
@@ -100,7 +100,7 @@ public sealed class RequestLifecycleTests
     [Fact]
     public async Task EachConcurrentRequestGetsOneHandlerInstanceSharedWithItsServiceScope()
     {
-        var probe = new Probe();
+        var probe          = new Probe();
         var instancesMatch = new ConcurrentBag<bool>();
         probe.Received = (_, context, _) =>
         {
@@ -125,7 +125,7 @@ public sealed class RequestLifecycleTests
     [InlineData(false)]
     public async Task ReceivingAndStartingFailuresDoNotRepeatHooksDuringErrorHandling(bool receiving)
     {
-        var probe = new Probe();
+        var probe   = new Probe();
         var failure = new InvalidOperationException("hook failed");
         if (receiving)
         {
@@ -136,8 +136,8 @@ public sealed class RequestLifecycleTests
             probe.Starting = (name, _, _) => name == "First" ? ValueTask.FromException(failure) : ValueTask.CompletedTask;
         }
 
-        await using var app = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
-        var response = await app.SendAsync("/test/task");
+        await using var app      = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
+        var             response = await app.SendAsync("/test/task");
         Assert.Equal(500, response.StatusCode);
         Assert.Equal(1, probe.Events.Count(item => item == "First start"));
         Assert.Equal(1, probe.Events.Count(item => item == "Last start"));
@@ -149,9 +149,12 @@ public sealed class RequestLifecycleTests
     [Fact]
     public async Task MultipleStartingFailuresAbortWithoutRepeatingAnyHook()
     {
-        var probe = new Probe { Starting = (_, _, _) => ValueTask.FromException(new InvalidOperationException("startup")) };
-        await using var app = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
-        var response = await app.SendAsync("/test/task");
+        var probe = new Probe
+        {
+            Starting = (_, _, _) => ValueTask.FromException(new InvalidOperationException("startup"))
+        };
+        await using var app      = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
+        var             response = await app.SendAsync("/test/task");
         Assert.True(response.Aborted);
         Assert.Equal(1, probe.Events.Count(item => item == "First start"));
         Assert.Equal(1, probe.Events.Count(item => item == "Last start"));
@@ -165,15 +168,18 @@ public sealed class RequestLifecycleTests
     [InlineData("abort")]
     public async Task ReceivingHooksCannotSendResponses(string operation)
     {
-        var probe = new Probe { Received = (_, context, ct) => operation switch
+        var probe = new Probe
         {
-            "flush" => context.Response.FlushAsync(ct),
-            "complete" => context.Response.CompleteAsync(ct),
-            "abort" => context.Response.AbortAsync(ct),
-            _ => context.Response.WriteTextAsync("forbidden", ct),
-        }};
-        await using var app = Application(probe);
-        var response = await app.SendAsync("/test/task");
+            Received = (_, context, ct) => operation switch
+            {
+                "flush"    => context.Response.FlushAsync(ct),
+                "complete" => context.Response.CompleteAsync(ct),
+                "abort"    => context.Response.AbortAsync(ct),
+                _          => context.Response.WriteTextAsync("forbidden", ct),
+            }
+        };
+        await using var app      = Application(probe);
+        var             response = await app.SendAsync("/test/task");
         Assert.Equal(500, response.StatusCode);
         Assert.DoesNotContain("forbidden", response.Text);
         Assert.IsType<InvalidOperationException>(Assert.Single(probe.Results).Completion.Exception);
@@ -184,20 +190,23 @@ public sealed class RequestLifecycleTests
     [InlineData(true)]
     public async Task CancellationAndTimeoutHaveDistinctOutcomesAndIndependentCompletionTokens(bool clientCancellation)
     {
-        using var cts = new CancellationTokenSource();
-        var completionCanceled = true;
-        var probe = new Probe { Completed = (_, _, _, ct) =>
+        using var cts                = new CancellationTokenSource();
+        var       completionCanceled = true;
+        var probe = new Probe
         {
-            completionCanceled = ct.IsCancellationRequested;
-            return ValueTask.CompletedTask;
-        }};
+            Completed = (_, _, _, ct) =>
+            {
+                completionCanceled = ct.IsCancellationRequested;
+                return ValueTask.CompletedTask;
+            }
+        };
         await using var app = Application(probe, options => options.RequestTimeout = clientCancellation ? TimeSpan.FromSeconds(10) : TimeSpan.FromMilliseconds(40));
         if (clientCancellation)
         {
             cts.Cancel();
         }
 
-        var response = await app.SendAsync("/test/slow", cancellationToken: cts.Token);
+        var response   = await app.SendAsync("/test/slow", cancellationToken: cts.Token);
         var completion = Assert.Single(probe.Results).Completion;
         Assert.Equal(clientCancellation ? RequestCompletionReason.Canceled : RequestCompletionReason.TimedOut, completion.Reason);
         Assert.Equal(clientCancellation, completion.IsAborted);
@@ -209,17 +218,20 @@ public sealed class RequestLifecycleTests
     public async Task CompletionBudgetCancelsCooperativeHooksButStillInvokesLaterHandlers()
     {
         var laterCanceled = false;
-        var probe = new Probe { Completed = async (name, _, _, ct) =>
+        var probe = new Probe
         {
-            if (name == "First")
+            Completed = async (name, _, _, ct) =>
             {
-                await Task.Delay(Timeout.Infinite, ct);
+                if (name == "First")
+                {
+                    await Task.Delay(Timeout.Infinite, ct);
+                }
+                else
+                {
+                    laterCanceled = ct.IsCancellationRequested;
+                }
             }
-            else
-            {
-                laterCanceled = ct.IsCancellationRequested;
-            }
-        }};
+        };
         await using var app = Application(probe, options => options.CompletionTimeout = TimeSpan.FromMilliseconds(40),
             builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
         Assert.Equal(200, (await app.SendAsync("/test/task").WaitAsync(TimeSpan.FromSeconds(5))).StatusCode);
@@ -230,8 +242,8 @@ public sealed class RequestLifecycleTests
     [Fact]
     public async Task MiddlewareResourcesSurviveCallbacksAndLifecycleCompletion()
     {
-        var probe = new Probe();
-        await using var app = Application(probe, configureBuilder: builder => builder.UseMiddleware<ResourceMiddleware>());
+        var             probe = new Probe();
+        await using var app   = Application(probe, configureBuilder: builder => builder.UseMiddleware<ResourceMiddleware>());
         await app.SendAsync("/test/crash");
         Assert.Equal([
             "First received", "resource start", "First start", "resource complete", "First complete",
@@ -242,7 +254,10 @@ public sealed class RequestLifecycleTests
     [Fact]
     public async Task CompletionFailuresAndFailingLoggersCannotSkipCleanup()
     {
-        var probe = new Probe { Completed = (_, _, _, _) => ValueTask.FromException(new InvalidOperationException("completion")) };
+        var probe = new Probe
+        {
+            Completed = (_, _, _, _) => ValueTask.FromException(new InvalidOperationException("completion"))
+        };
         await using var app = Application(probe, configureBuilder: builder =>
         {
             builder.AddRequestLifecycleHandler<Recorder<Last>>();
@@ -286,25 +301,28 @@ public sealed class RequestLifecycleTests
     public async Task CompletionCallbacksCannotWriteOrChangeHeadersEvenWhenAbortedBeforeStartup()
     {
         var rejected = false;
-        var probe = new Probe { Completed = async (_, context, _, _) =>
+        var probe = new Probe
         {
-            try
+            Completed = async (_, context, _, _) =>
             {
-                await context.Response.WriteTextAsync("late");
+                try
+                {
+                    await context.Response.WriteTextAsync("late");
+                }
+                catch (InvalidOperationException)
+                {
+                    rejected = true;
+                }
             }
-            catch (InvalidOperationException)
-            {
-                rejected = true;
-            }
-        }};
+        };
         await using var app = Application(probe);
-        using var cts = new CancellationTokenSource();
+        using var       cts = new CancellationTokenSource();
         cts.Cancel();
         var response = await app.SendAsync("/test/slow", cancellationToken: cts.Token);
         Assert.True(rejected);
         Assert.Empty(response.Text);
         Assert.Throws<InvalidOperationException>(() => response.Headers["X-Late"] = "no");
-        Assert.Throws<InvalidOperationException>(() => response.StatusCode = 201);
+        Assert.Throws<InvalidOperationException>(() => response.StatusCode        = 201);
     }
 
     [Fact]
@@ -328,13 +346,16 @@ public sealed class RequestLifecycleTests
     {
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var probe = new Probe { Completed = async (_, _, _, ct) =>
+        var probe = new Probe
         {
-            await using var registration = ct.Register(() => entered.TrySetResult());
-            await release.Task;
-        }};
-        await using var app = Application(probe, options => options.CompletionTimeout = TimeSpan.FromMilliseconds(30));
-        var pending = app.SendAsync("/test/task");
+            Completed = async (_, _, _, ct) =>
+            {
+                await using var registration = ct.Register(() => entered.TrySetResult());
+                await release.Task;
+            }
+        };
+        await using var app     = Application(probe, options => options.CompletionTimeout = TimeSpan.FromMilliseconds(30));
+        var             pending = app.SendAsync("/test/task");
         try
         {
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -354,9 +375,9 @@ public sealed class RequestLifecycleTests
     [Fact]
     public async Task ActivationFailureStillCompletesPreviouslyResolvedHandlers()
     {
-        var probe = new Probe();
-        await using var app = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<BrokenHandler>());
-        var response = await app.SendAsync("/test/task");
+        var             probe    = new Probe();
+        await using var app      = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<BrokenHandler>());
+        var             response = await app.SendAsync("/test/task");
         Assert.Equal(500, response.StatusCode);
         Assert.Equal(["First start", "First complete", "First dispose"], probe.Events);
         Assert.Equal("activation failed", Assert.Single(probe.Results).Completion.Exception!.Message);
@@ -366,7 +387,7 @@ public sealed class RequestLifecycleTests
     public async Task TransportFailuresAreReportedToHooksAndRethrownToTheTransport()
     {
         var failure = new RequestTransportException("reset");
-        var probe = new Probe();
+        var probe   = new Probe();
         await using var app = Application(probe, configureBuilder: builder => builder.AddController<object>("GET", "/reset", null,
             (_, _) => throw failure));
         Assert.Same(failure, await Assert.ThrowsAsync<RequestTransportException>(() => app.SendAsync("/reset")));
@@ -382,10 +403,10 @@ public sealed class RequestLifecycleTests
     {
         var probe = new Probe();
         await using (var app = new TestApplication(configureBuilder: builder =>
-        {
-            builder.Services.AddSingleton(probe);
-            builder.AddGroup("/group", group => group.AddRequestLifecycleHandler<Recorder<First>>());
-        }))
+                     {
+                         builder.Services.AddSingleton(probe);
+                         builder.AddGroup("/group", group => group.AddRequestLifecycleHandler<Recorder<First>>());
+                     }))
         {
             Assert.Equal(404, (await app.SendAsync("/outside-group")).StatusCode);
             Assert.Single(probe.Results);
@@ -396,13 +417,8 @@ public sealed class RequestLifecycleTests
         services.AddServal().AddRequestLifecycleHandler<Recorder<First>>();
         services.AddSingleton<Recorder<First>>();
         await using var provider = services.BuildServiceProvider();
-        var error = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IRequestHandler>());
+        var             error    = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IRequestHandler>());
         Assert.Contains("scoped", error.Message);
-    }
-
-    public sealed class BrokenHandler : RequestLifecycleHandler
-    {
-        public BrokenHandler() => throw new InvalidOperationException("activation failed");
     }
 
     private static TestApplication Application(Probe probe, Action<ServalOptions>? configure = null, Action<ServalBuilder>? configureBuilder = null)
@@ -419,25 +435,33 @@ public sealed class RequestLifecycleTests
         return ValueTask.CompletedTask;
     }
 
+    public sealed class BrokenHandler : RequestLifecycleHandler
+    {
+        public BrokenHandler() => throw new InvalidOperationException("activation failed");
+    }
+
     public sealed class First;
+
     public sealed class Middle;
+
     public sealed class Tie;
+
     public sealed class Last;
 
     public sealed class Probe
     {
-        public ConcurrentQueue<string> Events { get; } = new();
-        public ConcurrentBag<(object Instance, RequestCompletion Completion, ScopedProbe Scope, bool ScopeDisposed)> Results { get; } = [];
-        public Func<string, RequestContext, CancellationToken, ValueTask>? Received { get; set; }
-        public Func<string, RequestContext, CancellationToken, ValueTask>? Starting { get; set; }
-        public Func<string, RequestContext, RequestCompletion, CancellationToken, ValueTask>? Completed { get; set; }
+        public ConcurrentQueue<string>                                                                               Events    { get; } = new();
+        public ConcurrentBag<(object Instance, RequestCompletion Completion, ScopedProbe Scope, bool ScopeDisposed)> Results   { get; } = [];
+        public Func<string, RequestContext, CancellationToken, ValueTask>?                                           Received  { get; set; }
+        public Func<string, RequestContext, CancellationToken, ValueTask>?                                           Starting  { get; set; }
+        public Func<string, RequestContext, RequestCompletion, CancellationToken, ValueTask>?                        Completed { get; set; }
     }
 
     public sealed class Recorder<T> : RequestLifecycleHandler, IAsyncDisposable
     {
-        private readonly Probe _probe;
+        private readonly Probe       _probe;
         private readonly ScopedProbe _scope;
-        private readonly string _name = typeof(T).Name;
+        private readonly string      _name = typeof(T).Name;
 
         public Recorder(Probe probe, ScopedProbe scope)
         {
@@ -449,7 +473,7 @@ public sealed class RequestLifecycleTests
         {
             await Task.Yield();
             _probe.Events.Enqueue(_name + " received");
-            if (_probe.Received is { } callback)
+            if (_probe.Received is {} callback)
             {
                 await callback(_name, context, ct);
             }
@@ -459,7 +483,7 @@ public sealed class RequestLifecycleTests
         {
             _probe.Events.Enqueue(_name + " start");
             context.Response.Headers.Append("X-Lifecycle", _name);
-            if (_probe.Starting is { } callback)
+            if (_probe.Starting is {} callback)
             {
                 await callback(_name, context, ct);
             }
@@ -469,7 +493,7 @@ public sealed class RequestLifecycleTests
         {
             _probe.Events.Enqueue(_name + " complete");
             _probe.Results.Add((this, completion, _scope, _scope.Disposed));
-            if (_probe.Completed is { } callback)
+            if (_probe.Completed is {} callback)
             {
                 await callback(_name, context, completion, ct);
             }
@@ -480,7 +504,7 @@ public sealed class RequestLifecycleTests
 
     public sealed class ResourceMiddleware : IMiddleware, IAsyncDisposable
     {
-        private bool _disposed;
+        private          bool  _disposed;
         private readonly Probe _probe;
 
         public ResourceMiddleware(Probe probe)
@@ -505,9 +529,13 @@ public sealed class RequestLifecycleTests
     private sealed class ThrowingLogProvider : ILoggerProvider, ILogger
     {
         public ILogger CreateLogger(string categoryName) => this;
+
         public void Dispose() {}
+
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
         public bool IsEnabled(LogLevel logLevel) => true;
+
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
             => throw new InvalidOperationException("logging failed");
     }

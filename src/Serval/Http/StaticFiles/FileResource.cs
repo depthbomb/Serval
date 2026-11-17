@@ -12,10 +12,13 @@ public sealed class FileResource
 {
     /// <summary>The full physical path. The caller owns authorization for this file.</summary>
     public string Path { get; }
+
     /// <summary>The length at inspection time.</summary>
     public long Length { get; }
+
     /// <summary>The last modification time at inspection.</summary>
     public DateTimeOffset LastModified { get; }
+
     /// <summary>A weak metadata validator, or the validator supplied by the caller.</summary>
     public string ETag { get; }
 

@@ -57,7 +57,7 @@ internal sealed class SavannaHtmlControlFlow
                 foreach (var scope in _scopes)
                 {
                     if (scope.Kind is SavannaNodeKind.For or SavannaNodeKind.ForEach or SavannaNodeKind.AwaitForEach && !scope.Empty
-                        || node.Kind == SavannaNodeKind.Break                                                  && scope.Kind == SavannaNodeKind.Switch)
+                        || node.Kind == SavannaNodeKind.Break                                                        && scope.Kind == SavannaNodeKind.Switch)
                     {
                         Check(document, node, html, scope.Container, diagnostics);
                         break;

@@ -107,7 +107,7 @@ public static class SavannaParser
                 continue;
             }
 
-            if (token.Tag is { } tag)
+            if (token.Tag is {} tag)
             {
                 // Both syntaxes feed the same node model, but tag attributes keep their own exact source spans.
                 var primary   = SavannaTagRules.Primary(tag.Name);
@@ -132,7 +132,10 @@ public static class SavannaParser
                         var argument = tag.Get(command == "component" ? "arguments" : "model");
                         var target   = command == "component" || !value.EndsWith(".svn", StringComparison.Ordinal) ? value : SymbolDisplay.FormatLiteral(value, true);
                         var call = new SavannaNode(command == "component" ? SavannaNodeKind.Component : SavannaNodeKind.Include, target, valueSpan,
-                            argument?.Value ?? "Model", argument?.Span ?? valueSpan) { Paired = !tag.SelfClosing && command != "extends" };
+                            argument?.Value ?? "Model", argument?.Span ?? valueSpan)
+                        {
+                            Paired = !tag.SelfClosing && command != "extends"
+                        };
                         if (command == "extends")
                         {
                             if (contentSeen || document.Parent is not null)
@@ -187,7 +190,10 @@ public static class SavannaParser
                         }
 
                         body.Add(new SavannaNode(command == "slot" ? SavannaNodeKind.Slot : SavannaNodeKind.Whitespace, value, valueSpan)
-                            { Paired = !tag.SelfClosing, Required = tag.Get("required") is not null });
+                        {
+                            Paired   = !tag.SelfClosing,
+                            Required = tag.Get("required") is not null
+                        });
                         if (!tag.SelfClosing)
                         {
                             scopes.Push((command, false));

@@ -35,8 +35,13 @@ public static class SavannaImports
                                        .OrderBy(import => import.Name.Length).SelectMany(import => import.Usings);
                 return new SavannaDocument(document.Path, document.Name, document.Text)
                 {
-                    Model  = document.Model, ModelSpan = document.ModelSpan, IsLayout = document.IsLayout,
-                    Parent = document.Parent, Imports  = document.Imports, Body       = document.Body, Blocks = document.Blocks,
+                    Model     = document.Model,
+                    ModelSpan = document.ModelSpan,
+                    IsLayout  = document.IsLayout,
+                    Parent    = document.Parent,
+                    Imports   = document.Imports,
+                    Body      = document.Body,
+                    Blocks    = document.Blocks,
                     Usings =
                     [
                         .. inherited.Concat(document.Usings)

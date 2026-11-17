@@ -71,7 +71,7 @@ public sealed class SavannaGenerator : IIncrementalGenerator
                     "SAVANNA001" => InvalidTemplate,
                     "SAVANNA002" => InvalidReference,
                     "SAVANNA003" => UnsafeContext,
-                    _         => InvalidConfiguration,
+                    _            => InvalidConfiguration,
                 };
                 output.ReportDiagnostic(Diagnostic.Create(descriptor, location, diagnostic.Message));
             }

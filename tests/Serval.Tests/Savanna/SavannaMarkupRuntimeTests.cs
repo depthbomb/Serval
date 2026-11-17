@@ -43,7 +43,10 @@ public sealed class SavannaMarkupRuntimeTests
         var       nested   = context.WithSlots(new SavannaSlots(new Dictionary<string, SavannaRenderFragment>()));
         Assert.Same(urls, nested.Urls);
         Assert.Same(policy, nested.UrlPolicy);
-        Assert.Equal("/products/a%20b", nested.Urls.Path("products", new Dictionary<string, object?> { ["id"] = "a b" }));
+        Assert.Equal("/products/a%20b", nested.Urls.Path("products", new Dictionary<string, object?>
+        {
+            ["id"] = "a b"
+        }));
         Assert.Same(context, context.WithSlots(SavannaSlots.Empty));
     }
 
@@ -67,7 +70,7 @@ public sealed class SavannaMarkupRuntimeTests
     }
 
     [JsonConverter(typeof(RawConverter))]
-    private sealed class RawJson { }
+    private sealed class RawJson {}
 
     private sealed class RawConverter : JsonConverter<RawJson>
     {

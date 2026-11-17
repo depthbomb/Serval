@@ -30,10 +30,10 @@ internal static class DefinitionResponse
         // Give Rider the source token range so Ctrl+hover can underline and cache the whole reference.
         var origin = new TextSpan(offset, 0);
         var token = SavannaLexer.Tokenize(document, [], CancellationToken.None, true)
-                             .FirstOrDefault(token => token.Kind != SavannaTokenKind.Text && token.Span.Start <= offset && token.Span.End >= offset);
+                                .FirstOrDefault(token => token.Kind != SavannaTokenKind.Text && token.Span.Start <= offset && token.Span.End >= offset);
         if (token is not null)
         {
-            var sourceSpan = token.Tag is { } tag
+            var sourceSpan = token.Tag is {} tag
                 ? tag.Attributes.Values.FirstOrDefault(attribute => attribute.Span.Start <= offset && offset <= attribute.Span.End)?.Span
                   ?? new TextSpan(tag.Span.Start + (tag.Closing ? 3 : 2), tag.Name.Length)
                 : token.Span;

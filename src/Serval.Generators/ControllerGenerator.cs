@@ -172,9 +172,9 @@ public sealed class ControllerGenerator : IIncrementalGenerator
 
     private static bool IsSupportedParameter(IParameterSymbol parameter)
         => parameter is { RefKind: RefKind.None, Type: not INamedTypeSymbol { IsRefLikeType: true } }
-                                             && parameter.Type.TypeKind is not (TypeKind.Pointer or TypeKind.FunctionPointer)
-                                             && (parameter.Type.ToDisplayString() is "Serval.RequestContext" or "System.Threading.CancellationToken"
-                                                 || parameter.GetAttributes().Any(BindingEmitter.IsBinding));
+           && parameter.Type.TypeKind is not (TypeKind.Pointer or TypeKind.FunctionPointer)
+           && (parameter.Type.ToDisplayString() is "Serval.RequestContext" or "System.Threading.CancellationToken"
+               || parameter.GetAttributes().Any(BindingEmitter.IsBinding));
 
     private static bool IsMiddleware(AttributeData attribute)
     {

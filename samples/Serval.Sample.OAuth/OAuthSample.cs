@@ -19,14 +19,20 @@ public static class OAuthSample
     public static void Configure(ServalBuilder builder, Action<OAuthOptions>? configureProvider, bool loopbackHttp = false)
     {
         builder.Services.AddSingleton(new ProviderStatus(configureProvider is not null));
-        var authentication = builder.AddGeneratedControllers().AddAuthentication(options => options.DefaultScheme = "Cookies").AddCookie(configure: options =>
-        {
-            if (loopbackHttp)
-            {
-                options.CookieName = "Serval.Sample.OAuth.Session";
-                options.Cookie     = new CookieOptions { Secure = false };
-            }
-        });
+
+        var authentication = builder
+                             .AddGeneratedControllers()
+                             .AddAuthentication(options => options.DefaultScheme = "Cookies").AddCookie(configure: options =>
+                             {
+                                 if (loopbackHttp)
+                                 {
+                                     options.CookieName = "Serval.Sample.OAuth.Session";
+                                     options.Cookie = new CookieOptions
+                                     {
+                                         Secure = false
+                                     };
+                                 }
+                             });
         if (configureProvider is not null)
         {
             authentication.AddOAuth("provider", configureProvider);

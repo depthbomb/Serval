@@ -9,8 +9,8 @@ public sealed class BodyStreamTests
     [Fact]
     public async Task LeasePreservesOwnershipExclusivityAndCumulativeLimits()
     {
-        using var transport = new MemoryStream("abcdef"u8.ToArray());
-        await using var request = Create(transport, 4);
+        using var       transport = new MemoryStream("abcdef"u8.ToArray());
+        await using var request   = Create(transport, 4);
         await using (var body = request.OpenBodyStream())
         {
             Assert.Equal(3, await body.ReadAsync(new byte[3]));
@@ -28,9 +28,9 @@ public sealed class BodyStreamTests
     [Fact]
     public async Task LeaseObservesRequestAndPerReadCancellationAndCannotMixWithForms()
     {
-        using var transport = new MemoryStream("name=alice"u8.ToArray());
-        await using var request = Create(transport, 100, "application/x-www-form-urlencoded");
-        using var cts = new CancellationTokenSource();
+        using var       transport = new MemoryStream("name=alice"u8.ToArray());
+        await using var request   = Create(transport, 100, "application/x-www-form-urlencoded");
+        using var       cts       = new CancellationTokenSource();
         request.RequestAborted = cts.Token;
         await using (var body = request.OpenBodyStream())
         {
@@ -48,15 +48,18 @@ public sealed class BodyStreamTests
     [Fact]
     public async Task ExternalStreamParserCanReadWithoutWholeBodyBuffering()
     {
-        using var transport = new MemoryStream("one\ntwo\n"u8.ToArray());
-        await using var request = Create(transport, 100);
-        await using var body = request.OpenBodyStream();
-        using var reader = new StreamReader(body, Encoding.UTF8, leaveOpen: true);
+        using var       transport = new MemoryStream("one\ntwo\n"u8.ToArray());
+        await using var request   = Create(transport, 100);
+        await using var body      = request.OpenBodyStream();
+        using var       reader    = new StreamReader(body, Encoding.UTF8, leaveOpen: true);
         Assert.Equal("one", await reader.ReadLineAsync());
         Assert.Equal("two", await reader.ReadLineAsync());
         Assert.Null(await reader.ReadLineAsync());
     }
 
     private static Request Create(Stream body, long limit, string contentType = "text/plain")
-        => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers { ["Content-Type"] = contentType }, body, limit);
+        => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers
+        {
+            ["Content-Type"] = contentType
+        }, body, limit);
 }

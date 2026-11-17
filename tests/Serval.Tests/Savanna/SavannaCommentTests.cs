@@ -59,7 +59,7 @@ public sealed partial class SavannaCompilerTests
         Assert.Matches(@"^<!-- Savanna view: Page\.svn; id=[a-f0-9]{12}; output=utf-8; renderer=compiled; minify=html; blocks=1; partials=1; components=1", rendered);
         Assert.Contains("<!-- Savanna layout: Base.svn", rendered);
         Assert.Equal(20, rendered.Split("<!-- Savanna partial: Card.svn").Length - 1);
-        Assert.Equal(20, rendered.Split("<!-- Savanna component: Badge").Length   - 1);
+        Assert.Equal(20, rendered.Split("<!-- Savanna component: Badge").Length  - 1);
         Assert.DoesNotContain("private model value", rendered);
         Assert.Equal(debug, rendered.Contains("; model=string"));
         Assert.Equal(debug, rendered.Contains("; source=/Templates/Page.svn"));
@@ -87,8 +87,14 @@ public sealed class SavannaCommentTests
     [Fact]
     public void DevelopmentDefaultsToTheHostEnvironmentAndCanBeOverridden()
     {
-        using var development = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Development }).Build();
-        using var production  = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Production }).Build();
+        using var development = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+        {
+            EnvironmentName = Environments.Development
+        }).Build();
+        using var production = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+        {
+            EnvironmentName = Environments.Production
+        }).Build();
         Assert.True(new SavannaRenderContext(development.Services).IsDevelopment);
         Assert.False(new SavannaRenderContext(production.Services).IsDevelopment);
         Assert.False(new SavannaRenderContext(development.Services, development: false).IsDevelopment);
@@ -99,7 +105,7 @@ public sealed class SavannaCommentTests
     public async Task HandwrittenRenderersOwnTheirOutput()
     {
         var view = new SavannaView<int>("Card", static (writer, _, context) => writer.WriteLiteralAsync("<b/>"u8.ToArray(), context.CancellationToken),
-            static (writer,                                  _, context) => writer.WriteLiteralAsync("<small/>"u8.ToArray(), context.CancellationToken));
+            static (writer,                                     _, context) => writer.WriteLiteralAsync("<small/>"u8.ToArray(), context.CancellationToken));
         using var body    = new MemoryStream();
         using var writer  = new SavannaWriter(body.WriteAsync);
         var       context = new SavannaRenderContext();

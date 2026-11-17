@@ -11,7 +11,7 @@ namespace Serval.Http.StaticFiles;
 /// <summary>Composes safe path resolution, media types, cache policy, and file response writing.</summary>
 public sealed class StaticFileMiddleware : IMiddleware
 {
-    private readonly StaticFileOptions _options;
+    private readonly StaticFileOptions   _options;
     private readonly StaticFileResolver? _resolver;
 
     /// <summary>Creates an independently configured file mount. Invoke it with a relative request path when mounting below a prefix.</summary>
@@ -20,6 +20,7 @@ public sealed class StaticFileMiddleware : IMiddleware
         ArgumentNullException.ThrowIfNull(options);
         options.Validate();
         _options = options;
+
         if (options.DirectoryPath is {} directory)
         {
             _resolver = new StaticFileResolver(directory, options.ServeDotFiles, trailingSlashes != TrailingSlashBehavior.Strict);

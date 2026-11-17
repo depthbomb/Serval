@@ -13,8 +13,8 @@ public sealed class InputValidationTests
     [Fact]
     public async Task BindingOnlyAndNonthrowingValidationLeaveResponsePolicyToTheAction()
     {
-        await using var app = new TestApplication(configureBuilder: builder => builder.AddInputValidator<ValidationTestInput, NameValidator>());
-        var bindingOnly = await app.SendAsync("/validation/binding-only", "POST", "{}", "application/json");
+        await using var app         = new TestApplication(configureBuilder: builder => builder.AddInputValidator<ValidationTestInput, NameValidator>());
+        var             bindingOnly = await app.SendAsync("/validation/binding-only", "POST", "{}", "application/json");
         Assert.Equal(200, bindingOnly.StatusCode);
         Assert.Equal("bound", bindingOnly.Text);
         var evaluated = await app.SendAsync("/validation/evaluate", "POST", "{}", "application/json");

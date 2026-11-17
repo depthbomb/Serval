@@ -27,7 +27,10 @@ public sealed class AuthenticationTests
     {
         await using var app   = Cookies();
         await using var login = app.Request();
-        await login.Context.SignInAsync(SecurityTestApplication.User("alice", "admin"), properties: new AuthenticationProperties { IsPersistent = true });
+        await login.Context.SignInAsync(SecurityTestApplication.User("alice", "admin"), properties: new AuthenticationProperties
+        {
+            IsPersistent = true
+        });
         var header = Assert.Single(login.Response.Headers.GetValues(HeaderNames.SetCookie));
         Assert.Contains("Secure", header);
         Assert.Contains("HttpOnly", header);
@@ -113,7 +116,10 @@ public sealed class AuthenticationTests
         });
         var             started = app.Clock.Now;
         await using var login   = app.Request();
-        await login.Context.SignInAsync(SecurityTestApplication.User(), properties: new AuthenticationProperties { IsPersistent = true });
+        await login.Context.SignInAsync(SecurityTestApplication.User(), properties: new AuthenticationProperties
+        {
+            IsPersistent = true
+        });
         var cookie = SecurityTestApplication.Cookie(login.Response);
         app.Clock.Now += TimeSpan.FromMinutes(6);
         await using var renew  = app.Request(cookie: cookie);
@@ -198,7 +204,11 @@ public sealed class AuthenticationTests
         await login.Context.SignInAsync(SecurityTestApplication.User());
         var token  = await login.Context.GetCsrfTokenAsync();
         var cookie = SecurityTestApplication.Cookie(login.Response);
-        var fields = new List<(string Name, string Value)> { ("_csrf", token), ("value", "still readable") };
+        var fields = new List<(string Name, string Value)>
+        {
+            ("_csrf", token),
+            ("value", "still readable")
+        };
         if (scenario == "duplicate")
         {
             fields.Add(("_csrf", token));
@@ -220,7 +230,10 @@ public sealed class AuthenticationTests
         await using var scope   = app.Request(cookie: cookie);
         var             context = new RequestContext(request, scope.Response, scope.Context.Services, scope.Context.Urls, CancellationToken.None);
         var             invoked = false;
-        await new RequireCsrfAttribute { FormFieldName = scenario == "disabled" ? null : "_csrf" }.InvokeAsync(context, async current =>
+        await new RequireCsrfAttribute
+        {
+            FormFieldName = scenario == "disabled" ? null : "_csrf"
+        }.InvokeAsync(context, async current =>
         {
             invoked = true;
             Assert.Equal("still readable", (await current.Request.ReadFormAsync()).Get<string>("value"));
@@ -239,7 +252,10 @@ public sealed class AuthenticationTests
                 options.DefaultScheme = "Cookies";
                 options.Policies.Add("admin", new AuthorizationPolicy().RequireRole("admin").RequireClaim(ClaimTypes.NameIdentifier));
             }).AddCookie();
-            builder.AddController<object>("GET", "/private", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult(context.User.Identity!.Name!)), new AuthorizeAttribute { Policy = "admin" });
+            builder.AddController<object>("GET", "/private", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult(context.User.Identity!.Name!)), new AuthorizeAttribute
+            {
+                Policy = "admin"
+            });
         });
         foreach (var role in new[] { null, "member", "admin" })
         {
@@ -315,9 +331,15 @@ public sealed class AuthenticationTests
     [Fact]
     public async Task MemoryStoreBoundsCapacityAndCannotRenewRevokedSessions()
     {
-        var time   = new TestTimeProvider();
-        var store  = new MemoryAuthenticationSessionStore(time, new MemoryAuthenticationSessionStoreOptions { Capacity             = 1 });
-        var ticket = new AuthenticationTicket(SecurityTestApplication.User(), "Cookies", new AuthenticationProperties { ExpiresUtc = time.Now.AddMinutes(1) });
+        var time = new TestTimeProvider();
+        var store = new MemoryAuthenticationSessionStore(time, new MemoryAuthenticationSessionStoreOptions
+        {
+            Capacity = 1
+        });
+        var ticket = new AuthenticationTicket(SecurityTestApplication.User(), "Cookies", new AuthenticationProperties
+        {
+            ExpiresUtc = time.Now.AddMinutes(1)
+        });
         await store.StoreAsync("a", ticket);
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.StoreAsync("b", ticket));
         await store.RemoveAsync("a");
@@ -325,7 +347,13 @@ public sealed class AuthenticationTests
         await store.StoreAsync("b", ticket);
         time.Now += TimeSpan.FromMinutes(1);
         Assert.Null(await store.FindAsync("b"));
-        await store.StoreAsync("c", ticket with { Properties = ticket.Properties with { ExpiresUtc = time.Now.AddMinutes(1) } });
+        await store.StoreAsync("c", ticket with
+        {
+            Properties = ticket.Properties with
+            {
+                ExpiresUtc = time.Now.AddMinutes(1)
+            }
+        });
     }
 
     [Fact]
@@ -336,7 +364,10 @@ public sealed class AuthenticationTests
         authentication.AddCookie();
         Assert.Throws<ArgumentException>(() => authentication.AddCookie());
         Assert.Throws<InvalidOperationException>(() => builder.AddAuthentication());
-        Assert.Throws<ArgumentException>(() => authentication.AddCookie("bad", options => options.Cookie = new CookieOptions { Secure = false }));
+        Assert.Throws<ArgumentException>(() => authentication.AddCookie("bad", options => options.Cookie = new CookieOptions
+        {
+            Secure = false
+        }));
     }
 
     [Fact]
@@ -368,7 +399,10 @@ public sealed class AuthenticationTests
     {
         await using var app   = Cookies(options => options.SlidingExpiration = true);
         await using var login = app.Request();
-        await login.Context.SignInAsync(SecurityTestApplication.User(), properties: new AuthenticationProperties { AllowRefresh = false });
+        await login.Context.SignInAsync(SecurityTestApplication.User(), properties: new AuthenticationProperties
+        {
+            AllowRefresh = false
+        });
         Assert.DoesNotContain("Expires=", login.Response.Headers.GetValues(HeaderNames.SetCookie).Single());
         app.Clock.Now += TimeSpan.FromHours(5);
         await using var request = app.Request(cookie: SecurityTestApplication.Cookie(login.Response));

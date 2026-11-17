@@ -31,14 +31,14 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="int"><p>shared</p>
-                            <#debug><#let name="label" value="DebugOnly.Label"><span>{{ label }}</span>
-                                <#debug><b>nested debug</b></#debug><#release>{{ UndefinedInEveryBuild }}</#release>
-                            </#debug>
-                            <#release><#let name="label" value="ReleaseOnly.Label"><span>{{ label }}</span>
-                                <#release><b>nested release</b></#release><#debug>{{ UndefinedInEveryBuild }}</#debug>
-                            </#release>
-                            """,
+                           <#model type="int"><p>shared</p>
+                           <#debug><#let name="label" value="DebugOnly.Label"><span>{{ label }}</span>
+                               <#debug><b>nested debug</b></#debug><#release>{{ UndefinedInEveryBuild }}</#release>
+                           </#debug>
+                           <#release><#let name="label" value="ReleaseOnly.Label"><span>{{ label }}</span>
+                               <#release><b>nested release</b></#release><#debug>{{ UndefinedInEveryBuild }}</#debug>
+                           </#release>
+                           """,
         });
         var output = await Run(result, """
                                        #if DEBUG
@@ -65,8 +65,8 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="Probe"><#unless condition="Model.HasItems() && true // keep the condition mapped">empty<#elseif condition="Model.Count == 1">one<#else>many</#unless>
-                            """,
+                           <#model type="Probe"><#unless condition="Model.HasItems() && true // keep the condition mapped">empty<#elseif condition="Model.Count == 1">one<#else>many</#unless>
+                           """,
         });
         var output = await Run(result, $$"""
                                          public sealed class Probe {
@@ -95,16 +95,16 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="int"><span>before <#switch value="Model">
-                                <#case value="0">
-                                <#-- These labels share a body. -->
-                                {# Either comment syntax can go here. #}
-                                <#case value="1">small<#break>
-                                <#case value="2">two<#break>
-                                <#case value=">= 3 and <= 5">range<#break>
-                                <#default>other<#break>
-                            </#switch> after</span>
-                            """,
+                           <#model type="int"><span>before <#switch value="Model">
+                               <#case value="0">
+                               <#-- These labels share a body. -->
+                               {# Either comment syntax can go here. #}
+                               <#case value="1">small<#break>
+                               <#case value="2">two<#break>
+                               <#case value=">= 3 and <= 5">range<#break>
+                               <#default>other<#break>
+                           </#switch> after</span>
+                           """,
         });
         var output = await Run(result, $$"""
                                          public static class Entry {
@@ -120,15 +120,15 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="int[]"><#foreach item="item" in="Model"><#switch value="item">
-                                <#case value="0"><#continue>
-                                <#case value="1"><#break if="item == 1">unreachable at runtime<#break>
-                                <#default><#switch value="item % 2">
-                                    <#case value="0">even<#break>
-                                    <#default>odd<#break>
-                                </#switch><#break>
-                            </#switch>!<span>{{ item }}</span></#foreach>
-                            """,
+                           <#model type="int[]"><#foreach item="item" in="Model"><#switch value="item">
+                               <#case value="0"><#continue>
+                               <#case value="1"><#break if="item == 1">unreachable at runtime<#break>
+                               <#default><#switch value="item % 2">
+                                   <#case value="0">even<#break>
+                                   <#default>odd<#break>
+                               </#switch><#break>
+                           </#switch>!<span>{{ item }}</span></#foreach>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {
@@ -146,15 +146,15 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="int"><#foreach item="item" in="new[] { Model }">
-                                <#debug><#continue></#debug>
-                                <#release><b>loop</b></#release>
-                            </#foreach><#switch value="Model">
-                                <#case value="1">
-                                    <#debug><b>debug case</b><#break></#debug>
-                                    <#release><b>release case</b><#break></#release>
-                            </#switch>
-                            """,
+                           <#model type="int"><#foreach item="item" in="new[] { Model }">
+                               <#debug><#continue></#debug>
+                               <#release><b>loop</b></#release>
+                           </#foreach><#switch value="Model">
+                               <#case value="1">
+                                   <#debug><b>debug case</b><#break></#debug>
+                                   <#release><b>release case</b><#break></#release>
+                           </#switch>
+                           """,
         });
         var options = Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []);
         const string code = """
@@ -178,7 +178,10 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<textarea><#foreach item='item' in='new[] { Model }'></textarea><#break><textarea></#foreach></textarea>")]
     public void BranchesAndJumpsMustPreserveHtmlTextContainers(string markup)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "<#model type='int'>" + markup });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "<#model type='int'>" + markup
+        });
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "SAVANNA003");
         Assert.Empty(result.Sources);
     }
@@ -201,8 +204,8 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="string"><textarea><#foreach item="item" in="new[] { 0, 1, 2 }"><#continue if="item == 0"><#switch value="item"><#case value="1"><#unless condition="Model.Length == 0">{{ Model }}</#unless><#break><#default><#break></#switch><#break if="item == 1"></#foreach></textarea>
-                            """,
+                           <#model type="string"><textarea><#foreach item="item" in="new[] { 0, 1, 2 }"><#continue if="item == 0"><#switch value="item"><#case value="1"><#unless condition="Model.Length == 0">{{ Model }}</#unless><#break><#default><#break></#switch><#break if="item == 1"></#foreach></textarea>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {
@@ -222,7 +225,7 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = "<#model type=\"Sequence\">"                                                                        + open +
-                            "<#continue if=\"Model.Skip(item)\"><#break if=\"Model.Stop(item)\"><i>{{ item }}</i><#empty>empty" + close,
+                           "<#continue if=\"Model.Skip(item)\"><#break if=\"Model.Stop(item)\"><i>{{ item }}</i><#empty>empty" + close,
         });
         var output = await Run(result, LoopModel + """
                                                    public static class Entry {
@@ -246,8 +249,8 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="int[]"><#foreach item="outer" in="Model"><#for clause="int inner = 0; inner < 4; inner++"><#continue if="inner == 0"><#break if="inner == 2"><i>{{ outer }}:{{ inner }}</i></#for><#foreach item="unused" in="System.Array.Empty<int>()"><#empty><#continue if="outer == 1"><#break if="outer == 2"></#foreach>after</#foreach>
-                            """,
+                           <#model type="int[]"><#foreach item="outer" in="Model"><#for clause="int inner = 0; inner < 4; inner++"><#continue if="inner == 0"><#break if="inner == 2"><i>{{ outer }}:{{ inner }}</i></#for><#foreach item="unused" in="System.Array.Empty<int>()"><#empty><#continue if="outer == 1"><#break if="outer == 2"></#foreach>after</#foreach>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {
@@ -313,7 +316,10 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<#foreach item='x' in='new int[0]'><#include view='Card.svn'><#slot name='Body'><#break></#slot></#include></#foreach>")]
     public void SwitchLabelsAndJumpsRequireValidContexts(string markup)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "<#model type='int'>" + markup });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "<#model type='int'>" + markup
+        });
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "SAVANNA001");
     }
 
@@ -322,7 +328,10 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<#case value='0'>one<#break><#case value='0'>two<#break>")]
     public void SwitchCasesAreCheckedByTheCSharpCompiler(string cases)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "<#model type='int'><#switch value='Model'>" + cases + "</#switch>" });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "<#model type='int'><#switch value='Model'>" + cases + "</#switch>"
+        });
         Assert.Contains(CreateCompilation(result, "").GetDiagnostics(), diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
     }
 

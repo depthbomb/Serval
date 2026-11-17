@@ -64,5 +64,8 @@ public sealed class RequestBodyBufferTests
     }
 
     private static Request Request(Stream body, long limit = 100000) => new("POST", new Uri("http://localhost/"), HttpVersion.Version11,
-        new Headers { [HeaderNames.ContentType] = MimeTypes.Json }, body, limit);
+        new Headers
+        {
+            [HeaderNames.ContentType] = MimeTypes.Json
+        }, body, limit);
 }

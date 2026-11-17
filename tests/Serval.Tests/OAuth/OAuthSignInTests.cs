@@ -22,7 +22,10 @@ public sealed class OAuthSignInTests
         using var       http    = new HttpClient(handler);
         await using var app     = Application(http);
         await using var begin   = app.Request("https://app.test/login");
-        await begin.Context.BeginOAuthSignInAsync("provider", "/search?q=hello%20world", new AuthenticationProperties { IsPersistent = true });
+        await begin.Context.BeginOAuthSignInAsync("provider", "/search?q=hello%20world", new AuthenticationProperties
+        {
+            IsPersistent = true
+        });
         var authorization = new Uri(begin.Response.Headers[HeaderNames.Location]!);
         var query         = OAuthClientTests.Query(authorization);
         var cookie        = SecurityTestApplication.Cookie(begin.Response);
@@ -173,7 +176,7 @@ public sealed class OAuthSignInTests
         builder.AddOAuth("three", options =>
         {
             Configure(options, http);
-            options.RedirectUri = new Uri("https://app.test/manual-callback");
+            options.RedirectUri     = new Uri("https://app.test/manual-callback");
             options.CreatePrincipal = null;
         });
     }
@@ -189,7 +192,7 @@ public sealed class OAuthSignInTests
         }));
         var (state, cookie) = await Begin(app);
         await using var request = app.Request("https://app.test/callback?code=code&state=" + state, cookie);
-        var result = await request.Context.CompleteOAuthCallbackAsync("provider");
+        var             result  = await request.Context.CompleteOAuthCallbackAsync("provider");
         Assert.Null(result.SignInContext.OpenIdConnect);
         Assert.Equal("access-secret", result.SignInContext.Tokens.AccessToken);
         Assert.False(request.Context.User.Identity!.IsAuthenticated);
@@ -199,8 +202,11 @@ public sealed class OAuthSignInTests
     [Fact]
     public async Task StateStoreIsBoundedAndChecksSchemeBeforeConsuming()
     {
-        var time  = new TestTimeProvider();
-        var store = new MemoryOAuthStateStore(time, new MemoryOAuthStateStoreOptions { Capacity = 1 });
+        var time = new TestTimeProvider();
+        var store = new MemoryOAuthStateStore(time, new MemoryOAuthStateStoreOptions
+        {
+            Capacity = 1
+        });
         var state = new OAuthState
         {
             Scheme          = "one",

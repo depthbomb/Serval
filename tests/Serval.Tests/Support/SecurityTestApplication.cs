@@ -27,7 +27,11 @@ internal sealed class SecurityTestApplication : IAsyncDisposable
         services.AddSingleton<TimeProvider>(Clock);
         var builder = services.AddServal();
         configure(builder);
-        Services = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        Services = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes  = true,
+            ValidateOnBuild = true
+        });
     }
 
     public ValueTask DisposeAsync() => Services.DisposeAsync();
@@ -55,7 +59,10 @@ internal sealed class SecurityTestRequest : IAsyncDisposable
     public SecurityTestRequest(ServiceProvider services, string url, string? cookie, string method, Action<Headers>? configureHeaders, CancellationToken cancellationToken)
     {
         _scope = services.CreateAsyncScope();
-        var headers = new Headers { [HeaderNames.Cookie] = cookie };
+        var headers = new Headers
+        {
+            [HeaderNames.Cookie] = cookie
+        };
         configureHeaders?.Invoke(headers);
         var request = new Request(method, new Uri(url), HttpVersion.Version11, headers, Stream.Null, 1024);
         Context = new RequestContext(request, Response, _scope.ServiceProvider, services.GetRequiredService<IUrlGenerator>(), cancellationToken);

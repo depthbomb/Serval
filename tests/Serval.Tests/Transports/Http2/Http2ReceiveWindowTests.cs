@@ -204,7 +204,7 @@ public sealed class Http2ReceiveWindowTests : IAsyncLifetime
         using var client  = await ConnectAsync(timeout.Token);
         var       stream  = client.GetStream();
         await WriteAsync(stream, Frames.Headers, Frames.EndHeaders, 1, RequestBlock("/early", false), timeout.Token);
-        while ((await ReadAsync(stream, timeout.Token)).Type != Frames.ResetStream) { }
+        while ((await ReadAsync(stream, timeout.Token)).Type != Frames.ResetStream) {}
 
         var remaining = Frames.InitialWindow;
         while (remaining > 0)
@@ -235,7 +235,10 @@ public sealed class Http2ReceiveWindowTests : IAsyncLifetime
 
     private async Task<TcpClient> ConnectAsync(CancellationToken token)
     {
-        var client = new TcpClient { NoDelay = true };
+        var client = new TcpClient
+        {
+            NoDelay = true
+        };
         await client.ConnectAsync(IPAddress.Loopback, _port, token);
         var stream = client.GetStream();
         await stream.WriteAsync("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"u8.ToArray(), token);

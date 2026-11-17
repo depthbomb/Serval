@@ -16,18 +16,20 @@ public static class CsrfTokens
     public const string PropertyName = "Serval.CsrfToken";
 
     /// <summary>Generates a token for storage in trusted browser state and submission in a form or header.</summary>
-    public static string Create() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    public static string Create()
+        => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     /// <summary>Replaces a state's token. Rotate when the browser's authentication state changes.</summary>
     public static string Rotate(IDictionary<string, string> state)
     {
         ArgumentNullException.ThrowIfNull(state);
+
         return state[PropertyName] = Create();
     }
 
     /// <summary>Compares a submitted token with a token loaded from trusted state in constant time.</summary>
     public static bool Validate(string? expected, string? submitted)
-        => expected is { Length: 43 } && submitted is { Length: 43 } &&
+        => expected is { Length: 43 }     && submitted is { Length: 43 }     &&
            expected.All(IsTokenCharacter) && submitted.All(IsTokenCharacter) &&
            CryptographicOperations.FixedTimeEquals(Encoding.ASCII.GetBytes(expected), Encoding.ASCII.GetBytes(submitted));
 
@@ -35,6 +37,7 @@ public static class CsrfTokens
     public static bool Validate(IReadOnlyDictionary<string, string> state, string? submitted)
     {
         ArgumentNullException.ThrowIfNull(state);
+
         return state.TryGetValue(PropertyName, out var expected) && Validate(expected, submitted);
     }
 

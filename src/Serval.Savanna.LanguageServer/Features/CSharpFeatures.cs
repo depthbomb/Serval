@@ -18,7 +18,7 @@ namespace Serval.Savanna.LanguageServer.Features;
 
 public sealed partial class CSharpFeatures
 {
-    private readonly Document            _document;
+    private readonly Document               _document;
     private readonly SavannaGeneratedSource _projection;
     private readonly SavannaDocument        _template;
 
@@ -52,9 +52,16 @@ public sealed partial class CSharpFeatures
 
             items.Add(new
             {
-                label    = item.DisplayText, detail = item.InlineDescription, sortText = item.SortText, filterText = item.FilterText,
-                kind     = CompletionKind(item.Tags),
-                textEdit = new { range = Position.Range(_template.Text, span.Value), newText = change.TextChange.NewText },
+                label      = item.DisplayText,
+                detail     = item.InlineDescription,
+                sortText   = item.SortText,
+                filterText = item.FilterText,
+                kind       = CompletionKind(item.Tags),
+                textEdit = new
+                {
+                    range   = Position.Range(_template.Text, span.Value),
+                    newText = change.TextChange.NewText
+                },
             });
         }
 
@@ -88,15 +95,23 @@ public sealed partial class CSharpFeatures
             };
             return new
             {
-                contents = new { kind = "plaintext", value = field.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + " " + field.Name + "\n\n" + description },
-                range    = Position.Range(_template.Text, span.Value),
+                contents = new
+                {
+                    kind  = "plaintext",
+                    value = field.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + " " + field.Name + "\n\n" + description
+                },
+                range = Position.Range(_template.Text, span.Value),
             };
         }
 
         return new
         {
-            contents = new { kind = "plaintext", value = string.Join("\n\n", info.Sections.Select(section => string.Concat(section.TaggedParts.Select(part => part.Text)))) },
-            range    = Position.Range(_template.Text, span.Value),
+            contents = new
+            {
+                kind  = "plaintext",
+                value = string.Join("\n\n", info.Sections.Select(section => string.Concat(section.TaggedParts.Select(part => part.Text))))
+            },
+            range = Position.Range(_template.Text, span.Value),
         };
     }
 
@@ -129,7 +144,13 @@ public sealed partial class CSharpFeatures
         if (location.SourceTree == await _document.GetSyntaxTreeAsync(cancellationToken))
         {
             var span = MapSpan(location.SourceSpan);
-            return span is null ? null : new { uri = new Uri(_template.Path).AbsoluteUri, range = Position.Range(_template.Text, span.Value) };
+            return span is null
+                ? null
+                : new
+                {
+                    uri   = new Uri(_template.Path).AbsoluteUri,
+                    range = Position.Range(_template.Text, span.Value)
+                };
         }
 
         var path = location.SourceTree.FilePath;
@@ -138,21 +159,31 @@ public sealed partial class CSharpFeatures
             return null;
         }
 
-        return new { uri = new Uri(path).AbsoluteUri, range = Position.Range(await location.SourceTree.GetTextAsync(cancellationToken), location.SourceSpan) };
+        return new
+        {
+            uri   = new Uri(path).AbsoluteUri,
+            range = Position.Range(await location.SourceTree.GetTextAsync(cancellationToken), location.SourceSpan)
+        };
     }
 
     public async Task<object[]> DiagnosticsAsync(CancellationToken cancellationToken)
     {
         var model = await _document.GetSemanticModelAsync(cancellationToken);
-        return [.. model!.GetDiagnostics(cancellationToken: cancellationToken)
+        return
+        [
+            .. model!.GetDiagnostics(cancellationToken: cancellationToken)
                      .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning && diagnostic.Location.SourceTree == model.SyntaxTree)
                      .Select(diagnostic => (Diagnostic: diagnostic, Span: MapSpan(diagnostic.Location.SourceSpan)))
                      .Where(item => item.Span is not null)
                      .Select(item => (object)new
                      {
-                         range = Position.Range(_template.Text, item.Span!.Value), severity = item.Diagnostic.Severity == DiagnosticSeverity.Error ? 1 : 2,
-                         code  = item.Diagnostic.Id, source                                 = "C#", message = item.Diagnostic.GetMessage(),
-                     })];
+                         range    = Position.Range(_template.Text, item.Span!.Value),
+                         severity = item.Diagnostic.Severity == DiagnosticSeverity.Error ? 1 : 2,
+                         code     = item.Diagnostic.Id,
+                         source   = "C#",
+                         message  = item.Diagnostic.GetMessage(),
+                     })
+        ];
     }
 
     private async Task<(ISymbol? Symbol, TextSpan Span)> SymbolAtAsync(int offset, CancellationToken cancellationToken)
@@ -200,15 +231,23 @@ public sealed partial class CSharpFeatures
         {
             switch (tag)
             {
-                case "Method":    return 2;
-                case "Property":  return 10;
-                case "Field":     return 5;
-                case "Class":     return 7;
-                case "Interface": return 8;
-                case "Keyword":   return 14;
-                case "Namespace": return 9;
+                case "Method":
+                    return 2;
+                case "Property":
+                    return 10;
+                case "Field":
+                    return 5;
+                case "Class":
+                    return 7;
+                case "Interface":
+                    return 8;
+                case "Keyword":
+                    return 14;
+                case "Namespace":
+                    return 9;
                 case "Local":
-                case "Parameter": return 6;
+                case "Parameter":
+                    return 6;
             }
         }
 

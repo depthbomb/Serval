@@ -14,10 +14,10 @@ namespace Serval.OAuth;
 
 internal sealed class OpenIdConnectValidator
 {
-    private readonly OAuthClient _client;
-    private readonly OAuthOptions _oauth;
+    private readonly OAuthClient          _client;
+    private readonly OAuthOptions         _oauth;
     private readonly OpenIdConnectOptions _options;
-    private readonly TimeProvider _time;
+    private readonly TimeProvider         _time;
 
     internal OpenIdConnectValidator(OAuthClient client, OAuthOptions oauth, TimeProvider time)
     {
@@ -27,11 +27,18 @@ internal sealed class OpenIdConnectValidator
         _time    = time;
     }
 
-    internal async ValueTask<OpenIdConnectIdentity> ValidateAsync(OAuthTokenResponse tokens, OAuthState state, string code, string scheme, CancellationToken ct)
+    internal async ValueTask<OpenIdConnectIdentity> ValidateAsync(OAuthTokenResponse tokens,
+                                                                  OAuthState         state,
+                                                                  string             code,
+                                                                  string             scheme,
+                                                                  CancellationToken  ct)
     {
         ct.ThrowIfCancellationRequested();
-        if (string.IsNullOrEmpty(tokens.IdToken) || tokens.IdToken.Length > _options.MaximumTokenBytes ||
-            string.IsNullOrEmpty(state.Nonce) || !tokens.TokenType.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+
+        if (string.IsNullOrEmpty(tokens.IdToken)               ||
+            tokens.IdToken.Length > _options.MaximumTokenBytes ||
+            string.IsNullOrEmpty(state.Nonce)                  ||
+            !tokens.TokenType.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
         {
             throw new OAuthProtocolException("invalid_id_token");
         }
@@ -42,26 +49,31 @@ internal sealed class OpenIdConnectValidator
             throw new OAuthProtocolException("invalid_id_token");
         }
 
-        var header  = Decode(parts[0]);
-        var claims  = Decode(parts[1]);
-        var alg     = OAuthProtocol.String(header, "alg");
-        var kid     = OAuthProtocol.String(header, "kid");
-        if (alg is null || !_options.SigningAlgorithms.Contains(alg) || header.TryGetProperty("crit", out _) || header.TryGetProperty("b64", out _))
+        var header = Decode(parts[0]);
+        var claims = Decode(parts[1]);
+        var alg    = OAuthProtocol.String(header, "alg");
+        var kid    = OAuthProtocol.String(header, "kid");
+        if (alg is null                               ||
+            !_options.SigningAlgorithms.Contains(alg) ||
+            header.TryGetProperty("crit", out _)      ||
+            header.TryGetProperty("b64", out _))
         {
             throw new OAuthProtocolException("unsupported_id_token_algorithm");
         }
 
         ValidateClaims(claims, state.Nonce);
+
         var provider      = _client.OpenIdConnect!;
         var configuration = await provider.GetAsync(ct);
         var result        = await VerifyAsync(tokens.IdToken, alg, kid, configuration, scheme);
-        if (!result.IsValid && result.Exception is SecurityTokenSignatureKeyNotFoundException or SecurityTokenInvalidSignatureException)
+        if (result is { IsValid: false, Exception: SecurityTokenSignatureKeyNotFoundException or SecurityTokenInvalidSignatureException })
         {
             configuration = await provider.GetAsync(ct, configuration);
-            result = await VerifyAsync(tokens.IdToken, alg, kid, configuration, scheme);
+            result        = await VerifyAsync(tokens.IdToken, alg, kid, configuration, scheme);
         }
 
         ct.ThrowIfCancellationRequested();
+
         if (!result.IsValid)
         {
             // IdentityModel diagnostics can contain token data. Do not attach its exception to a public failure.
@@ -70,6 +82,7 @@ internal sealed class OpenIdConnectValidator
 
         ValidateHash(claims, "at_hash", tokens.AccessToken, alg);
         ValidateHash(claims, "c_hash", code, alg);
+
         JsonElement? userInfo = null;
         if (_options.GetClaimsFromUserInfoEndpoint)
         {
@@ -84,7 +97,11 @@ internal sealed class OpenIdConnectValidator
         return new OpenIdConnectIdentity(new ClaimsPrincipal(result.ClaimsIdentity), claims, userInfo);
     }
 
-    private async Task<TokenValidationResult> VerifyAsync(string token, string alg, string? kid, OpenIdConnectConfiguration configuration, string scheme)
+    private async Task<TokenValidationResult> VerifyAsync(string                     token,
+                                                          string                     alg,
+                                                          string?                    kid,
+                                                          OpenIdConnectConfiguration configuration,
+                                                          string                     scheme)
     {
         if (!configuration.Algorithms.Contains(alg, StringComparer.Ordinal))
         {
@@ -94,9 +111,9 @@ internal sealed class OpenIdConnectValidator
         JsonWebKey[] keys;
         try
         {
-            keys = configuration.Keys.Where(key => (kid is null || key.Kid == kid) &&
-                                                  (string.IsNullOrEmpty(key.Alg) || key.Alg == alg) &&
-                                                  (alg.StartsWith("ES", StringComparison.Ordinal) ? key.Kty == "EC" : key.Kty == "RSA" && key.KeySize >= 2048)).ToArray();
+            keys = configuration.Keys.Where(key => (kid is null                   || key.Kid                 == kid) &&
+                                                   (string.IsNullOrEmpty(key.Alg) || key.Alg                 == alg) &&
+                                                   (alg.StartsWith("ES", StringComparison.Ordinal) ? key.Kty == "EC" : key.Kty == "RSA" && key.KeySize >= 2048)).ToArray();
         }
         catch (Exception exception) when (exception is FormatException or ArgumentException or CryptographicException)
         {
@@ -105,32 +122,32 @@ internal sealed class OpenIdConnectValidator
 
         var handler = new JsonWebTokenHandler
         {
-            MapInboundClaims       = false,
+            MapInboundClaims        = false,
             MaximumTokenSizeInBytes = _options.MaximumTokenBytes,
         };
         var parameters = new TokenValidationParameters
         {
-            AuthenticationType     = scheme,
-            NameClaimType          = "name",
-            RoleClaimType          = "roles",
-            RequireSignedTokens    = true,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKeys      = keys,
-            ValidAlgorithms        = [alg],
-            ValidateIssuer         = true,
-            ValidIssuer            = _options.Issuer,
-            ValidateAudience       = true,
-            ValidAudience          = _oauth.ClientId,
+            AuthenticationType                        = scheme,
+            NameClaimType                             = "name",
+            RoleClaimType                             = "roles",
+            RequireSignedTokens                       = true,
+            ValidateIssuerSigningKey                  = true,
+            IssuerSigningKeys                         = keys,
+            ValidAlgorithms                           = [alg],
+            ValidateIssuer                            = true,
+            ValidIssuer                               = _options.Issuer,
+            ValidateAudience                          = true,
+            ValidAudience                             = _oauth.ClientId,
             IgnoreTrailingSlashWhenValidatingAudience = false,
-            RequireExpirationTime  = true,
-            ValidateLifetime       = true,
-            ClockSkew              = _options.ClockSkew,
-            LifetimeValidator      = (notBefore, expires, _, _) => expires is not null &&
-                expires > _time.GetUtcNow().UtcDateTime - _options.ClockSkew &&
-                (notBefore is null || notBefore <= _time.GetUtcNow().UtcDateTime + _options.ClockSkew) &&
-                (notBefore is null || notBefore <= expires),
+            RequireExpirationTime                     = true,
+            ValidateLifetime                          = true,
+            ClockSkew                                 = _options.ClockSkew,
+            LifetimeValidator = (notBefore, expires, _, _) => expires is not null &&
+                                                              expires > _time.GetUtcNow().UtcDateTime - _options.ClockSkew                           &&
+                                                              (notBefore is null || notBefore <= _time.GetUtcNow().UtcDateTime + _options.ClockSkew) &&
+                                                              (notBefore is null || notBefore <= expires),
             IncludeTokenOnFailedValidation = false,
-            LogValidationExceptions = false,
+            LogValidationExceptions        = false,
         };
         return await handler.ValidateTokenAsync(token, parameters);
     }
@@ -138,7 +155,10 @@ internal sealed class OpenIdConnectValidator
     private void ValidateClaims(JsonElement claims, string nonce)
     {
         var subject = OAuthProtocol.String(claims, "sub");
-        if (OAuthProtocol.String(claims, "iss") != _options.Issuer || string.IsNullOrEmpty(subject) || subject.Length > 255 || subject.Any(value => value > 127) ||
+        if (OAuthProtocol.String(claims, "iss") != _options.Issuer ||
+            string.IsNullOrEmpty(subject)                          ||
+            subject.Length > 255                                   ||
+            subject.Any(value => value > 127)                      ||
             !Equal(OAuthProtocol.String(claims, "nonce"), nonce))
         {
             throw new OAuthProtocolException("invalid_id_token_claims");
@@ -164,7 +184,7 @@ internal sealed class OpenIdConnectValidator
         }
 
         var party = OAuthProtocol.String(claims, "azp");
-        if (!audiences.Contains(_oauth.ClientId, StringComparer.Ordinal) ||
+        if (!audiences.Contains(_oauth.ClientId, StringComparer.Ordinal)                                      ||
             audiences.Any(value => value != _oauth.ClientId && !_options.AdditionalAudiences.Contains(value)) ||
             (party is not null || audiences.Length > 1) && party != _oauth.ClientId)
         {
@@ -188,7 +208,7 @@ internal sealed class OpenIdConnectValidator
         if (claims.TryGetProperty("auth_time", out _) || _options.MaxAge is not null)
         {
             var authenticated = Timestamp(claims, "auth_time");
-            if (authenticated > now + skew || _options.MaxAge is { } maxAge && now - authenticated > maxAge.TotalSeconds + skew)
+            if (authenticated > now + skew || _options.MaxAge is {} maxAge && now - authenticated > maxAge.TotalSeconds + skew)
             {
                 throw new OAuthProtocolException("invalid_authentication_time");
             }
@@ -209,7 +229,10 @@ internal sealed class OpenIdConnectValidator
     {
         try
         {
-            using var document = JsonDocument.Parse(Base64UrlEncoder.DecodeBytes(part), new JsonDocumentOptions { MaxDepth = 32 });
+            using var document = JsonDocument.Parse(Base64UrlEncoder.DecodeBytes(part), new JsonDocumentOptions
+            {
+                MaxDepth = 32
+            });
             OAuthProtocol.ValidateObject(document.RootElement);
             return document.RootElement.Clone();
         }

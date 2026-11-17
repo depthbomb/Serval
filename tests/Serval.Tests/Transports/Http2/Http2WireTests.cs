@@ -288,7 +288,7 @@ public sealed class Http2WireTests : IAsyncLifetime
 
     private static async Task<Frame> ReadUntilAsync(Stream stream, byte type, CancellationToken cancellationToken)
     {
-        while (await Frames.ReadAsync(stream, cancellationToken) is { } frame)
+        while (await Frames.ReadAsync(stream, cancellationToken) is {} frame)
         {
             if (frame.Type == type)
             {

@@ -97,7 +97,10 @@ public sealed class OAuthClientTests
     [Fact]
     public async Task ProviderParametersRequestHooksAndResponseParsingAreReplaceable()
     {
-        using var handler = new OAuthTestBackchannel { Respond = _ => OAuthTestBackchannel.Json("{\"custom_token\":\"custom\"}") };
+        using var handler = new OAuthTestBackchannel
+        {
+            Respond = _ => OAuthTestBackchannel.Json("{\"custom_token\":\"custom\"}")
+        };
         using var http    = new HttpClient(handler);
         var       options = Options(http);
         options.AuthorizationParameters.Add("audience", "https://api.test/");
@@ -111,10 +114,17 @@ public sealed class OAuthClientTests
         {
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
-            return new OAuthTokenResponse { AccessToken = root.GetProperty("custom_token").GetString()!, TokenType = "Bearer" };
+            return new OAuthTokenResponse
+            {
+                AccessToken = root.GetProperty("custom_token").GetString()!,
+                TokenType   = "Bearer"
+            };
         };
-        using var client        = new OAuthClient(options);
-        var       authorization = client.CreateAuthorizationRequest(new Uri("https://app.test/callback"), parameters: new Dictionary<string, string> { ["prompt"] = "login" });
+        using var client = new OAuthClient(options);
+        var authorization = client.CreateAuthorizationRequest(new Uri("https://app.test/callback"), parameters: new Dictionary<string, string>
+        {
+            ["prompt"] = "login"
+        });
         Assert.Equal("https://api.test/", Query(authorization.AuthorizationUri)["audience"].Single());
         Assert.Equal("login", Query(authorization.AuthorizationUri)["prompt"].Single());
         Assert.Equal("custom", (await client.ClientCredentialsAsync()).AccessToken);
@@ -181,19 +191,25 @@ public sealed class OAuthClientTests
     [InlineData("{\"access_token\":null,\"token_type\":\"Bearer\"}")]
     public async Task InvalidTokenResponsesFailClosed(string json)
     {
-        using var handler = new OAuthTestBackchannel { Respond = _ => OAuthTestBackchannel.Json(json) };
-        using var http    = new HttpClient(handler);
-        using var client  = new OAuthClient(Options(http));
+        using var handler = new OAuthTestBackchannel
+        {
+            Respond = _ => OAuthTestBackchannel.Json(json)
+        };
+        using var http   = new HttpClient(handler);
+        using var client = new OAuthClient(Options(http));
         await Assert.ThrowsAsync<OAuthProtocolException>(async () => await client.ClientCredentialsAsync());
     }
 
     [Fact]
     public async Task ErrorsDoNotExposeRawProviderDescriptionsOrTokens()
     {
-        using var handler = new OAuthTestBackchannel { Respond = _ => OAuthTestBackchannel.Json("{\"error\":\"invalid_grant\",\"error_description\":\"secret details\"}", HttpStatusCode.BadRequest) };
-        using var http    = new HttpClient(handler);
-        using var client  = new OAuthClient(Options(http));
-        var       error   = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await client.RefreshAsync("secret token"));
+        using var handler = new OAuthTestBackchannel
+        {
+            Respond = _ => OAuthTestBackchannel.Json("{\"error\":\"invalid_grant\",\"error_description\":\"secret details\"}", HttpStatusCode.BadRequest)
+        };
+        using var http   = new HttpClient(handler);
+        using var client = new OAuthClient(Options(http));
+        var       error  = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await client.RefreshAsync("secret token"));
         Assert.Equal("invalid_grant", error.Error);
         Assert.Equal(400, error.StatusCode);
         Assert.DoesNotContain("secret", error.ToString());
@@ -202,7 +218,10 @@ public sealed class OAuthClientTests
     [Fact]
     public async Task RedirectsAndOversizedResponsesAreRejected()
     {
-        using var handler = new OAuthTestBackchannel { Respond = _ => new HttpResponseMessage(HttpStatusCode.Redirect) };
+        using var handler = new OAuthTestBackchannel
+        {
+            Respond = _ => new HttpResponseMessage(HttpStatusCode.Redirect)
+        };
         using var http    = new HttpClient(handler);
         var       options = Options(http);
         options.MaximumResponseBytes = 64;
@@ -224,7 +243,11 @@ public sealed class OAuthClientTests
         {
             entered.TrySetResult();
             await release.Task.WaitAsync(cancellationToken);
-            return new OAuthTokenResponse { AccessToken = root.GetProperty("access_token").GetString()!, TokenType = "Bearer" };
+            return new OAuthTokenResponse
+            {
+                AccessToken = root.GetProperty("access_token").GetString()!,
+                TokenType   = "Bearer"
+            };
         };
         using var client  = new OAuthClient(options);
         var       pending = client.ClientCredentialsAsync().AsTask();
@@ -285,7 +308,11 @@ public sealed class OAuthClientTests
         options.ReadTokenResponse = async (_, _) =>
         {
             await cancellation.CancelAsync();
-            return new OAuthTokenResponse { AccessToken = "late", TokenType = "Bearer" };
+            return new OAuthTokenResponse
+            {
+                AccessToken = "late",
+                TokenType   = "Bearer"
+            };
         };
         using var client = new OAuthClient(options);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await client.ClientCredentialsAsync(cancellationToken: new CancellationToken(true)));
@@ -323,8 +350,12 @@ public sealed class OAuthClientTests
         TokenEndpoint           = new Uri("https://provider.test/token"),
         UserInformationEndpoint = new Uri("https://provider.test/profile"),
         RevocationEndpoint      = new Uri("https://provider.test/revoke"),
-        Scopes                  = { "profile", "email" },
-        Backchannel             = http,
+        Scopes =
+        {
+            "profile",
+            "email"
+        },
+        Backchannel = http,
     };
 
     internal static IReadOnlyDictionary<string, string[]> Query(Uri uri) => new Request("GET", uri, HttpVersion.Version11, new Headers(), Stream.Null, 1024).Query;

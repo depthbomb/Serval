@@ -58,14 +58,17 @@ public static class TemplateFeatures
     {
         var document = snapshot.Document;
         var token    = TokenAt(document, offset);
-        if (token?.Tag is { } tag)
+        if (token?.Tag is {} tag)
         {
             var start = tag.Span.Start + (tag.Closing ? 3 : 2);
             if (offset <= start + tag.Name.Length)
             {
                 var partial = document.Text.ToString(TextSpan.FromBounds(start, Math.Max(start, offset)));
-                return [.. SavannaTagRules.Attributes.Keys.Where(name => name.StartsWith(partial, StringComparison.Ordinal))
-                                   .Select(name => Item(name, name, "Savanna " + name + " tag", 14, new TextSpan(start, partial.Length)))];
+                return
+                [
+                    .. SavannaTagRules.Attributes.Keys.Where(name => name.StartsWith(partial, StringComparison.Ordinal))
+                                      .Select(name => Item(name, name, "Savanna " + name + " tag", 14, new TextSpan(start, partial.Length)))
+                ];
             }
 
             var attribute = tag.Attributes.Values.FirstOrDefault(value => value.Span.Start <= offset && offset <= value.Span.End);
@@ -75,17 +78,23 @@ public static class TemplateFeatures
                 var range   = new TextSpan(attribute.Span.Start, partial.Length);
                 if (attribute.Name == "view")
                 {
-                    return [.. snapshot.Templates.Where(view => !view.IsImports && view.Name != document.Name && view.Name.StartsWith(partial, StringComparison.Ordinal))
+                    return
+                    [
+                        .. snapshot.Templates.Where(view => !view.IsImports && view.Name != document.Name && view.Name.StartsWith(partial, StringComparison.Ordinal))
                                    .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, range))
                                    .Concat(document.Imports.Where(pair => pair.Key.StartsWith(partial, StringComparison.Ordinal))
-                                                   .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, range)))];
+                                                   .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, range)))
+                    ];
                 }
 
                 if (tag.Name == "block" && attribute.Name == "name")
                 {
-                    return [.. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
+                    return
+                    [
+                        .. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
                                               .Where(block => block.Name.StartsWith(partial, StringComparison.Ordinal))
-                                              .Select(block => Item(block.Name, block.Name, "Inherited block", 6, range))];
+                                              .Select(block => Item(block.Name, block.Name, "Inherited block", 6, range))
+                    ];
                 }
 
                 return null;
@@ -98,8 +107,11 @@ public static class TemplateFeatures
             }
 
             var prefixText = document.Text.ToString(TextSpan.FromBounds(wordStart, offset));
-            return [.. SavannaTagRules.Attributes.GetValueOrDefault(tag.Name, []).Where(name => !tag.Attributes.ContainsKey(name) && name.StartsWith(prefixText, StringComparison.Ordinal))
-                               .Select(name => Item(name, name is "required" or "await" ? name : name + "=\"\"", "Savanna " + tag.Name + " attribute", 10, new TextSpan(wordStart, prefixText.Length)))];
+            return
+            [
+                .. SavannaTagRules.Attributes.GetValueOrDefault(tag.Name, []).Where(name => !tag.Attributes.ContainsKey(name) && name.StartsWith(prefixText, StringComparison.Ordinal))
+                                  .Select(name => Item(name, name is "required" or "await" ? name : name + "=\"\"", "Savanna " + tag.Name + " attribute", 10, new TextSpan(wordStart, prefixText.Length)))
+            ];
         }
 
         if (token?.Kind != SavannaTokenKind.Directive)
@@ -111,8 +123,11 @@ public static class TemplateFeatures
         var split  = prefix.IndexOfAny([' ', '\t', '\r', '\n']);
         if (split < 0)
         {
-            return [.. Directives.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal))
-                             .Select(pair => Item(pair.Key, pair.Key, pair.Value, 14, new TextSpan(token.Span.Start, prefix.Length)))];
+            return
+            [
+                .. Directives.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal))
+                             .Select(pair => Item(pair.Key, pair.Key, pair.Value, 14, new TextSpan(token.Span.Start, prefix.Length)))
+            ];
         }
 
         var command       = prefix[..split];
@@ -128,22 +143,31 @@ public static class TemplateFeatures
             if (argument.StartsWith('"') && argument.AsSpan(1).IndexOf('"') < 0)
             {
                 var partial = argument[1..];
-                return [.. snapshot.Templates.Where(view => view.Name != document.Name && (command != "extends" || view.IsLayout) && view.Name.StartsWith(partial, StringComparison.Ordinal))
-                               .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, new TextSpan(argumentStart + 1, partial.Length)))];
+                return
+                [
+                    .. snapshot.Templates.Where(view => view.Name != document.Name && (command != "extends" || view.IsLayout) && view.Name.StartsWith(partial, StringComparison.Ordinal))
+                               .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, new TextSpan(argumentStart + 1, partial.Length)))
+                ];
             }
 
             if (command != "import" && !argument.Contains(' ') && !argument.StartsWith('"'))
             {
-                return [.. document.Imports.Where(pair => pair.Key.StartsWith(argument, StringComparison.Ordinal))
-                               .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, new TextSpan(argumentStart, argument.Length)))];
+                return
+                [
+                    .. document.Imports.Where(pair => pair.Key.StartsWith(argument, StringComparison.Ordinal))
+                               .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, new TextSpan(argumentStart, argument.Length)))
+                ];
             }
         }
 
         if (command == "block" && !argument.Contains(' '))
         {
-            return [.. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
+            return
+            [
+                .. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
                                       .Where(block => block.Name.StartsWith(argument, StringComparison.Ordinal))
-                                      .Select(block => Item(block.Name, block.Name, block.Required ? "Required inherited block" : "Inherited block", 6, new TextSpan(argumentStart, argument.Length)))];
+                                      .Select(block => Item(block.Name, block.Name, block.Required ? "Required inherited block" : "Inherited block", 6, new TextSpan(argumentStart, argument.Length)))
+            ];
         }
 
         return null;
@@ -152,7 +176,14 @@ public static class TemplateFeatures
         {
             return new
             {
-                label, kind, detail, textEdit = new { range = Position.Range(document.Text, span), newText = insert },
+                label,
+                kind,
+                detail,
+                textEdit = new
+                {
+                    range   = Position.Range(document.Text, span),
+                    newText = insert
+                },
             };
         }
     }
@@ -160,7 +191,7 @@ public static class TemplateFeatures
     public static object? Hover(TemplateSnapshot snapshot, int offset)
     {
         var token = TokenAt(snapshot.Document, offset);
-        if (token?.Tag is { } tag)
+        if (token?.Tag is {} tag)
         {
             var start = tag.Span.Start + (tag.Closing ? 3 : 2);
             if (offset >= start && offset <= start + tag.Name.Length && SavannaTagRules.Attributes.TryGetValue(tag.Name, out var attributes))
@@ -168,7 +199,15 @@ public static class TemplateFeatures
                 var tagDescription = tag.Name is "unless" or "debug" or "release" or "switch" or "case" or "default" or "break" or "continue"
                     ? Directives[tag.Name]
                     : "Savanna " + tag.Name + ". Attributes: " + string.Join(", ", attributes);
-                return new { contents = new { kind = "plaintext", value = tagDescription }, range = Position.Range(snapshot.Document.Text, new TextSpan(start, tag.Name.Length)) };
+                return new
+                {
+                    contents = new
+                    {
+                        kind  = "plaintext",
+                        value = tagDescription
+                    },
+                    range = Position.Range(snapshot.Document.Text, new TextSpan(start, tag.Name.Length))
+                };
             }
 
             return null;
@@ -182,7 +221,15 @@ public static class TemplateFeatures
         var command = token.Value.Split(' ', '\t', '\r', '\n')[0];
         if (offset <= token.Span.Start + command.Length && Directives.TryGetValue(command, out var description))
         {
-            return new { contents = new { kind = "plaintext", value = description }, range = Position.Range(snapshot.Document.Text, new TextSpan(token.Span.Start, command.Length)) };
+            return new
+            {
+                contents = new
+                {
+                    kind  = "plaintext",
+                    value = description
+                },
+                range = Position.Range(snapshot.Document.Text, new TextSpan(token.Span.Start, command.Length))
+            };
         }
 
         return null;
@@ -192,9 +239,9 @@ public static class TemplateFeatures
     {
         var document = snapshot.Document;
         var token    = TokenAt(document, offset);
-        if (token?.Tag is { } tag)
+        if (token?.Tag is {} tag)
         {
-            if (tag.Get("view") is { } viewAttribute && viewAttribute.Span.Start <= offset && offset <= viewAttribute.Span.End)
+            if (tag.Get("view") is {} viewAttribute && viewAttribute.Span.Start <= offset && offset <= viewAttribute.Span.End)
             {
                 var name = document.Imports.GetValueOrDefault(viewAttribute.Value, viewAttribute.Value);
                 var view = snapshot.Templates.FirstOrDefault(view => view.Name == name);
@@ -261,13 +308,20 @@ public static class TemplateFeatures
     }
 
     public static SavannaToken? TokenAt(SavannaDocument document, int offset) => SavannaLexer.Tokenize(document, [], CancellationToken.None, true)
-                                                                                    .FirstOrDefault(token => token.Span.Start <= offset && token.Span.End >= offset && token.Kind != SavannaTokenKind.Text);
+                                                                                             .FirstOrDefault(token => token.Span.Start <= offset && token.Span.End >= offset && token.Kind != SavannaTokenKind.Text);
 
-    private static object Location(SavannaDocument document, TextSpan span) => new { uri = new Uri(document.Path).AbsoluteUri, range = Position.Range(document.Text, span) };
+    private static object Location(SavannaDocument document, TextSpan span) => new
+    {
+        uri   = new Uri(document.Path).AbsoluteUri,
+        range = Position.Range(document.Text, span)
+    };
 
     private static IEnumerable<SavannaDocument> Ancestors(TemplateSnapshot snapshot)
     {
-        var seen    = new HashSet<string>(StringComparer.Ordinal) { snapshot.Document.Name };
+        var seen = new HashSet<string>(StringComparer.Ordinal)
+        {
+            snapshot.Document.Name
+        };
         var current = snapshot.Document;
         while (current.Parent is not null)
         {

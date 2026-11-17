@@ -14,7 +14,9 @@ function append(message) {
 
 function update() {
     const connected = socket?.connected === true;
-    document.querySelectorAll(".online").forEach(button => { button.disabled = !connected; });
+    document.querySelectorAll(".online").forEach(button => {
+        button.disabled = !connected;
+    });
     document.querySelector("#disconnect").disabled = !socket;
     document.querySelector("#connect").disabled = !!socket;
     status.textContent = connected ? `Connected to ${socket.nsp} using ${socket.io.engine.transport.name}` : "Disconnected";

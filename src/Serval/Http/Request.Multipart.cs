@@ -15,11 +15,14 @@ public sealed partial class Request
     ///     callback. All form and request limits apply, including to skipped sections and epilogues. Choose this mode before
     ///     any other body reader. Failure consumes the request; application-owned destinations may contain partial data.
     /// </remarks>
-    public async ValueTask ReadMultipartAsync(Func<MultipartSection, CancellationToken, ValueTask> readSection, CancellationToken ct = default)
+    public async ValueTask ReadMultipartAsync(Func<MultipartSection, CancellationToken, ValueTask> readSection,
+                                              CancellationToken                                    ct = default)
     {
         ArgumentNullException.ThrowIfNull(readSection);
+
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, RequestAborted);
         linked.Token.ThrowIfCancellationRequested();
+
         var type = FormDataParser.ContentType(Headers[HeaderNames.ContentType]);
         if (!string.Equals(type.MediaType, MimeTypes.MultipartFormData, StringComparison.OrdinalIgnoreCase))
         {
@@ -27,6 +30,7 @@ public sealed partial class Request
         }
 
         FormOptions.Validate();
+
         await using var input = OpenBodyStreamCore(linked.Token, true);
         await FormDataParser.StreamMultipartAsync(input, type, FormOptions, readSection, linked.Token);
     }
@@ -34,7 +38,9 @@ public sealed partial class Request
     private async ValueTask<int> ReadBodyChunkAsync(Memory<byte> buffer, CancellationToken ct)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
+
         ct.ThrowIfCancellationRequested();
+
         if (_bodyTooLarge)
         {
             throw new HttpErrorException(StatusCodes.PayloadTooLarge, "The request body is too large.");
@@ -50,5 +56,4 @@ public sealed partial class Request
         _bodyBytesRead += read;
         return read;
     }
-
 }

@@ -27,9 +27,21 @@ public sealed class WorkspaceCacheTests
 
         workspace.Open(partial, "{% model int %}unsaved", 1);
         Assert.Equal("int", (await workspace.SnapshotAsync(partial, CancellationToken.None)).Document.Model);
-        workspace.Change(partial, JsonSerializer.SerializeToElement(new[] { new { text = "{% model bool %}changed" } }), 2);
+        workspace.Change(partial, JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                text = "{% model bool %}changed"
+            }
+        }), 2);
         Assert.Equal("bool", (await workspace.SnapshotAsync(partial, CancellationToken.None)).Document.Model);
-        Assert.False(workspace.Change(partial, JsonSerializer.SerializeToElement(new[] { new { text = "stale" } }), 1));
+        Assert.False(workspace.Change(partial, JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                text = "stale"
+            }
+        }), 1));
         workspace.Close(partial);
         Assert.Equal("string", (await workspace.SnapshotAsync(partial, CancellationToken.None)).Document.Model);
 

@@ -47,7 +47,7 @@ public sealed class MiddlewareActivationTests
     [Fact]
     public async Task NullArgumentsStillFailAndChangedArgumentTypesRemainSupported()
     {
-        await using var app     = new SecurityTestApplication(_ => { });
+        await using var app     = new SecurityTestApplication(_ => {});
         await using var request = app.Request();
         // ActivatorUtilities cannot infer the constructor argument type from null.
         await Assert.ThrowsAsync<InvalidOperationException>(() => new UseMiddlewareAttribute(typeof(ValueMiddleware), [null!])

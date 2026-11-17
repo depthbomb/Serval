@@ -19,9 +19,12 @@ namespace Serval.Tests.Savanna;
 public sealed partial class SavannaCompilerTests
 {
     private static readonly CSharpParseOptions Options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp15);
-    private static readonly MetadataReference[] References = [.. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-                                                                                                                         .Append(typeof(SavannaView<>).Assembly.Location).Append(typeof(RequestContext).Assembly.Location).Distinct()
-                                                                                                                         .Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))];
+    private static readonly MetadataReference[] References =
+    [
+        .. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
+                                                                       .Append(typeof(SavannaView<>).Assembly.Location).Append(typeof(RequestContext).Assembly.Location).Distinct()
+                                                                       .Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))
+    ];
 
     [Fact]
     public async Task ThreeLevelsPreserveModelsImportsAndParentOrder()
@@ -64,7 +67,10 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<script><!--<script>\n// nested\n</script>\n// still script\n--></script>\n<div>x</div>", "<script><!--<script>\n// nested\n</script>\n// still script\n--></script><div>x</div>")]
     public async Task GeneratedViewsMinifyHtmlAndPreserveSensitiveWhitespace(string html, string expected)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "{% model int %}" + html });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "{% model int %}" + html
+        });
         var output = await Run(result, """
                                        public static class Entry
                                        {
@@ -77,7 +83,10 @@ public sealed partial class SavannaCompilerTests
     [Fact]
     public async Task DynamicAttributesRemainQuotedAndEncoded()
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "{% model string %}<div class=\"static\"\n title=\"{{ Model }}\" data-empty=\"{{ string.Empty }}\">\ntext\n</div>" });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "{% model string %}<div class=\"static\"\n title=\"{{ Model }}\" data-empty=\"{{ string.Empty }}\">\ntext\n</div>"
+        });
         var output = await Run(result, """
                                        public static class Entry
                                        {
@@ -157,7 +166,10 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<#foreach item='item' in='new[] { Model } // comment'>{{ item }}</#foreach>", "3")]
     public async Task CSharpLexingAndControlFlowPreserveMeaning(string body, string expected)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "{% model int %}" + body });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "{% model int %}" + body
+        });
         Assert.Empty(result.Diagnostics);
         var output = await Run(result, """
                                        public static class Entry
@@ -213,7 +225,11 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<#model type='int'><!{# comment #}-- <b> <#include view='Card.svn' /> -->", "SAVANNA003")]
     public void InvalidTemplatesHaveSourceLocatedDiagnostics(string template, string code)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = template, ["Card.svn"] = "<#model type='int'><p>{{ Model }}</p>" });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = template,
+            ["Card.svn"] = "<#model type='int'><p>{{ Model }}</p>"
+        });
         Assert.Empty(result.Sources);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code && diagnostic.Path == "/Templates/Page.svn");
     }
@@ -259,7 +275,10 @@ public sealed partial class SavannaCompilerTests
     public void CSharpErrorsMapBackToTheExpressionAndTypedIncludes()
     {
         const string template = "{% model string %}\r\n<p>🙂 {{ Model.Missing }}</p>";
-        var          result   = Compile(new Dictionary<string, string> { ["Page.svn"] = template });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = template
+        });
         Assert.Empty(result.Diagnostics);
         var diagnostics = CreateCompilation(result, "").GetDiagnostics();
         var error       = Assert.Single(diagnostics.Where(diagnostic => diagnostic.Id == "CS1061"));
@@ -282,7 +301,10 @@ public sealed partial class SavannaCompilerTests
     [Fact]
     public void UrlInterpolationAcceptsOrdinaryStrings()
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "{% model string %}<a href=\"{{ Model }}\">x</a>" });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "{% model string %}<a href=\"{{ Model }}\">x</a>"
+        });
         Assert.DoesNotContain(CreateCompilation(result, "").GetDiagnostics(), diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
     }
 
@@ -332,11 +354,11 @@ public sealed partial class SavannaCompilerTests
             ["Card.svn"] = "{% model int %}{{ Model }}",
         });
         Assert.Equal("<!-- Savanna view: Page.svn --><!-- Savanna partial: Card.svn -->3", await Run(result, """
-                                                                                                         public static class Entry
-                                                                                                         {
-                                                                                                             public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(3);
-                                                                                                         }
-                                                                                                         """));
+                                                                                                             public static class Entry
+                                                                                                             {
+                                                                                                                 public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(3);
+                                                                                                             }
+                                                                                                             """));
     }
 
     private static SavannaCompilation Compile(Dictionary<string, string> templates)
@@ -353,7 +375,7 @@ public sealed partial class SavannaCompilerTests
     private static async Task<string> Run(SavannaCompilation result, string code, CSharpParseOptions? options = null, bool normalizeComments = true)
     {
         using var compiled = new CompiledTestAssembly(CreateCompilation(result, code, options));
-        var output = await (Task<string>)compiled.Assembly.GetType("Entry")!.GetMethod("Run", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, null)!;
+        var       output   = await (Task<string>)compiled.Assembly.GetType("Entry")!.GetMethod("Run", BindingFlags.Static | BindingFlags.Public)!.Invoke(null, null)!;
         return normalizeComments ? SavannaTestOutput.NamesOnly(output) : output;
     }
 
@@ -380,8 +402,8 @@ public sealed partial class SavannaCompilerTests
             value = key switch
             {
                 "build_property.MSBuildProjectDirectory" => "/project",
-                "build_property.SavannaRoot"                => root,
-                "build_property.SavannaNamespace"           => "TestViews",
+                "build_property.SavannaRoot"             => root,
+                "build_property.SavannaNamespace"        => "TestViews",
                 _                                        => "",
             };
             return value.Length != 0;

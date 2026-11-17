@@ -66,12 +66,7 @@ public sealed class SignedUrlSampleTests
         Assert.Equal(403, (await app.SendAsync(download + "&extra=1")).StatusCode);
 
         var inspection = links.GetProperty("inspection").GetString()!;
-        foreach (var (url, failure) in new[]
-                 {
-                     ("/inspect/42", "MissingSignature"),
-                     (inspection.Replace("/42?", "/43?", StringComparison.Ordinal), "UrlMismatch"),
-                     (inspection + "&signature=duplicate", "Malformed"),
-                 })
+        foreach (var (url, failure) in new[] { ("/inspect/42", "MissingSignature"), (inspection.Replace("/42?", "/43?", StringComparison.Ordinal), "UrlMismatch"), (inspection + "&signature=duplicate", "Malformed"), })
         {
             var response = await app.SendAsync(url);
             Assert.Equal(403, response.StatusCode);

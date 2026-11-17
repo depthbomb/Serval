@@ -33,8 +33,12 @@ public sealed class ApiController : ControllerBase
     [Get("widgets/{id:int:min(1)}", Name = "widgets.get")]
     public ValueTask<IActionResult> GetWidgetAsync(RequestContext context)
     {
-        var id  = RouteValue<int>("id");
-        var url = context.Urls.Path("widgets.get", new Dictionary<string, object?> { ["id"] = id });
+        var id = RouteValue<int>("id");
+        var url = context.Urls.Path("widgets.get", new Dictionary<string, object?>
+        {
+            ["id"] = id
+        });
+
         return JsonAsync(new Widget(id, $"Widget {id}", url), SampleJsonContext.Default.Widget);
     }
 
@@ -44,8 +48,12 @@ public sealed class ApiController : ControllerBase
         var input = await context.Request.ReadJsonAsync(SampleJsonContext.Default.CreateWidget, context.RequestAborted);
         AbortIf(string.IsNullOrWhiteSpace(input.Name), StatusCodes.UnprocessableContent, "A widget name is required.");
 
-        var url = context.Urls.Path("widgets.get", new Dictionary<string, object?> { ["id"] = 1 });
+        var url = context.Urls.Path("widgets.get", new Dictionary<string, object?>
+        {
+            ["id"] = 1
+        });
         context.Response.Headers[HeaderNames.Location] = url;
+
         return Json(new Widget(1, input.Name, url), SampleJsonContext.Default.Widget, StatusCodes.Created);
     }
 
@@ -53,17 +61,23 @@ public sealed class ApiController : ControllerBase
     public ValueTask<IActionResult> SetCookieAsync(RequestContext context)
     {
         // The sample's HTTP listener uses loopback HTTP. Production cookies default to Secure.
-        context.Response.Cookies.Set("theme", "dark", new CookieOptions { Secure = context.Request.Url.Scheme == "https" });
+        context.Response.Cookies.Set("theme", "dark", new CookieOptions
+        {
+            Secure = context.Request.Url.Scheme == "https"
+        });
+
         return TextAsync("Cookie set.");
     }
 
     [Get("download")]
-    public ValueTask<IActionResult> DownloadAsync(RequestContext context) => FileAsync(Path.Combine(AppContext.BaseDirectory, "Public", "hello.json"), MimeTypes.Json, "hello.json");
+    public ValueTask<IActionResult> DownloadAsync(RequestContext context)
+        => FileAsync(Path.Combine(AppContext.BaseDirectory, "Public", "hello.json"), MimeTypes.Json, "hello.json");
 
     [Get("events")]
     public async ValueTask<IActionResult> EventsAsync(RequestContext context)
     {
         context.DisableRequestTimeout();
+
         var events = await context.Response.StartEventsAsync(context.RequestAborted);
         for (var index = 0; index < 3; index++)
         {
@@ -78,6 +92,7 @@ public sealed class ApiController : ControllerBase
     public async ValueTask<IActionResult> SocketAsync(RequestContext context)
     {
         context.DisableRequestTimeout();
+
         using var socket = await context.Response.AcceptWebSocketAsync(cancellationToken: context.RequestAborted);
         var       buffer = new byte[4096];
         while (socket.State == WebSocketState.Open)

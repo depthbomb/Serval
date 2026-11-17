@@ -124,7 +124,11 @@ public sealed class GeneratedRouteTests
     {
         await using var app  = new TestApplication(options => options.TrailingSlashes = TrailingSlashBehavior.RedirectToWithSlash);
         var             urls = app.Services.GetRequiredService<IUrlGenerator>();
-        Assert.Equal("/test/items/12/?q=a%20b", urls.Item(12, new Dictionary<string, object?> { ["q"] = "a b", ["skip"] = null }));
+        Assert.Equal("/test/items/12/?q=a%20b", urls.Item(12, new Dictionary<string, object?>
+        {
+            ["q"]    = "a b",
+            ["skip"] = null
+        }));
         Assert.Equal("/test/optional/1/", urls.Optional());
         Assert.Equal("/test/optional/3/", urls.Optional(3));
         Assert.Equal("/test/files/a/b%20c/", urls.Files("a/b c"));

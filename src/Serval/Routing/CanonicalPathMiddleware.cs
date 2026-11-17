@@ -43,15 +43,15 @@ public sealed class CanonicalPathMiddleware : IMiddleware
             throw new HttpErrorException(StatusCodes.BadRequest, "The request path must start with a single slash.");
         }
 
-        var trailing = path.Length > 1 && path.EndsWith('/');
-        var redirect = path != "/" && (_behavior == TrailingSlashBehavior.RedirectToWithoutSlash && trailing || _behavior == TrailingSlashBehavior.RedirectToWithSlash && !trailing);
+        var trailing = path.Length > 1    && path.EndsWith('/');
+        var redirect = path        != "/" && (_behavior == TrailingSlashBehavior.RedirectToWithoutSlash && trailing || _behavior == TrailingSlashBehavior.RedirectToWithSlash && !trailing);
         if (!redirect)
         {
             return false;
         }
 
         var canonical = _behavior == TrailingSlashBehavior.RedirectToWithSlash ? path + "/" : path.TrimEnd('/');
-        await context.Response.RedirectAsync(canonical + context.Request.Url.Query, StatusCodes.PermanentRedirect, context.RequestAborted);
+        await context.Response.RedirectAsync(canonical                                + context.Request.Url.Query, StatusCodes.PermanentRedirect, context.RequestAborted);
         return true;
     }
 }

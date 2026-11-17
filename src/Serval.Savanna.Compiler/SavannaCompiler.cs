@@ -28,8 +28,8 @@ public static class SavannaCompiler
     /// </remarks>
     /// <exception cref="OperationCanceledException">Compilation is canceled.</exception>
     public static SavannaCompilation Compile(IReadOnlyList<SavannaDocument> documents,
-                                          string                      generatedNamespace,
-                                          CancellationToken           cancellationToken = default)
+                                             string                         generatedNamespace,
+                                             CancellationToken              cancellationToken = default)
     {
         var diagnostics = documents.SelectMany(document => document.Diagnostics).ToList();
         documents = [.. SavannaImports.Apply(documents).Where(document => !document.IsImports)];
@@ -99,7 +99,7 @@ public static class SavannaCompiler
         foreach (var document in views.Values)
         {
             var targets = new List<SavannaDocument>();
-            if (document.Parent is { } parent)
+            if (document.Parent is {} parent)
             {
                 var target = Resolve(document, parent, views, diagnostics);
                 if (target is not null)
@@ -204,8 +204,11 @@ public static class SavannaCompiler
         foreach (var document in views.Values.OrderBy(document => document.Name, StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var chain = new List<SavannaDocument> { document };
-            while (chain[chain.Count - 1].Parent is { } parent)
+            var chain = new List<SavannaDocument>
+            {
+                document
+            };
+            while (chain[chain.Count - 1].Parent is {} parent)
             {
                 chain.Add(Resolve(chain[chain.Count - 1], parent, views, diagnostics)!);
             }

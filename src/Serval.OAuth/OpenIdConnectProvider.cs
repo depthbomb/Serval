@@ -10,27 +10,27 @@ namespace Serval.OAuth;
 
 internal sealed class OpenIdConnectConfiguration
 {
-    internal required Uri AuthorizationEndpoint { get; init; }
-    internal required Uri TokenEndpoint { get; init; }
-    internal required Uri JwksUri { get; init; }
-    internal Uri? UserInformationEndpoint { get; init; }
-    internal Uri? RevocationEndpoint { get; init; }
-    internal required string[] Algorithms { get; init; }
-    internal required JsonWebKey[] Keys { get; init; }
-    internal bool RequiresCallbackIssuer { get; init; }
-    internal required DateTimeOffset ExpiresUtc { get; init; }
+    internal required Uri            AuthorizationEndpoint   { get; init; }
+    internal required Uri            TokenEndpoint           { get; init; }
+    internal required Uri            JwksUri                 { get; init; }
+    internal          Uri?           UserInformationEndpoint { get; init; }
+    internal          Uri?           RevocationEndpoint      { get; init; }
+    internal required string[]       Algorithms              { get; init; }
+    internal required JsonWebKey[]   Keys                    { get; init; }
+    internal          bool           RequiresCallbackIssuer  { get; init; }
+    internal required DateTimeOffset ExpiresUtc              { get; init; }
 }
 
 internal sealed class OpenIdConnectProvider : IDisposable
 {
     private OpenIdConnectConfiguration? _configuration;
-    private DateTimeOffset _lastForcedRefresh = DateTimeOffset.MinValue;
+    private DateTimeOffset              _lastForcedRefresh = DateTimeOffset.MinValue;
 
-    private readonly OAuthClient _client;
-    private readonly OAuthOptions _oauth;
+    private readonly OAuthClient          _client;
+    private readonly OAuthOptions         _oauth;
     private readonly OpenIdConnectOptions _options;
-    private readonly TimeProvider _time;
-    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly TimeProvider         _time;
+    private readonly SemaphoreSlim        _gate = new(1, 1);
 
     internal OpenIdConnectProvider(OAuthClient client, OAuthOptions oauth, TimeProvider time)
     {
@@ -70,7 +70,7 @@ internal sealed class OpenIdConnectProvider : IDisposable
                 _lastForcedRefresh = now;
             }
 
-            var address = _options.MetadataAddress ?? new Uri(_options.Issuer.TrimEnd('/') + "/.well-known/openid-configuration");
+            var address  = _options.MetadataAddress ?? new Uri(_options.Issuer.TrimEnd('/') + "/.well-known/openid-configuration");
             var metadata = await _client.GetDocumentAsync(address, "oidc_discovery", ct);
             if (OAuthProtocol.String(metadata, "issuer") != _options.Issuer)
             {
@@ -152,17 +152,18 @@ internal sealed class OpenIdConnectProvider : IDisposable
             }
 
             ct.ThrowIfCancellationRequested();
+
             _configuration = new OpenIdConnectConfiguration
             {
-                AuthorizationEndpoint  = authorization,
-                TokenEndpoint          = token,
-                JwksUri                = jwks,
+                AuthorizationEndpoint   = authorization,
+                TokenEndpoint           = token,
+                JwksUri                 = jwks,
                 UserInformationEndpoint = userInfo,
-                RevocationEndpoint     = revocation,
-                Algorithms             = algorithms,
-                Keys                   = signingKeys.ToArray(),
-                RequiresCallbackIssuer = requiresIssuer,
-                ExpiresUtc             = _time.GetUtcNow() + _options.RefreshInterval,
+                RevocationEndpoint      = revocation,
+                Algorithms              = algorithms,
+                Keys                    = signingKeys.ToArray(),
+                RequiresCallbackIssuer  = requiresIssuer,
+                ExpiresUtc              = _time.GetUtcNow() + _options.RefreshInterval,
             };
             return _configuration;
         }

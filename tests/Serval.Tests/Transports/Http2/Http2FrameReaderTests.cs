@@ -24,7 +24,7 @@ public sealed class Http2FrameReaderTests
         }
 
         await using var stream = new FragmentedReadStream(input.ToArray(), chunkSize);
-        var       reader = new FrameReader(stream);
+        var             reader = new FrameReader(stream);
         for (var index = 0; index < lengths.Length; index++)
         {
             var frame = (await reader.ReadAsync(CancellationToken.None))!.Value;

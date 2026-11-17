@@ -62,16 +62,16 @@ public sealed class QueryTests
     [InlineData("{}", MimeTypes.PlainText, StatusCodes.UnsupportedMediaType)]
     public async Task QueryBindingRejectsInvalidContentAndUnsupportedFormats(string body, string contentType, int status)
     {
-        await using var app = new TestApplication();
-        var response = await app.SendAsync("/query/search", HttpMethods.Query, body, contentType);
+        await using var app      = new TestApplication();
+        var             response = await app.SendAsync("/query/search", HttpMethods.Query, body, contentType);
         Assert.Equal(status, response.StatusCode);
     }
 
     [Fact]
     public async Task FormQueriesUseExistingBodyBinding()
     {
-        await using var app = new TestApplication();
-        var response = await app.SendAsync("/query/form", HttpMethods.Query, "term=caf%C3%A9+books", MimeTypes.FormUrlEncoded);
+        await using var app      = new TestApplication();
+        var             response = await app.SendAsync("/query/form", HttpMethods.Query, "term=caf%C3%A9+books", MimeTypes.FormUrlEncoded);
         Assert.Equal(StatusCodes.Ok, response.StatusCode);
         Assert.Equal("café books", response.Text);
     }
@@ -79,8 +79,8 @@ public sealed class QueryTests
     [Fact]
     public async Task QueryBodyLimitsAreEnforced()
     {
-        await using var app = new TestApplication(options => options.MaxRequestBodyBytes = 64);
-        var response = await app.SendAsync("/query/search", HttpMethods.Query, "{\"Text\":\"" + new string('x', 100) + "\"}", MimeTypes.Json);
+        await using var app      = new TestApplication(options => options.MaxRequestBodyBytes = 64);
+        var             response = await app.SendAsync("/query/search", HttpMethods.Query, "{\"Text\":\"" + new string('x', 100) + "\"}", MimeTypes.Json);
         Assert.Equal(StatusCodes.PayloadTooLarge, response.StatusCode);
     }
 
@@ -91,8 +91,8 @@ public sealed class QueryTests
     [InlineData(HttpMethods.Post, StatusCodes.MethodNotAllowed)]
     public async Task QueryRoutesAdvertiseTheirMethodWithoutAHeadFallback(string method, int status)
     {
-        await using var app = new TestApplication();
-        var response = await app.SendAsync("/query/search", method);
+        await using var app      = new TestApplication();
+        var             response = await app.SendAsync("/query/search", method);
         Assert.Equal(status, response.StatusCode);
         Assert.Equal("OPTIONS, QUERY", response.Headers[HeaderNames.Allow]);
     }

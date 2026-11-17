@@ -34,7 +34,13 @@ public sealed class HttpHelperTests
     public void InvalidCookieOptionsFailBeforeCommit(string name, bool secure, string? domain, string path, SameSite sameSite)
     {
         var cookies = new ResponseCookies(new Headers());
-        Assert.Throws<ArgumentException>(() => cookies.Set(name, "value", new CookieOptions { Secure = secure, Domain = domain, Path = path, SameSite = sameSite }));
+        Assert.Throws<ArgumentException>(() => cookies.Set(name, "value", new CookieOptions
+        {
+            Secure   = secure,
+            Domain   = domain,
+            Path     = path,
+            SameSite = sameSite
+        }));
     }
 
     [Theory]

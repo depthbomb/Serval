@@ -43,11 +43,14 @@ public sealed class ProtocolTests
         object[]  values = ["🌿 héllo", new string('x', 20000) + "🙂", true];
         foreach (var value in values)
         {
-            await writer.WriteAsync(new { value });
+            await writer.WriteAsync(new
+            {
+                value
+            });
         }
 
         await using var input  = new ChunkedStream(bytes.ToArray(), chunkSize);
-        var       reader = new Protocol(input, Stream.Null);
+        var             reader = new Protocol(input, Stream.Null);
         foreach (var value in values)
         {
             using var message = await reader.ReadAsync(CancellationToken.None);
@@ -84,7 +87,26 @@ public sealed class ProtocolTests
         using var workspace = new SavannaWorkspace();
         var       path      = Path.Combine(Path.GetTempPath(), "SavannaEditorTests", "Index.svn");
         workspace.Open(path, "😀 title\r\nother", 1);
-        var changes = JsonSerializer.SerializeToElement(new[] { new { range = new { start = new { line = 0, character = 3 }, end = new { line = 0, character = 8 } }, text = "name" } });
+        var changes = JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                range = new
+                {
+                    start = new
+                    {
+                        line      = 0,
+                        character = 3
+                    },
+                    end = new
+                    {
+                        line      = 0,
+                        character = 8
+                    }
+                },
+                text = "name"
+            }
+        });
         Assert.True(workspace.Change(path, changes, 2));
         Assert.False(workspace.Change(path, changes, 1));
         Assert.Equal("😀 name\r\nother", Assert.Single(workspace.OpenDocuments).Text.ToString());
@@ -108,7 +130,13 @@ public sealed class ProtocolTests
         Assert.Equal("original", Assert.Single(workspace.OpenDocuments).Text.ToString());
         Assert.Equal(1, Assert.Single(workspace.OpenDocuments).Version);
 
-        var deletion = JsonSerializer.SerializeToElement(new[] { new { text = "" } });
+        var deletion = JsonSerializer.SerializeToElement(new[]
+        {
+            new
+            {
+                text = ""
+            }
+        });
         Assert.True(workspace.Change(path, deletion, 2));
         Assert.Equal("", Assert.Single(workspace.OpenDocuments).Text.ToString());
     }
@@ -124,9 +152,20 @@ public sealed class ProtocolTests
         var       writer  = new Protocol(Stream.Null, input);
         using var invalid = JsonDocument.Parse(json);
         await writer.WriteAsync(invalid.RootElement);
-        await writer.WriteAsync(new { id     = 1, method = "initialize" });
-        await writer.WriteAsync(new { id     = 2, method = "shutdown" });
-        await writer.WriteAsync(new { method = "exit" });
+        await writer.WriteAsync(new
+        {
+            id     = 1,
+            method = "initialize"
+        });
+        await writer.WriteAsync(new
+        {
+            id     = 2,
+            method = "shutdown"
+        });
+        await writer.WriteAsync(new
+        {
+            method = "exit"
+        });
         input.Position = 0;
 
         using var workspace = new SavannaWorkspace();
@@ -151,13 +190,29 @@ public sealed class ProtocolTests
         using var input  = new MemoryStream();
         using var output = new MemoryStream();
         var       writer = new Protocol(Stream.Null, input);
-        await writer.WriteAsync(new { id = 1, method = "initialize" });
+        await writer.WriteAsync(new
+        {
+            id     = 1,
+            method = "initialize"
+        });
         var       uri        = property == "uri" ? value : JsonSerializer.Serialize(new Uri(Path.Combine(Path.GetTempPath(), "Index.svn")).AbsoluteUri);
         var       text       = property == "text" ? value : "\"valid\"";
         using var parameters = JsonDocument.Parse("{\"textDocument\":{\"uri\":" + uri + ",\"text\":" + text + ",\"version\":1}}");
-        await writer.WriteAsync(new { id     = 2, method = "textDocument/didOpen", @params = parameters.RootElement });
-        await writer.WriteAsync(new { id     = 3, method = "shutdown" });
-        await writer.WriteAsync(new { method = "exit" });
+        await writer.WriteAsync(new
+        {
+            id      = 2,
+            method  = "textDocument/didOpen",
+            @params = parameters.RootElement
+        });
+        await writer.WriteAsync(new
+        {
+            id     = 3,
+            method = "shutdown"
+        });
+        await writer.WriteAsync(new
+        {
+            method = "exit"
+        });
         input.Position = 0;
 
         using var workspace = new SavannaWorkspace();

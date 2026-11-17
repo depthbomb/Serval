@@ -29,7 +29,14 @@ public sealed class SignedUrlTests
     {
         await using var app    = CreateApplication();
         var             signer = app.Services.GetRequiredService<ISignedUrlService>();
-        var             url    = signer.Path("signed.download", new Dictionary<string, object?> { ["id"] = 42 }, new Dictionary<string, object?> { ["file"] = "hello & 狸.txt", ["unused"] = null });
+        var url = signer.Path("signed.download", new Dictionary<string, object?>
+        {
+            ["id"] = 42
+        }, new Dictionary<string, object?>
+        {
+            ["file"]   = "hello & 狸.txt",
+            ["unused"] = null
+        });
         Assert.StartsWith("/signed/download/42?file=hello%20%26%20%E7%8B%B8.txt&signature=", url);
 
         var payload = ReadPayload(url);
@@ -58,13 +65,25 @@ public sealed class SignedUrlTests
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
-            var url = signer.Path("signed.files", new Dictionary<string, object?> { ["path"] = "a b/狸" }, new Dictionary<string, object?> { ["price"] = 1.25m });
+            var url = signer.Path("signed.files", new Dictionary<string, object?>
+            {
+                ["path"] = "a b/狸"
+            }, new Dictionary<string, object?>
+            {
+                ["price"] = 1.25m
+            });
             Assert.StartsWith("/signed/files/a%20b/%E7%8B%B8?price=1.25&signature=", url);
             Assert.True(signer.IsValid(url));
             Assert.StartsWith("/signed/pages/2?signature=", signer.Path("signed.pages"));
-            Assert.StartsWith("/signed/download/12?signature=", signer.Path("signed.download", new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["ID"] = 12 }));
+            Assert.StartsWith("/signed/download/12?signature=", signer.Path("signed.download", new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ID"] = 12
+            }));
             Assert.Throws<ArgumentException>(() => signer.Path("signed.download"));
-            Assert.Throws<ArgumentException>(() => signer.Path("signed.download", new Dictionary<string, object?> { ["id"] = 0 }));
+            Assert.Throws<ArgumentException>(() => signer.Path("signed.download", new Dictionary<string, object?>
+            {
+                ["id"] = 0
+            }));
             Assert.Throws<ArgumentException>(() => signer.Path("missing"));
         }
         finally
@@ -76,9 +95,12 @@ public sealed class SignedUrlTests
     [Fact]
     public async Task ExistingGeneratedPathsCanBeSignedAndValidatedAsRequests()
     {
-        await using var app     = CreateApplication();
-        var             signer  = app.Services.GetRequiredService<ISignedUrlService>();
-        var             path    = app.Services.GetRequiredService<IUrlGenerator>().Path("signed.download", new Dictionary<string, object?> { ["id"] = 12 });
+        await using var app    = CreateApplication();
+        var             signer = app.Services.GetRequiredService<ISignedUrlService>();
+        var path = app.Services.GetRequiredService<IUrlGenerator>().Path("signed.download", new Dictionary<string, object?>
+        {
+            ["id"] = 12
+        });
         var             url     = signer.Sign(path);
         await using var request = app.Request("https://app.test" + url);
         Assert.True(signer.IsValid(request.Context.Request));
@@ -201,8 +223,11 @@ public sealed class SignedUrlTests
     {
         await using var app    = CreateApplication();
         var             signer = app.Services.GetRequiredService<ISignedUrlService>();
-        var             signed = signer.Path("signed.download", new Dictionary<string, object?> { ["id"] = 12 }, expiresAt: app.Clock.Now.AddMinutes(1));
-        var             token  = Token(signed);
+        var signed = signer.Path("signed.download", new Dictionary<string, object?>
+        {
+            ["id"] = 12
+        }, expiresAt: app.Clock.Now.AddMinutes(1));
+        var token = Token(signed);
         foreach (var claim in new[] { "routeName", "routeValues", "expiresAt", "path", "query", "version" })
         {
             var payload = ReadPayload(signed);
@@ -361,7 +386,7 @@ public sealed class SignedUrlTests
     public void InvalidConfigurationFailsAtRegistration()
     {
         var builder = new ServiceCollection().AddServal();
-        Assert.Throws<ArgumentException>(() => builder.AddSignedUrls(_ => { }));
+        Assert.Throws<ArgumentException>(() => builder.AddSignedUrls(_ => {}));
         Assert.Throws<ArgumentException>(() => builder.AddSignedUrls(options => options.SigningKey = new byte[31]));
         Assert.Throws<ArgumentException>(() => builder.AddSignedUrls(options =>
         {
@@ -385,8 +410,11 @@ public sealed class SignedUrlTests
             configureServices: services => services.AddSingleton<TimeProvider>(clock),
             configureBuilder: builder => builder.AddSignedUrls(options => options.SigningKey = Key));
         var signer = app.Services.GetRequiredService<ISignedUrlService>();
-        var url    = signer.Path("signed.generated", new Dictionary<string, object?> { ["id"] = 7 }, expiresAt: clock.Now.AddMinutes(1));
-        var valid  = await app.SendAsync(url);
+        var url = signer.Path("signed.generated", new Dictionary<string, object?>
+        {
+            ["id"] = 7
+        }, expiresAt: clock.Now.AddMinutes(1));
+        var valid = await app.SendAsync(url);
         Assert.Equal(200, valid.StatusCode);
         Assert.Equal("7:True", valid.Text);
         Assert.Equal(403, (await app.SendAsync("/signed/generated/7")).StatusCode);
@@ -402,7 +430,10 @@ public sealed class SignedUrlTests
         var             signer = app.Services.GetRequiredService<ISignedUrlService>();
         await Parallel.ForEachAsync(Enumerable.Range(1, 100), (id, _) =>
         {
-            var url    = signer.Path("signed.download", new Dictionary<string, object?> { ["id"] = id });
+            var url = signer.Path("signed.download", new Dictionary<string, object?>
+            {
+                ["id"] = id
+            });
             var result = signer.Validate(url);
             Assert.True(result.IsValid);
             Assert.Equal(id.ToString(CultureInfo.InvariantCulture), result.Data!.RouteValues["id"]);
@@ -429,8 +460,14 @@ public sealed class SignedUrlTests
     {
         await using var app    = CreateApplication();
         var             signer = app.Services.GetRequiredService<ISignedUrlService>();
-        Assert.Throws<ArgumentException>(() => signer.Path("signed.files", new Dictionary<string, object?> { ["path"] = path }));
-        Assert.True(signer.IsValid(signer.Path("signed.files", new Dictionary<string, object?> { ["path"] = "%2e%2e/file.txt" })));
+        Assert.Throws<ArgumentException>(() => signer.Path("signed.files", new Dictionary<string, object?>
+        {
+            ["path"] = path
+        }));
+        Assert.True(signer.IsValid(signer.Path("signed.files", new Dictionary<string, object?>
+        {
+            ["path"] = "%2e%2e/file.txt"
+        })));
         Assert.True(signer.IsValid(signer.Sign("/signed/files/a/../file.txt")));
     }
 
@@ -440,7 +477,11 @@ public sealed class SignedUrlTests
         await using var app      = CreateApplication();
         var             urls     = app.Services.GetRequiredService<IUrlGenerator>();
         var             original = app.Services.GetRequiredService<ISignedUrlService>().Sign("/signed/pages/2?title=" + new string('a', 64));
-        var             signer   = new SignedUrlService(urls, new SignedUrlOptions { SigningKey = Key, MaxUrlLength = original.Length });
+        var signer = new SignedUrlService(urls, new SignedUrlOptions
+        {
+            SigningKey   = Key,
+            MaxUrlLength = original.Length
+        });
         Assert.Equal(original, signer.Sign("/signed/pages/2?title=" + new string('a', 64)));
         Assert.True(signer.IsValid(original));
         Assert.True(signer.IsValid("https://app.test:8443"            + original));
@@ -454,16 +495,10 @@ public sealed class SignedUrlTests
     [Fact]
     public async Task AuthenticatedJsonRejectsDuplicatePropertiesAtEveryLevel()
     {
-        await using var app    = CreateApplication();
-        var             signer = app.Services.GetRequiredService<ISignedUrlService>();
-        var             json   = ReadPayload(signer.Sign("/?x=1")).ToJsonString();
-        var duplicates = new[]
-        {
-            json.Replace("\"version\":1", "\"version\":1,\"version\":1", StringComparison.Ordinal),
-            json.Replace("\"expiresAt\":null", "\"expiresAt\":\"2020-01-01T00:00:00Z\",\"expiresAt\":null", StringComparison.Ordinal),
-            json.Replace("\"x\":[\"1\"]", "\"x\":[\"0\"],\"x\":[\"1\"]", StringComparison.Ordinal),
-            json.Replace("\"routeValues\":{}", "\"routeValues\":{\"id\":\"1\",\"id\":\"2\"}", StringComparison.Ordinal),
-        };
+        await using var app        = CreateApplication();
+        var             signer     = app.Services.GetRequiredService<ISignedUrlService>();
+        var             json       = ReadPayload(signer.Sign("/?x=1")).ToJsonString();
+        var             duplicates = new[] { json.Replace("\"version\":1", "\"version\":1,\"version\":1", StringComparison.Ordinal), json.Replace("\"expiresAt\":null", "\"expiresAt\":\"2020-01-01T00:00:00Z\",\"expiresAt\":null", StringComparison.Ordinal), json.Replace("\"x\":[\"1\"]", "\"x\":[\"0\"],\"x\":[\"1\"]", StringComparison.Ordinal), json.Replace("\"routeValues\":{}", "\"routeValues\":{\"id\":\"1\",\"id\":\"2\"}", StringComparison.Ordinal), };
         foreach (var duplicate in duplicates)
         {
             Assert.NotEqual(json, duplicate);
@@ -476,11 +511,14 @@ public sealed class SignedUrlTests
     [Fact]
     public async Task ValidationUsesTheRequestPathWithoutRecanonicalizingIt()
     {
-        await using var app     = CreateApplication();
-        var             signer  = app.Services.GetRequiredService<ISignedUrlService>();
-        var             signed  = signer.Sign("/signed/pages/2");
-        var             raw     = new Uri("https://app.test/other/.." + signed, new UriCreationOptions { DangerousDisablePathAndQueryCanonicalization = true });
-        var             request = new Request("GET", raw, HttpVersion.Version11, new Headers(), Stream.Null, 0);
+        await using var app    = CreateApplication();
+        var             signer = app.Services.GetRequiredService<ISignedUrlService>();
+        var             signed = signer.Sign("/signed/pages/2");
+        var raw = new Uri("https://app.test/other/.." + signed, new UriCreationOptions
+        {
+            DangerousDisablePathAndQueryCanonicalization = true
+        });
+        var request = new Request("GET", raw, HttpVersion.Version11, new Headers(), Stream.Null, 0);
         Assert.StartsWith("/other/..", request.Url.AbsolutePath);
         Assert.False(signer.IsValid(request));
         Assert.False(signer.Validate(request).IsValid);
@@ -489,9 +527,15 @@ public sealed class SignedUrlTests
     [Fact]
     public async Task RepeatedChecksRespectExpirationAndReturnIndependentImmutableData()
     {
-        await using var app     = CreateApplication();
-        var             signer  = app.Services.GetRequiredService<ISignedUrlService>();
-        var             signed  = signer.Path("signed.download", new Dictionary<string, object?> { ["id"] = 12 }, new Dictionary<string, object?> { ["x"] = "one" }, app.Clock.Now.AddMinutes(1));
+        await using var app    = CreateApplication();
+        var             signer = app.Services.GetRequiredService<ISignedUrlService>();
+        var signed = signer.Path("signed.download", new Dictionary<string, object?>
+        {
+            ["id"] = 12
+        }, new Dictionary<string, object?>
+        {
+            ["x"] = "one"
+        }, app.Clock.Now.AddMinutes(1));
         await using var request = app.Request("https://app.test" + signed);
         var             data    = signer.Validate(request.Context.Request).Data!;
         if (data.Query is IDictionary<string, IReadOnlyList<string>> query)
@@ -521,7 +565,10 @@ public sealed class SignedUrlTests
         await using var app    = CreateApplication();
         var             signer = app.Services.GetRequiredService<ISignedUrlService>();
         var             value  = new ChangingRouteValue();
-        var             signed = signer.Path("signed.download", new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["ID"] = value });
+        var signed = signer.Path("signed.download", new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["ID"] = value
+        });
         Assert.StartsWith("/signed/download/12?", signed);
         Assert.Equal("12", signer.Validate(signed).Data!.RouteValues["ID"]);
         Assert.Equal(1, value.Calls);
@@ -566,20 +613,7 @@ public sealed class SignedUrlTests
         var             signature             = token[(separator + 1)..];
         const string    alphabet              = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
         var             noncanonicalSignature = signature[..^1] + alphabet[alphabet.IndexOf(signature[^1]) | 1];
-        var malformed = new[]
-        {
-            encoded  + "."  + noncanonicalSignature,
-            encoded  + "=." + signature,
-            "A."     + signature,
-            "AB."    + signature,
-            "AAB."   + signature,
-            "a+a."   + signature,
-            "a/a."   + signature,
-            "a%20a." + signature,
-            "a%0Aa." + signature,
-            "é."     + signature,
-            encoded  + ".." + signature,
-        };
+        var             malformed             = new[] { encoded + "." + noncanonicalSignature, encoded + "=." + signature, "A." + signature, "AB." + signature, "AAB." + signature, "a+a." + signature, "a/a." + signature, "a%20a." + signature, "a%0Aa." + signature, "é." + signature, encoded + ".." + signature, };
         foreach (var invalid in malformed)
         {
             var url = "/?signature=" + invalid;

@@ -37,7 +37,10 @@ public sealed class SampleWireTests
         await host.StartAsync(timeout.Token);
         try
         {
-            using var client   = new HttpClient(new SocketsHttpHandler { UseProxy = false });
+            using var client = new HttpClient(new SocketsHttpHandler
+            {
+                UseProxy = false
+            });
             using var response = await client.GetAsync($"http://localhost:{port}/", timeout.Token);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.NotEmpty(await response.Content.ReadAsStringAsync(timeout.Token));
@@ -60,7 +63,10 @@ public sealed class SampleWireTests
         await host.StartAsync(timeout.Token);
         try
         {
-            using var client = new HttpClient(new SocketsHttpHandler { UseProxy = false });
+            using var client = new HttpClient(new SocketsHttpHandler
+            {
+                UseProxy = false
+            });
             var last = 0;
             while (last < 10)
             {
@@ -74,8 +80,8 @@ public sealed class SampleWireTests
                 Assert.Equal(HttpStatusCode.OK, response.StatusCode);
                 Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType);
                 using var reader = new StreamReader(await response.Content.ReadAsStreamAsync(timeout.Token));
-                var ids = new List<int>();
-                while (await reader.ReadLineAsync(timeout.Token) is { } line)
+                var       ids    = new List<int>();
+                while (await reader.ReadLineAsync(timeout.Token) is {} line)
                 {
                     if (line.StartsWith("id: ", StringComparison.Ordinal))
                     {

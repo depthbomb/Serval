@@ -15,10 +15,10 @@ public sealed partial class SavannaCompilerTests
             ["_Imports.svn"] = """<#using namespace="System.Text">""",
             ["Base.svn"]     = """<#model type="StringBuilder"><#layout><main><#block name="body">base</#block></main>""",
             ["Page.svn"] = """
-                            <#model type="StringBuilder"><#extends view="Base.svn"><#import view="Card.svn" as="Card">
-                            <#block name="body"><#parent><#let name="label" value="Model.ToString()">
-                            <#include view="Card" model="label" /><#html value='SavannaHtml.Trusted("<b>trusted</b>")'><#json id="state" value="label"></#block>
-                            """,
+                           <#model type="StringBuilder"><#extends view="Base.svn"><#import view="Card.svn" as="Card">
+                           <#block name="body"><#parent><#let name="label" value="Model.ToString()">
+                           <#include view="Card" model="label" /><#html value='SavannaHtml.Trusted("<b>trusted</b>")'><#json id="state" value="label"></#block>
+                           """,
             ["Card.svn"] = """<#model type="string"><i>{{ Model }}</i>""",
         });
         var output = await Run(result, """
@@ -39,12 +39,12 @@ public sealed partial class SavannaCompilerTests
         {
             ["Base.svn"] = """<#model type="int[]" /><#layout /><main><#block name="content" required></#block></main>""",
             ["Page.svn"] = """
-                            <#model type="int[]" /><#extends view="Base.svn" model="Model" />
-                            <#block name="content"><#let name="count" value="Model.Length" />
-                            <#if condition="count > 1">many<#elseif condition="count == 1">one<#else>none</#if>
-                            <ul><#foreach item="item" in="Model"><li>{{ item }}</li><#empty><li>empty</li></#foreach></ul>
-                            </#block>
-                            """,
+                           <#model type="int[]" /><#extends view="Base.svn" model="Model" />
+                           <#block name="content"><#let name="count" value="Model.Length" />
+                           <#if condition="count > 1">many<#elseif condition="count == 1">one<#else>none</#if>
+                           <ul><#foreach item="item" in="Model"><li>{{ item }}</li><#empty><li>empty</li></#foreach></ul>
+                           </#block>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {
@@ -62,8 +62,8 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="bool" /><input disabled="{{ Model }}" required="{{ (bool?)null }}" aria-disabled="{{ Model }}" title="{{ (string?)null }}"><a href="{{ "custom:open?x=1&y=2" }}">x</a>
-                            """,
+                           <#model type="bool" /><input disabled="{{ Model }}" required="{{ (bool?)null }}" aria-disabled="{{ Model }}" title="{{ (string?)null }}"><a href="{{ "custom:open?x=1&y=2" }}">x</a>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {
@@ -81,10 +81,10 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="string" /><#let name="label" value="Model.ToUpperInvariant()" />
-                            <#include view="Card.svn" model="Model"><#slot name="heading"><b>{{ label }}</b></#slot></#include>
-                            <#include view="Card.svn" model="Model" />
-                            """,
+                           <#model type="string" /><#let name="label" value="Model.ToUpperInvariant()" />
+                           <#include view="Card.svn" model="Model"><#slot name="heading"><b>{{ label }}</b></#slot></#include>
+                           <#include view="Card.svn" model="Model" />
+                           """,
             ["Card.svn"] = """<#model type="string" /><article><#slot name="heading"><i>{{ Model }}</i></#slot></article>""",
         });
         var output = await Run(result, """
@@ -102,9 +102,9 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="string" /><#json id="state" value="Model" /><#whitespace mode="preserve">  <b class="x"> a
-                              b </b>  </#whitespace><#verbatim>{{ untouched }}</#verbatim>
-                            """,
+                           <#model type="string" /><#json id="state" value="Model" /><#whitespace mode="preserve">  <b class="x"> a
+                             b </b>  </#whitespace><#verbatim>{{ untouched }}</#verbatim>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {
@@ -141,7 +141,10 @@ public sealed partial class SavannaCompilerTests
     [InlineData("<#switch value=\"Model\"><#case value=\"0\"></#case></#switch>")]
     public void MalformedMarkupProducesTemplateDiagnostics(string markup)
     {
-        var result = Compile(new Dictionary<string, string> { ["Page.svn"] = "<#model type=\"int\" />" + markup });
+        var result = Compile(new Dictionary<string, string>
+        {
+            ["Page.svn"] = "<#model type=\"int\" />" + markup
+        });
         Assert.NotEmpty(result.Diagnostics);
     }
 
@@ -151,10 +154,10 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="Sequence" /><#foreach item="item" in="Model">{{ item }}<#empty>empty</#foreach>
-                            <#foreach item="item" in="Model.Async()" await>{{ item }}<#empty>async-empty</#foreach>
-                            <#for clause="var i = 0; i < 0; i++">never<#empty>for-empty</#for>
-                            """,
+                           <#model type="Sequence" /><#foreach item="item" in="Model">{{ item }}<#empty>empty</#foreach>
+                           <#foreach item="item" in="Model.Async()" await>{{ item }}<#empty>async-empty</#foreach>
+                           <#for clause="var i = 0; i < 0; i++">never<#empty>for-empty</#for>
+                           """,
         });
         var output = await Run(result, """
                                        public sealed class Sequence : System.Collections.Generic.IEnumerable<int> {
@@ -179,12 +182,7 @@ public sealed partial class SavannaCompilerTests
     [Fact]
     public void SlotsValidateSuppliesAndRcDataIncludesAreRejected()
     {
-        foreach (var caller in new[]
-                 {
-                     "<#include view=\"Card.svn\" />",
-                     "<#include view=\"Card.svn\"><#slot name=\"typo\">x</#slot></#include>",
-                     "<#include view=\"Card.svn\">unassigned</#include>",
-                 })
+        foreach (var caller in new[] { "<#include view=\"Card.svn\" />", "<#include view=\"Card.svn\"><#slot name=\"typo\">x</#slot></#include>", "<#include view=\"Card.svn\">unassigned</#include>", })
         {
             var result = Compile(new Dictionary<string, string>
             {
@@ -214,10 +212,10 @@ public sealed partial class SavannaCompilerTests
         });
         Assert.Equal(2, result.Sources.Count);
         Assert.Contains("<b><!-- Savanna partial: Card.svn --><b>ok</b></b>", await Run(result, """
-                                                                                              public static class Entry {
-                                                                                                  public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(new System.Text.StringBuilder("ok"));
-                                                                                              }
-                                                                                              """));
+                                                                                                public static class Entry {
+                                                                                                    public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(new System.Text.StringBuilder("ok"));
+                                                                                                }
+                                                                                                """));
     }
 
     [Fact]
@@ -244,9 +242,9 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = """
-                            <#model type="int" /><#-- {{ do not compile }} <#if> -->
-                            <svg viewBox="{{ "0 0 20 20" }}"></svg><div hidden="{{ false }}"></div><div hidden="{{ "until-found" }}"></div>
-                            """,
+                           <#model type="int" /><#-- {{ do not compile }} <#if> -->
+                           <svg viewBox="{{ "0 0 20 20" }}"></svg><div hidden="{{ false }}"></div><div hidden="{{ "until-found" }}"></div>
+                           """,
         });
         var output = await Run(result, """
                                        public static class Entry {

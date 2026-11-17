@@ -16,8 +16,8 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
 {
     internal const string CsrfProperty = CsrfTokens.PropertyName;
 
-    private readonly object                      _currentTokenKey = new();
-    private readonly CookieAuthenticationOptions _options;
+    private readonly object                       _currentTokenKey = new();
+    private readonly CookieAuthenticationOptions  _options;
     private readonly AuthenticationSessionService _sessions;
 
     /// <summary>Creates a cookie handler with a session store and clock.</summary>
@@ -120,12 +120,19 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
 
         var items = new Dictionary<string, string>(properties.Items, StringComparer.Ordinal);
         CsrfTokens.Rotate(items);
-        var session = await _sessions.IssueAsync(scheme, principal, properties with { Items = items }, GetToken(context), context.RequestAborted);
-        var token = session.Credential;
+
+        var session = await _sessions.IssueAsync(scheme, principal, properties with
+        {
+            Items = items
+        }, GetToken(context), context.RequestAborted);
+
+        var token  = session.Credential;
         var ticket = session.Ticket;
 
         context.Items[_currentTokenKey] = token;
+
         SetCookie(context, token, ticket.Properties);
+
         return ticket;
     }
 
@@ -161,5 +168,4 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             throw new InvalidOperationException("Sign-in and sign-out must run before the response starts.");
         }
     }
-
 }

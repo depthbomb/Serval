@@ -13,7 +13,7 @@ namespace Serval.Routing;
 public sealed class RoutingMiddleware : IMiddleware
 {
     private readonly IEndpointMatcher _matcher;
-    private readonly bool _automaticOptions;
+    private readonly bool             _automaticOptions;
 
     /// <summary>Creates routing middleware with optional automatic OPTIONS responses.</summary>
     public RoutingMiddleware(IEndpointMatcher matcher, bool automaticOptions = true)
@@ -47,17 +47,20 @@ public sealed class RoutingMiddleware : IMiddleware
         }
 
         var methods = _automaticOptions ? match.AllowedMethods.Append(HttpMethods.Options) : match.AllowedMethods;
-        var allow = string.Join(", ", methods.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
+        var allow   = string.Join(", ", methods.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
         if (_automaticOptions && context.Request.Method == HttpMethods.Options)
         {
-            context.Response.StatusCode = StatusCodes.NoContent;
+            context.Response.StatusCode                 = StatusCodes.NoContent;
             context.Response.Headers[HeaderNames.Allow] = allow;
             return true;
         }
 
         throw new HttpErrorException(StatusCodes.MethodNotAllowed, "This HTTP method is not supported for this route.")
         {
-            Headers = { [HeaderNames.Allow] = allow },
+            Headers =
+            {
+                [HeaderNames.Allow] = allow
+            },
         };
     }
 }

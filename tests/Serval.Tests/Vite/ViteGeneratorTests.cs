@@ -20,8 +20,11 @@ public sealed class ViteGeneratorTests
     private const           string             ManifestPath   = "/project/dist/.vite/manifest.json";
     private const           string             SimpleManifest = """{"src/main.ts":{"file":"assets/main-123.js","isEntry":true}}""";
     private static readonly CSharpParseOptions ParseOptions   = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Preview);
-    private static readonly MetadataReference[] References = [.. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-                                                                                                                         .Append(typeof(ViteEntry).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase).Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))];
+    private static readonly MetadataReference[] References =
+    [
+        .. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
+                                                                       .Append(typeof(ViteEntry).Assembly.Location).Distinct(StringComparer.OrdinalIgnoreCase).Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))
+    ];
 
     [Fact]
     public void EntryGraphPreservesCssOrderAndKeepsDynamicImportsLazy()
@@ -73,7 +76,10 @@ public sealed class ViteGeneratorTests
     public void ValidUnicodeNamesStillGenerateCompilableSources()
     {
         Assert.Equal("/assets/main-123.js", Run<string>(SimpleManifest, "Assets.GetUrl(\"src/main.ts\")",
-            new Dictionary<string, string> { ["ViteClassName"] = "A\u200cssets" }));
+            new Dictionary<string, string>
+            {
+                ["ViteClassName"] = "A\u200cssets"
+            }));
         var urls = Run<IReadOnlyDictionary<string, string>>("{\"src/\\uD83C\\uDF3F.svg\":{\"file\":\"assets/\\uD83C\\uDF3F.svg\"}}", "Assets.Urls");
         Assert.Equal("/assets/🌿.svg", urls["src/🌿.svg"]);
     }
@@ -108,15 +114,24 @@ public sealed class ViteGeneratorTests
     [InlineData("./", "./assets/main-123.js")]
     [InlineData("", "assets/main-123.js")]
     public void BaseUrlIsJoinedOnce(string baseUrl, string expected)
-        => Assert.Equal(expected, Run<string>(SimpleManifest, "Assets.GetUrl(\"src/main.ts\")", new Dictionary<string, string> { ["ViteBaseUrl"] = baseUrl }));
+        => Assert.Equal(expected, Run<string>(SimpleManifest, "Assets.GetUrl(\"src/main.ts\")", new Dictionary<string, string>
+        {
+            ["ViteBaseUrl"] = baseUrl
+        }));
 
     [Fact]
     public void ManifestStringsAreEscapedAsCSharpLiteralsWithoutChangingTheirValue()
     {
-        const string key      = "src/a\"\\\n雪.svg";
-        const string file     = "assets/a\"\\\n雪<&>.svg";
-        var          manifest = JsonSerializer.Serialize(new Dictionary<string, object> { [key] = new { file } });
-        var          urls     = Run<IReadOnlyDictionary<string, string>>(manifest, "Assets.Urls");
+        const string key  = "src/a\"\\\n雪.svg";
+        const string file = "assets/a\"\\\n雪<&>.svg";
+        var manifest = JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            [key] = new
+            {
+                file
+            }
+        });
+        var urls = Run<IReadOnlyDictionary<string, string>>(manifest, "Assets.Urls");
         Assert.Equal("/" + file, urls[key]);
     }
 
@@ -165,7 +180,10 @@ public sealed class ViteGeneratorTests
     [InlineData("ViteDevelopment", "sometimes")]
     public void InvalidConfigurationProducesDiagnostics(string key, string value)
     {
-        var result = Driver(SimpleManifest, new Dictionary<string, string> { [key] = value }).RunGenerators(Compilation()).GetRunResult();
+        var result = Driver(SimpleManifest, new Dictionary<string, string>
+        {
+            [key] = value
+        }).RunGenerators(Compilation()).GetRunResult();
         Assert.Equal("VITE003", Assert.Single(result.Diagnostics).Id);
         Assert.Empty(result.GeneratedTrees);
     }
@@ -212,7 +230,11 @@ public sealed class ViteGeneratorTests
     [InlineData("ViteDevServerUrl", "/frontend#fragment")]
     public void InvalidDevelopmentConfigurationProducesDiagnostics(string key, string value)
     {
-        var options = new Dictionary<string, string> { ["ViteDevelopment"] = "true", ["ViteDevEntries"] = "src/main.js" };
+        var options = new Dictionary<string, string>
+        {
+            ["ViteDevelopment"] = "true",
+            ["ViteDevEntries"]  = "src/main.js"
+        };
         // Attribute strings use UTF-8 metadata, so construct the invalid UTF-16 case at runtime.
         options[key] = value.Replace("\\uD800", "\ud800");
         var result = Driver("{broken manifest", options).RunGenerators(Compilation()).GetRunResult();
@@ -224,12 +246,20 @@ public sealed class ViteGeneratorTests
     [Fact]
     public void CustomClassAndNamespaceCompile()
         => Assert.Equal("/assets/main-123.js", Run<string>(SimpleManifest, "Other.Generated.Frontend.GetUrl(\"src/main.ts\")",
-            new Dictionary<string, string> { ["ViteNamespace"] = "Other.Generated", ["ViteClassName"] = "Frontend" }, false));
+            new Dictionary<string, string>
+            {
+                ["ViteNamespace"] = "Other.Generated",
+                ["ViteClassName"] = "Frontend"
+            }, false));
 
     [Fact]
     public void ResolvedPathTakesPrecedenceOverRelativeCommandLineProperty()
         => Assert.Equal("/assets/main-123.js", Run<string>(SimpleManifest, "Assets.GetUrl(\"src/main.ts\")",
-            new Dictionary<string, string> { ["ViteManifest"] = "dist/.vite/manifest.json", ["ViteManifestFullPath"] = ManifestPath }));
+            new Dictionary<string, string>
+            {
+                ["ViteManifest"]         = "dist/.vite/manifest.json",
+                ["ViteManifestFullPath"] = ManifestPath
+            }));
 
     [Fact]
     public void EmptyManifestCompilesWithoutSpecialCases()
@@ -246,13 +276,19 @@ public sealed class ViteGeneratorTests
     [Fact]
     public void ChangesRegenerateAndRemovalDoesNotLeaveStaleSource()
     {
-        const string manifest    = """{"src/main.js":{"file":"assets/main-123.js","isEntry":true,"imports":["shared"]},"shared":{"file":"shared.js"}}""";
-        var          file        = new ManifestFile(manifest);
-        var          driver      = Driver(file, new Dictionary<string, string> { ["ViteBaseUrl"] = "/before" });
-        var          compilation = Compilation();
+        const string manifest = """{"src/main.js":{"file":"assets/main-123.js","isEntry":true,"imports":["shared"]},"shared":{"file":"shared.js"}}""";
+        var          file     = new ManifestFile(manifest);
+        var driver = Driver(file, new Dictionary<string, string>
+        {
+            ["ViteBaseUrl"] = "/before"
+        });
+        var compilation = Compilation();
         driver = driver.RunGenerators(compilation);
         Assert.Contains("main-123.js", driver.GetRunResult().GeneratedTrees.Single().ToString());
-        driver = driver.WithUpdatedAnalyzerConfigOptions(new ViteOptions(new Dictionary<string, string> { ["ViteBaseUrl"] = "/after" })).RunGenerators(compilation);
+        driver = driver.WithUpdatedAnalyzerConfigOptions(new ViteOptions(new Dictionary<string, string>
+        {
+            ["ViteBaseUrl"] = "/after"
+        })).RunGenerators(compilation);
         var source = Assert.Single(driver.GetRunResult().GeneratedTrees).ToString();
         Assert.Contains("\"/after/shared.js\"", source);
         Assert.DoesNotContain("/before/", source);
@@ -264,7 +300,11 @@ public sealed class ViteGeneratorTests
         Assert.Equal("VITE001", Assert.Single(driver.GetRunResult().Diagnostics).Id);
         Assert.Empty(driver.GetRunResult().GeneratedTrees);
 
-        var development = new Dictionary<string, string> { ["ViteDevelopment"] = "true", ["ViteDevEntries"] = "src/main.js" };
+        var development = new Dictionary<string, string>
+        {
+            ["ViteDevelopment"] = "true",
+            ["ViteDevEntries"]  = "src/main.js"
+        };
         driver = driver.WithUpdatedAnalyzerConfigOptions(new ViteOptions(development)).RunGenerators(compilation);
         Assert.Empty(driver.GetRunResult().Diagnostics);
         Assert.Contains("/@vite/client", Assert.Single(driver.GetRunResult().GeneratedTrees).ToString());
@@ -299,7 +339,10 @@ public sealed class ViteGeneratorTests
     [Fact]
     public void TransitiveAnalyzerWithoutConfigurationDoesNothing()
     {
-        var result = Driver(SimpleManifest, new Dictionary<string, string> { ["ViteManifest"] = "" }).RunGenerators(Compilation()).GetRunResult();
+        var result = Driver(SimpleManifest, new Dictionary<string, string>
+        {
+            ["ViteManifest"] = ""
+        }).RunGenerators(Compilation()).GetRunResult();
         Assert.Empty(result.Diagnostics);
         Assert.Empty(result.GeneratedTrees);
     }

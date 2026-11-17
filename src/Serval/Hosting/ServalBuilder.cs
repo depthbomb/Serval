@@ -109,7 +109,7 @@ public sealed class ServalBuilder
     /// <summary>Registers a delegate endpoint with the same groups, metadata, limits, and middleware as controllers.</summary>
     public ServalBuilder AddEndpoint(string method, string template, RequestDelegate handler, string? name = null, params MiddlewareAttribute[] middleware)
     {
-        var path = _prefix.Length == 0 ? template : _prefix + "/" + template.TrimStart('/');
+        var path = _prefix.Length == 0 ? template : _prefix             + "/" + template.TrimStart('/');
         Controllers.Add(method, path, name is null ? null : _namePrefix + name, handler, middleware, ConfigureEndpoint);
         return this;
     }

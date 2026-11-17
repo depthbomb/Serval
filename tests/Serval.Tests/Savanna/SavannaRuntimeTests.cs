@@ -160,8 +160,12 @@ public sealed class SavannaRuntimeTests
         var random = new Random(12345);
         var samples = new List<string>
         {
-            "", new('x', 5000), string.Concat(Enumerable.Range(0, 128).Select(value => (char)value)),
-            "\ud800broken\udfff🙂\u0000<&>\"'`+", "a&b<c>d\"e'f", "中文 café 🙂",
+            "",
+            new('x', 5000),
+            string.Concat(Enumerable.Range(0, 128).Select(value => (char)value)),
+            "\ud800broken\udfff🙂\u0000<&>\"'`+",
+            "a&b<c>d\"e'f",
+            "中文 café 🙂",
         };
         for (var index = 0; index < 30; index++)
         {

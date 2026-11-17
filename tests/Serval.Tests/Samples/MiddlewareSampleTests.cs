@@ -13,11 +13,11 @@ public sealed class MiddlewareSampleTests
     [Fact]
     public async Task MiddlewareAndControllerShareARequestScope()
     {
-        await using var app = new SampleApplication("Middleware", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Middleware");
-        var first = await app.SendAsync("/work");
-        using var json = JsonDocument.Parse(first.Text);
-        var id = json.RootElement.GetProperty("requestId").GetString()!;
+        await using var app   = new SampleApplication("Middleware", "--Logging:LogLevel:Default", "Information");
+        var             logs  = SampleLogProvider.Capture(app, "Middleware");
+        var             first = await app.SendAsync("/work");
+        using var       json  = JsonDocument.Parse(first.Text);
+        var             id    = json.RootElement.GetProperty("requestId").GetString()!;
         Assert.Equal(200, first.StatusCode);
         Assert.Contains(id, logs.Messages.First());
         Assert.All(logs.Messages, message => Assert.StartsWith(json.RootElement.GetProperty("traceId").GetString() + ":", message));
@@ -31,8 +31,8 @@ public sealed class MiddlewareSampleTests
     [InlineData("/crash", 500)]
     public async Task MiddlewareWrapsActionsAndUnwindsOnFailure(string path, int status)
     {
-        await using var app = new SampleApplication("Middleware", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Middleware");
+        await using var app  = new SampleApplication("Middleware", "--Logging:LogLevel:Default", "Information");
+        var             logs = SampleLogProvider.Capture(app, "Middleware");
         Assert.Equal(status, (await app.SendAsync(path)).StatusCode);
         logs.AssertEvents("application middleware entered.", "route middleware entered.",
             "route middleware exited", "application middleware exited");
@@ -41,8 +41,8 @@ public sealed class MiddlewareSampleTests
     [Fact]
     public async Task MissingRouteRunsOnlyApplicationMiddleware()
     {
-        await using var app = new SampleApplication("Middleware", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Middleware");
+        await using var app  = new SampleApplication("Middleware", "--Logging:LogLevel:Default", "Information");
+        var             logs = SampleLogProvider.Capture(app, "Middleware");
         Assert.Equal(404, (await app.SendAsync("/missing")).StatusCode);
         logs.AssertEvents("application middleware entered.", "application middleware exited");
     }
@@ -50,9 +50,9 @@ public sealed class MiddlewareSampleTests
     [Fact]
     public async Task MaintenanceShortCircuitsInnerMiddlewareAndController()
     {
-        await using var app = new SampleApplication("Middleware", "--maintenance", "true", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Middleware");
-        var response = await app.SendAsync("/work");
+        await using var app      = new SampleApplication("Middleware", "--maintenance", "true", "--Logging:LogLevel:Default", "Information");
+        var             logs     = SampleLogProvider.Capture(app, "Middleware");
+        var             response = await app.SendAsync("/work");
         Assert.Equal(503, response.StatusCode);
         Assert.Equal("60", response.Headers["Retry-After"]);
         Assert.DoesNotContain("The controller ran", response.Text);

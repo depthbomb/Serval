@@ -75,15 +75,33 @@ public sealed class FormsController : ControllerBase
         {
             await using var content = file.OpenReadStream();
             var             digest  = await SHA256.HashDataAsync(content, RequestAborted);
-            files.Add(new { file.Name, file.FileName, file.ContentType, file.Length, sha256 = Convert.ToHexString(digest) });
+            files.Add(new
+            {
+                file.Name,
+                file.FileName,
+                file.ContentType,
+                file.Length,
+                sha256 = Convert.ToHexString(digest)
+            });
         }
 
-        return Json(new { id, limit, username, ids = post.GetValues<int>("ids"), files });
+        return Json(new
+        {
+            id,
+            limit,
+            username,
+            ids = post.GetValues<int>("ids"),
+            files
+        });
     }
 
     [Post("/bound")]
     public ValueTask<IActionResult> Bound([FromForm] string username, [FromForm] int[] ids)
-        => JsonAsync(new { username, ids });
+        => JsonAsync(new
+        {
+            username,
+            ids
+        });
 
     [Post("/stream")]
     public async ValueTask<IActionResult> StreamFiles()
@@ -94,9 +112,17 @@ public sealed class FormsController : ControllerBase
             if (section.FileName is not null)
             {
                 var digest = await SHA256.HashDataAsync(section.Body, ct);
-                files.Add(new { section.Name, section.FileName, sha256 = Convert.ToHexString(digest) });
+                files.Add(new
+                {
+                    section.Name,
+                    section.FileName,
+                    sha256 = Convert.ToHexString(digest)
+                });
             }
         }, RequestAborted);
-        return Json(new { files });
+        return Json(new
+        {
+            files
+        });
     }
 }

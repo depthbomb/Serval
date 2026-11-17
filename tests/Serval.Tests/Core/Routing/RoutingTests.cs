@@ -77,9 +77,21 @@ public sealed class RoutingTests
     {
         await using var app  = new TestApplication(options => options.TrailingSlashes = TrailingSlashBehavior.RedirectToWithSlash);
         var             urls = app.Services.GetRequiredService<IUrlGenerator>();
-        Assert.Equal("/test/items/12/?q=a%20b", urls.Path("item", new Dictionary<string, object?> { ["id"] = 12 }, new Dictionary<string, object?> { ["q"] = "a b" }));
-        Assert.Equal("/test/files/a/b%20c/", urls.Path("files", new Dictionary<string, object?> { ["path"] = "a/b c" }));
-        Assert.Throws<ArgumentException>(() => urls.Path("item", new Dictionary<string, object?> { ["id"] = 0 }));
+        Assert.Equal("/test/items/12/?q=a%20b", urls.Path("item", new Dictionary<string, object?>
+        {
+            ["id"] = 12
+        }, new Dictionary<string, object?>
+        {
+            ["q"] = "a b"
+        }));
+        Assert.Equal("/test/files/a/b%20c/", urls.Path("files", new Dictionary<string, object?>
+        {
+            ["path"] = "a/b c"
+        }));
+        Assert.Throws<ArgumentException>(() => urls.Path("item", new Dictionary<string, object?>
+        {
+            ["id"] = 0
+        }));
         Assert.Throws<ArgumentException>(() => urls.Path("item"));
         Assert.Throws<ArgumentException>(() => urls.Path("missing"));
     }
@@ -126,7 +138,10 @@ public sealed class RoutingTests
     {
         var options = new ServalOptions
         {
-            RouteConstraints = { ["slug"] = (value, _) => value.All(c => char.IsAsciiLetterLower(c) || c == '-') },
+            RouteConstraints =
+            {
+                ["slug"] = (value, _) => value.All(c => char.IsAsciiLetterLower(c) || c == '-')
+            },
         };
         var slug = new RouteTemplate("/blog/{name:slug}", options);
         Assert.True(slug.TryMatch(["blog", "hello-world"], false, out _));

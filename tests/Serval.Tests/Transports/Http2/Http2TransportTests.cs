@@ -21,7 +21,10 @@ public sealed class Http2TransportTests
     {
         UseProxy                     = false,
         InitialHttp2StreamWindowSize = 65535,
-        SslOptions                   = { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+        SslOptions =
+        {
+            RemoteCertificateValidationCallback = (_, _, _, _) => true
+        },
     };
 
     [Fact]
@@ -57,8 +60,8 @@ public sealed class Http2TransportTests
         await File.WriteAllBytesAsync(Path.Combine(directory, "download.bin"), file);
         await using var server = await TransportTestHost.StartAsync(HttpVersion.Version20, tls, ClientHandler,
             serval => Serval_Sample_TransportsControllers.Register(serval), options => options.StaticFiles.DirectoryPath = directory);
-        var client = server.Client;
-        using var first = await client.GetAsync("/test/items/12");
+        var       client = server.Client;
+        using var first  = await client.GetAsync("/test/items/12");
         Assert.Equal(HttpVersion.Version20, first.Version);
         Assert.Equal("12:controller,method", await first.Content.ReadAsStringAsync());
         var pending = new Task<string>[30];

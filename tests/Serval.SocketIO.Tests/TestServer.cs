@@ -88,7 +88,7 @@ internal sealed class ScopeTracker
 {
     internal ConcurrentDictionary<string, bool> Scopes       { get; } = new();
     internal ConcurrentQueue<string>            Disconnected { get; } = new();
-    internal ConcurrentQueue<string>            Waiting { get; } = new();
+    internal ConcurrentQueue<string>            Waiting      { get; } = new();
 }
 
 internal sealed class ScopedMarker : IAsyncDisposable

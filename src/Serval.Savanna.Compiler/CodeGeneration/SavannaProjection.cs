@@ -319,14 +319,14 @@ public static class SavannaProjection
 
         TextSpan Argument(SavannaToken token, int commandLength)
         {
-            return token.Tag is { } tag
+            return token.Tag is {} tag
                 ? tag.Get(SavannaTagRules.Primary(tag.Name) ?? "")?.Span ?? new TextSpan(tag.Span.End, 0)
                 : SavannaLexer.Trim(document.Text.ToString(), TextSpan.FromBounds(token.Span.Start + commandLength, token.Span.End));
         }
 
         void CopyAttribute(SavannaTag tag, string name)
         {
-            if (tag.Get(name) is { } attribute)
+            if (tag.Get(name) is {} attribute)
             {
                 Copy(attribute.Span);
             }

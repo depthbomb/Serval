@@ -125,6 +125,19 @@ public sealed class AuthenticationBuilder
 /// <summary>Adds authentication and authorization services to Serval.</summary>
 public static class AuthenticationBuilderExtensions
 {
+    private static AuthenticationOptions GetOptions(IServiceCollection services)
+    {
+        var existing = services.LastOrDefault(descriptor => descriptor.ServiceType == typeof(AuthenticationOptions));
+        if (existing is not null)
+        {
+            return existing.ImplementationInstance as AuthenticationOptions ?? throw new InvalidOperationException("Register authentication options through the Serval builder.");
+        }
+
+        var options = new AuthenticationOptions();
+        services.AddSingleton(options);
+        return options;
+    }
+
     extension(ServalBuilder builder)
     {
         /// <summary>Registers authentication defaults, authorization, and the default password hasher.</summary>
@@ -182,17 +195,4 @@ public static class AuthenticationBuilderExtensions
     }
 
     private sealed class AuthenticationRegistration;
-
-    private static AuthenticationOptions GetOptions(IServiceCollection services)
-    {
-        var existing = services.LastOrDefault(descriptor => descriptor.ServiceType == typeof(AuthenticationOptions));
-        if (existing is not null)
-        {
-            return existing.ImplementationInstance as AuthenticationOptions ?? throw new InvalidOperationException("Register authentication options through the Serval builder.");
-        }
-
-        var options = new AuthenticationOptions();
-        services.AddSingleton(options);
-        return options;
-    }
 }

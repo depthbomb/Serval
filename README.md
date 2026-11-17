@@ -30,7 +30,7 @@ These ten projects produce NuGet packages. Build them locally or consume them th
 |--------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | [Serval](src/Serval)                                               | Hosting, controllers, routing, middleware, HTTP helpers, and static files.             |
 | [Serval.Authentication](src/Serval.Authentication)                 | Authentication, sessions, authorization, password hashing, and CSRF helpers.           |
-| [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and OIDC sign-in with discovery, PKCE, and validated ID tokens.       |
+| [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and OIDC sign-in with discovery, PKCE, and validated ID tokens.      |
 | [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed route URLs, verified payload data, request validation, and optional expiration. |
 | [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, binary payloads, acknowledgements, namespaces, and in-memory rooms.  |
 | [Serval.Savanna](src/Serval.Savanna)                               | Compiled HTML templates with typed models, layouts, includes, and components.          |
@@ -442,7 +442,8 @@ code controls which endpoint to execute and should execute it once.
 framing checks, cancellation, exception handling, lifecycle hooks, and cleanup remain active. For standard method
 handling, use `RoutingMiddleware.TryHandleAsync(context)` instead of manually handling the match result; it runs
 matching endpoints, handles automatic OPTIONS and 405, and returns false only for an unmatched path. Construct it with
-`automaticOptions: false` to disable synthesized OPTIONS responses. HEAD selection follows `ServalOptions.AutomaticHead`.
+`automaticOptions: false` to disable synthesized OPTIONS responses. HEAD selection follows
+`ServalOptions.AutomaticHead`.
 `CanonicalPathMiddleware.TryRedirectAsync` provides the default slash redirect behavior as a separate step.
 
 ### Mount files and choose fallbacks
@@ -456,7 +457,8 @@ GET or HEAD should receive an SPA shell. For example, require an HTML navigation
 paths before calling `files.TryServeAsync(context, "/index.html")`. Check whether routing handled the request;
 an action's deliberate 404 should remain its response.
 
-For a protected download, authorize first, resolve the path with `StaticFileResolver`, inspect a `FileResource`, and call
+For a protected download, authorize first, resolve the path with `StaticFileResolver`, inspect a `FileResource`, and
+call
 `FileResponse.WriteAsync(context, file, contentType, "private, no-cache", downloadName)`. The same writer supports HEAD
 and conditional GET. `ConditionalRequests.IsNotModified` also works with validators for non-file resources. Resolver
 roots must be application-controlled; resolution does not lock filesystem entries against other writers.
@@ -501,7 +503,8 @@ cookie and ticket-validation policies. The session service does not create CSRF 
 
 `CsrfTokens.Rotate(state)` creates or replaces a synchronizer token in an application-owned dictionary, and
 `CsrfTokens.Validate(state, submitted)` verifies it. This also works for anonymous browser state. Load that state using
-a trusted session identifier, keep it server-side, and expose only its CSRF token in the form or a response. An unrelated
+a trusted session identifier, keep it server-side, and expose only its CSRF token in the form or a response. An
+unrelated
 browser must not be able to select another browser's state. Rotate the token and session identifier when authentication
 changes. The cookie adapter stores its token under `CsrfTokens.PropertyName` and retains the existing CSRF helpers.
 

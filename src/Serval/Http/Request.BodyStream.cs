@@ -18,7 +18,9 @@ public sealed partial class Request
     private Stream OpenBodyStreamCore(CancellationToken ct, bool multipart)
     {
         ct.ThrowIfCancellationRequested();
+
         RequestAborted.ThrowIfCancellationRequested();
+
         lock (_bodyGate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -28,8 +30,8 @@ public sealed partial class Request
             }
 
             var stream = new BodyReadStream(this, ct, true);
-            _readingBody = true;
-            _rawBodyRead = true;
+            _readingBody       = true;
+            _rawBodyRead       = true;
             _streamedMultipart = multipart;
             return stream;
         }
@@ -37,21 +39,21 @@ public sealed partial class Request
 
     private sealed class BodyReadStream : Stream
     {
-        public override bool CanRead => !_disposed;
-        public override bool CanSeek => false;
+        public override bool CanRead  => !_disposed;
+        public override bool CanSeek  => false;
         public override bool CanWrite => false;
-        public override long Length => throw new NotSupportedException();
+        public override long Length   => throw new NotSupportedException();
         public override long Position
         {
             get => throw new NotSupportedException();
             set => throw new NotSupportedException();
         }
 
-        private bool _disposed;
-        private int _reading;
-        private readonly Request _request;
+        private          bool                    _disposed;
+        private          int                     _reading;
+        private readonly Request                 _request;
         private readonly CancellationTokenSource _cts;
-        private readonly bool _release;
+        private readonly bool                    _release;
 
         internal BodyReadStream(Request request, CancellationToken ct, bool release)
         {
@@ -63,6 +65,7 @@ public sealed partial class Request
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+
             if (Interlocked.CompareExchange(ref _reading, 1, 0) != 0)
             {
                 throw new InvalidOperationException("Body reads must be sequential.");
@@ -82,10 +85,15 @@ public sealed partial class Request
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             => ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
 
-        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException("Use asynchronous body reads.");
+        public override int Read(byte[] buffer, int offset, int count)
+            => throw new NotSupportedException("Use asynchronous body reads.");
+
         public override void Flush() => throw new NotSupportedException();
+
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
         public override void SetLength(long value) => throw new NotSupportedException();
+
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
         protected override void Dispose(bool disposing)

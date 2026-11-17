@@ -42,7 +42,7 @@ public sealed class SampleRecipeTests
         Assert.Contains("<!doctype html>", response.Text);
         Assert.Contains("The item changed.", response.Text);
 
-        await using var services = new SecurityTestApplication(_ => { });
+        await using var services = new SecurityTestApplication(_ => {});
         await using var request  = services.Request("https://app.test/error?format=html");
         var             handler  = new SampleExceptionHandler(NullLogger<SampleExceptionHandler>.Instance);
         await handler.HandleAsync(request.Context, new HttpErrorException(422, "<script>alert('test')</script>"));

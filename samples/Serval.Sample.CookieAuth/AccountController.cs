@@ -53,7 +53,10 @@ public sealed class AccountController : ControllerBase
 
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
 
-        return Json(new { name = result.Ticket.Principal.Identity?.Name });
+        return Json(new
+        {
+            name = result.Ticket.Principal.Identity?.Name
+        });
     }
 
     [Get("/account/me")]
@@ -61,13 +64,19 @@ public sealed class AccountController : ControllerBase
     public ValueTask<IActionResult> MeAsync(RequestContext context)
     {
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
-        return JsonAsync(new { name = context.User.Identity?.Name });
+        return JsonAsync(new
+        {
+            name = context.User.Identity?.Name
+        });
     }
 
     [Get("/account/csrf")]
     [Authorize]
     public async ValueTask<IActionResult> CsrfAsync(RequestContext context)
-        => Json(new { token = await context.GetCsrfTokenAsync() });
+        => Json(new
+        {
+            token = await context.GetCsrfTokenAsync()
+        });
 
     [Post("/account/logout")]
     [Authorize(Priority = -100)]

@@ -156,7 +156,10 @@ public sealed class MultipartStreamingTests
     }
 
     private static Request Create(Stream input, long limit = 4 * 1024 * 1024)
-        => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers { ["Content-Type"] = "multipart/form-data; boundary=test" }, input, limit);
+        => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers
+        {
+            ["Content-Type"] = "multipart/form-data; boundary=test"
+        }, input, limit);
 
     private static byte[] FileBody(byte[] bytes)
         => [.. "--test\r\nContent-Disposition: form-data; name=file; filename=test.bin\r\n\r\n"u8, .. bytes, .. "\r\n--test--\r\n"u8];

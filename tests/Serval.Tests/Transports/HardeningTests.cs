@@ -37,7 +37,7 @@ public sealed class HardeningTests
         await H3.Frames.WriteAsync(wire, H3.Frames.Headers, FieldSection((name, value)), CancellationToken.None);
         wire.Position = 0;
         await using var body  = new H3.Http3BodyStream(wire, 1024, 1024, 0);
-        var       error = await Assert.ThrowsAsync<H3.Http3ProtocolException>(() => body.CopyToAsync(Stream.Null));
+        var             error = await Assert.ThrowsAsync<H3.Http3ProtocolException>(() => body.CopyToAsync(Stream.Null));
         Assert.Equal(H3.Http3Error.Message, error.ErrorCode);
     }
 
@@ -49,7 +49,7 @@ public sealed class HardeningTests
         await H3.Frames.WriteAsync(wire, H3.Frames.Headers, FieldSection(("x-checksum", "abc")), CancellationToken.None);
         wire.Position = 0;
         await using var body   = new H3.Http3BodyStream(wire, 1024, 1024, 3);
-        using var result = new MemoryStream();
+        using var       result = new MemoryStream();
         await body.CopyToAsync(result);
         Assert.Equal("abc", Encoding.UTF8.GetString(result.ToArray()));
     }
@@ -79,7 +79,10 @@ public sealed class HardeningTests
     {
         var fields = H3.QPack.Decode(FieldSection(("x", "\u00ff\u00c0\u0080")), 36);
         Assert.Equal(("x", "\u00ff\u00c0\u0080"), Assert.Single(fields));
-        var headers = new Headers { ["x"] = "\u00ff\u00c0\u0080" };
+        var headers = new Headers
+        {
+            ["x"] = "\u00ff\u00c0\u0080"
+        };
         Assert.Contains(("x", "\u00ff\u00c0\u0080"), H3.QPack.Decode(H3.QPack.Encode(200, headers), 1024));
         headers["x"] = "\u0100";
         Assert.Throws<ArgumentException>(() => H3.QPack.Encode(200, headers));
@@ -156,7 +159,10 @@ public sealed class HardeningTests
     [InlineData(200, "chunked")]
     public async Task ContradictoryResponseFramingFailsBeforeCommit(int status, string? transferEncoding)
     {
-        var response = new MemoryResponse { StatusCode = status };
+        var response = new MemoryResponse
+        {
+            StatusCode = status
+        };
         response.Headers[HeaderNames.ContentLength] = "0";
         response.Headers["Transfer-Encoding"]       = transferEncoding;
         await Assert.ThrowsAsync<InvalidOperationException>(() => response.StartAsync().AsTask());
@@ -192,10 +198,10 @@ public sealed class HardeningTests
             registry.Add<object>("GET", $"/a/{{id:probe({index})}}", null, (_, _) => ValueTask.FromResult<IActionResult>(EmptyResult.Instance));
         }
 
-        var       router   = new Router(registry, options);
-        var       request  = new Request("GET", new Uri("http://localhost/a/value"), HttpVersion.Version11, new Headers(), Stream.Null, 1024);
+        var             router   = new Router(registry, options);
+        var             request  = new Request("GET", new Uri("http://localhost/a/value"), HttpVersion.Version11, new Headers(), Stream.Null, 1024);
         await using var services = new ServiceCollection().BuildServiceProvider();
-        var       context  = new RequestContext(request, new MemoryResponse(), services, router, cancellation.Token);
+        var             context  = new RequestContext(request, new MemoryResponse(), services, router, cancellation.Token);
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => router.TryDispatchAsync(context).AsTask());
         Assert.Equal(1, calls);
     }
@@ -213,14 +219,14 @@ public sealed class HardeningTests
                 var fields = new H2.HPack().Decode(bytes, 256);
                 Assert.InRange(fields.Sum(field => field.Name.Length + field.Value.Length + 32), 0, 256);
             }
-            catch (H2.Http2ProtocolException) { }
+            catch (H2.Http2ProtocolException) {}
 
             try
             {
                 var fields = H3.QPack.Decode([0, 0, .. bytes], 256);
                 Assert.InRange(fields.Sum(field => field.Name.Length + field.Value.Length + 32), 0, 256);
             }
-            catch (H3.Http3ProtocolException) { }
+            catch (H3.Http3ProtocolException) {}
         }
     }
 

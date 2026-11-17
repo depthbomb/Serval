@@ -34,7 +34,7 @@ public sealed class ResponseLifecycleTests
     [Fact]
     public async Task EarlyHintsDoNotFireStartingHooksButAnUpgradeDoesOnce()
     {
-        var events = new List<string>();
+        var events   = new List<string>();
         var response = new UpgradeResponse();
         response.OnStarting(_ =>
         {
@@ -47,7 +47,10 @@ public sealed class ResponseLifecycleTests
             response.Headers["X-Upgrade"] = "yes";
             return ValueTask.CompletedTask;
         };
-        Assert.True(await response.SendEarlyHintsAsync(new Headers { [HeaderNames.Link] = "</site.css>; rel=preload" }));
+        Assert.True(await response.SendEarlyHintsAsync(new Headers
+        {
+            [HeaderNames.Link] = "</site.css>; rel=preload"
+        }));
         Assert.Empty(events);
         await response.UpgradeAsync();
         Assert.Equal(["local", "lifecycle"], events);
@@ -119,14 +122,14 @@ public sealed class ResponseLifecycleTests
     private sealed class Resource : IAsyncDisposable
     {
         private readonly List<string> _events;
-        private readonly string _name;
-        private readonly bool _fail;
+        private readonly string       _name;
+        private readonly bool         _fail;
 
         public Resource(List<string> events, string name, bool fail = false)
         {
             _events = events;
-            _name = name;
-            _fail = fail;
+            _name   = name;
+            _fail   = fail;
         }
 
         public async ValueTask DisposeAsync()
@@ -143,8 +146,9 @@ public sealed class ResponseLifecycleTests
     private sealed class UpgradeResponse : Response
     {
         public override bool SupportsEarlyHints => true;
-        public ValueTask UpgradeAsync() => MarkUpgradedAsync();
+
         public override ValueTask FlushAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+
         public override async ValueTask CompleteAsync(CancellationToken ct = default)
         {
             await StartAsync(ct);
@@ -157,8 +161,12 @@ public sealed class ResponseLifecycleTests
             return ValueTask.CompletedTask;
         }
 
+        public ValueTask UpgradeAsync() => MarkUpgradedAsync();
+
         protected override ValueTask OnStartAsync(CancellationToken ct) => ValueTask.CompletedTask;
+
         protected override ValueTask OnWriteAsync(ReadOnlyMemory<byte> bytes, CancellationToken ct) => ValueTask.CompletedTask;
+
         protected override ValueTask OnSendEarlyHintsAsync(Headers headers, CancellationToken ct) => ValueTask.CompletedTask;
     }
 }

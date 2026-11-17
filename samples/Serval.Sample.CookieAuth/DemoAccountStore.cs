@@ -12,8 +12,9 @@ namespace Serval.Sample.CookieAuth;
 // A deployed app needs durable accounts, login throttling, and account recovery.
 public sealed class DemoAccountStore : IPasswordAccountStore
 {
-    private          PasswordAccount _account;
-    private readonly Lock            _gate = new();
+    private PasswordAccount _account;
+
+    private readonly Lock _gate = new();
 
     public DemoAccountStore(IPasswordHasher hasher)
     {
@@ -24,18 +25,23 @@ public sealed class DemoAccountStore : IPasswordAccountStore
         _account = new PasswordAccount("demo-1", hasher.Hash("serval-sample-password"), principal);
     }
 
-    public ValueTask<PasswordAccount?> FindAsync(string login, CancellationToken cancellationToken = default)
+    public ValueTask<PasswordAccount?> FindAsync(string login, CancellationToken ct = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ct.ThrowIfCancellationRequested();
+
         lock (_gate)
         {
             return ValueTask.FromResult(login.Equals("demo", StringComparison.OrdinalIgnoreCase) ? _account : null);
         }
     }
 
-    public ValueTask<bool> ReplaceHashAsync(string accountId, string expectedHash, string newHash, CancellationToken cancellationToken = default)
+    public ValueTask<bool> ReplaceHashAsync(string            accountId,
+                                            string            expectedHash,
+                                            string            newHash,
+                                            CancellationToken ct = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ct.ThrowIfCancellationRequested();
+
         lock (_gate)
         {
             if (_account.Id != accountId || _account.PasswordHash != expectedHash)
@@ -43,7 +49,10 @@ public sealed class DemoAccountStore : IPasswordAccountStore
                 return ValueTask.FromResult(false);
             }
 
-            _account = _account with { PasswordHash = newHash };
+            _account = _account with
+            {
+                PasswordHash = newHash
+            };
             return ValueTask.FromResult(true);
         }
     }

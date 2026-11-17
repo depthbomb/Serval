@@ -66,9 +66,9 @@ public static class SavannaLexer
     ///     Savanna comments are removed. Verbatim blocks become literal text without interpreting embedded Savanna markers.
     /// </remarks>
     public static IReadOnlyList<SavannaToken> Tokenize(SavannaDocument         document,
-                                                    List<SavannaDiagnostic> diagnostics,
-                                                    CancellationToken    cancellationToken,
-                                                    bool                 tolerateIncomplete = false)
+                                                       List<SavannaDiagnostic> diagnostics,
+                                                       CancellationToken       cancellationToken,
+                                                       bool                    tolerateIncomplete = false)
     {
         var text           = document.Text.ToString();
         var tokens         = new List<SavannaToken>();
@@ -157,7 +157,10 @@ public static class SavannaLexer
                     continue;
                 }
 
-                tokens.Add(new SavannaToken(SavannaTokenKind.Directive, (tag.Closing ? "end" : "") + tag.Name, tag.Span) { Tag = tag });
+                tokens.Add(new SavannaToken(SavannaTokenKind.Directive, (tag.Closing ? "end" : "") + tag.Name, tag.Span)
+                {
+                    Tag = tag
+                });
                 continue;
             }
 
@@ -255,12 +258,24 @@ public static class SavannaLexer
 
             switch (token.Kind())
             {
-                case SyntaxKind.OpenBraceToken:    braces++; break;
-                case SyntaxKind.CloseBraceToken:   braces--; break;
-                case SyntaxKind.OpenParenToken:    parentheses++; break;
-                case SyntaxKind.CloseParenToken:   parentheses--; break;
-                case SyntaxKind.OpenBracketToken:  brackets++; break;
-                case SyntaxKind.CloseBracketToken: brackets--; break;
+                case SyntaxKind.OpenBraceToken:
+                    braces++;
+                    break;
+                case SyntaxKind.CloseBraceToken:
+                    braces--;
+                    break;
+                case SyntaxKind.OpenParenToken:
+                    parentheses++;
+                    break;
+                case SyntaxKind.CloseParenToken:
+                    parentheses--;
+                    break;
+                case SyntaxKind.OpenBracketToken:
+                    brackets++;
+                    break;
+                case SyntaxKind.CloseBracketToken:
+                    brackets--;
+                    break;
             }
 
             if (braces < 0 || parentheses < 0 || brackets < 0)

@@ -14,12 +14,15 @@ public sealed class CorrectnessTests
     [InlineData(true)]
     public async Task PollingReadRemainsExclusiveUntilResponseCompletes(bool blockCompletion)
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Enqueue(EnginePacket.Text(blockCompletion ? "6" : "42[\"test\"]"));
-        var response = new CapturedResponse(block: true) { BlockCompletion = blockCompletion };
+        var response = new CapturedResponse(block: true)
+        {
+            BlockCompletion = blockCompletion
+        };
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-        var pending = session.PollAsync(response, timeout.Token).AsTask();
+        var       pending = session.PollAsync(response, timeout.Token).AsTask();
         try
         {
             await response.Writing.Task.WaitAsync(TimeSpan.FromSeconds(blockCompletion ? 3 : 1), timeout.Token);
@@ -30,16 +33,20 @@ public sealed class CorrectnessTests
         {
             response.Release.TrySetResult();
             session.Close("test complete");
-            try { await pending; } catch (OperationCanceledException) when (!blockCompletion) { }
+            try
+            {
+                await pending;
+            }
+            catch (OperationCanceledException) when (!blockCompletion) {}
         }
     }
 
     [Fact]
     public async Task ReconstructedBinaryLimitIncludesTheEnginePacketPrefix()
     {
-        await using var host = await TestServer.StartAsync(options => options.MaxPayloadBytes = 100);
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
-        var header = EnginePacket.Text("451-[\"binary\",{\"_placeholder\":true,\"num\":0}]");
+        await using var host    = await TestServer.StartAsync(options => options.MaxPayloadBytes = 100);
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        var             header  = EnginePacket.Text("451-[\"binary\",{\"_placeholder\":true,\"num\":0}]");
         await session.ReceiveAsync(header, CancellationToken.None);
         var attachment = new EnginePacket(new byte[101 - header.Data.Length], true);
         await Assert.ThrowsAsync<InvalidDataException>(() => session.ReceiveAsync(attachment, CancellationToken.None).AsTask());
@@ -48,8 +55,8 @@ public sealed class CorrectnessTests
     [Fact]
     public async Task CompletedSessionReleasesQueuedPayloadsAndPartialAttachments()
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Start();
         session.Enqueue(new EnginePacket(new byte[8192], true));
         await session.ReceiveAsync(EnginePacket.Text("452-[\"binary\",{\"_placeholder\":true,\"num\":0},{\"_placeholder\":true,\"num\":1}]"), CancellationToken.None);
@@ -64,8 +71,8 @@ public sealed class CorrectnessTests
     [Fact]
     public async Task NamespaceDisconnectCancelsItsHandlerWithoutClosingOtherNamespaces()
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Start();
         try
         {
@@ -94,16 +101,16 @@ public sealed class CorrectnessTests
     [Fact]
     public async Task NamespaceReconnectDoesNotReuseAcknowledgementIds()
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Start();
         try
         {
             await session.ReceiveAsync(EnginePacket.Text("40"), CancellationToken.None);
             await UntilAsync(() => session.Sockets.ContainsKey("/"));
-            using var cancel = new CancellationTokenSource();
-            var first = session.Sockets["/"].EmitWithAcknowledgementAsync("ask", [], ct: cancel.Token).AsTask();
-            var firstId = await NextEventIdAsync(session);
+            using var cancel  = new CancellationTokenSource();
+            var       first   = session.Sockets["/"].EmitWithAcknowledgementAsync("ask", [], ct: cancel.Token).AsTask();
+            var       firstId = await NextEventIdAsync(session);
             cancel.Cancel();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
             await session.ReceiveAsync(EnginePacket.Text("41"), CancellationToken.None);
@@ -111,8 +118,8 @@ public sealed class CorrectnessTests
             await session.ReceiveAsync(EnginePacket.Text("40"), CancellationToken.None);
             await UntilAsync(() => session.Sockets.ContainsKey("/"));
             using var cancelSecond = new CancellationTokenSource();
-            var second = session.Sockets["/"].EmitWithAcknowledgementAsync("ask", [], ct: cancelSecond.Token).AsTask();
-            var secondId = await NextEventIdAsync(session);
+            var       second       = session.Sockets["/"].EmitWithAcknowledgementAsync("ask", [], ct: cancelSecond.Token).AsTask();
+            var       secondId     = await NextEventIdAsync(session);
             try
             {
                 Assert.NotEqual(firstId, secondId);
@@ -122,7 +129,11 @@ public sealed class CorrectnessTests
             finally
             {
                 cancelSecond.Cancel();
-                try { await second; } catch (OperationCanceledException) { }
+                try
+                {
+                    await second;
+                }
+                catch (OperationCanceledException) {}
             }
         }
         finally
@@ -135,8 +146,8 @@ public sealed class CorrectnessTests
     [Fact]
     public async Task ClientNamespaceDisconnectInterruptsItsHandler()
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Start();
         try
         {
@@ -160,8 +171,8 @@ public sealed class CorrectnessTests
     [Fact]
     public async Task ClosingDoesNotRunBufferedHandlers()
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Start();
         await session.ReceiveAsync(EnginePacket.Text("40"), CancellationToken.None);
         await UntilAsync(() => session.Sockets.ContainsKey("/"));
@@ -184,40 +195,27 @@ public sealed class CorrectnessTests
     [Fact]
     public async Task PollingBatchesPreserveOrderAndRespectEncodedPayloadLimit()
     {
-        await using var host = await TestServer.StartAsync(options => options.MaxPayloadBytes = 20);
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        await using var host    = await TestServer.StartAsync(options => options.MaxPayloadBytes = 20);
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
         session.Enqueue(EnginePacket.Text("4éé"), EnginePacket.Text("42[\"a\"]"), new EnginePacket(new byte[10], true), EnginePacket.Text("6"));
-        var first = new CapturedResponse();
+        var first       = new CapturedResponse();
         var firstPacket = await session.PollAsync(first, CancellationToken.None);
         Assert.Equal("4éé\x1e" + "42[\"a\"]", firstPacket.PollingText);
         Assert.Equal(firstPacket.Data, first.Body.ToArray());
-        var second = new CapturedResponse();
+        var second       = new CapturedResponse();
         var secondPacket = await session.PollAsync(second, CancellationToken.None);
         Assert.Equal("b" + Convert.ToBase64String(new byte[10]) + "\x1e" + "6", secondPacket.PollingText);
         Assert.True(secondPacket.Data.Length <= 20);
         session.Close("test complete");
     }
 
-    private static async Task<string> ReadMatchingTextAsync(EngineSession session, string prefix)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-        while (true)
-        {
-            var packet = await session.PollAsync(new CapturedResponse(), timeout.Token);
-            foreach (var text in packet.PollingText.Split('\x1e'))
-            {
-                if (text.StartsWith(prefix, StringComparison.Ordinal)) { return text; }
-            }
-        }
-    }
-
     [Fact]
     public async Task FailedUpgradeKeepsOwnershipUntilItsWebSocketHasClosed()
     {
-        await using var host = await TestServer.StartAsync();
-        var session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
-        using var socket = new ClosingWebSocket();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        await using var host    = await TestServer.StartAsync();
+        var             session = new EngineSession(host.Server, new ClaimsPrincipal(), false);
+        using var       socket  = new ClosingWebSocket();
+        using var       timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
         session.BeginUpgrade();
         var upgrade = session.RunWebSocketAsync(socket, true, timeout.Token);
         try
@@ -235,30 +233,20 @@ public sealed class CorrectnessTests
         }
     }
 
-    private sealed class ClosingWebSocket : WebSocket
+    private static async Task<string> ReadMatchingTextAsync(EngineSession session, string prefix)
     {
-        internal TaskCompletionSource Closing { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private WebSocketState _state = WebSocketState.Open;
-        public override WebSocketCloseStatus? CloseStatus => null;
-        public override string? CloseStatusDescription => null;
-        public override string? SubProtocol => null;
-        public override WebSocketState State => _state;
-        public override void Abort() => _state = WebSocketState.Aborted;
-        public override void Dispose() => Abort();
-        public override Task CloseAsync(WebSocketCloseStatus closeStatus, string? statusDescription, CancellationToken cancellationToken) => CloseOutputAsync(closeStatus, statusDescription, cancellationToken);
-        public override async Task CloseOutputAsync(WebSocketCloseStatus closeStatus, string? statusDescription, CancellationToken cancellationToken)
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        while (true)
         {
-            Closing.TrySetResult();
-            await Release.Task.WaitAsync(cancellationToken);
-            _state = WebSocketState.Closed;
+            var packet = await session.PollAsync(new CapturedResponse(), timeout.Token);
+            foreach (var text in packet.PollingText.Split('\x1e'))
+            {
+                if (text.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    return text;
+                }
+            }
         }
-        public override Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
-        {
-            buffer[0] = 255; // Invalid UTF-8 in the upgrade probe.
-            return Task.FromResult(new WebSocketReceiveResult(1, WebSocketMessageType.Text, true));
-        }
-        public override Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private static T Field<T>(EngineSession session, string name)
@@ -279,7 +267,7 @@ public sealed class CorrectnessTests
         while (true)
         {
             var response = new CapturedResponse();
-            var packet = await session.PollAsync(response, timeout.Token);
+            var packet   = await session.PollAsync(response, timeout.Token);
             foreach (var text in packet.PollingText.Split('\x1e'))
             {
                 if (text.StartsWith("42", StringComparison.Ordinal))
@@ -290,30 +278,81 @@ public sealed class CorrectnessTests
         }
     }
 
+    private sealed class ClosingWebSocket : WebSocket
+    {
+        public override WebSocketCloseStatus? CloseStatus            => null;
+        public override string?               CloseStatusDescription => null;
+        public override string?               SubProtocol            => null;
+        public override WebSocketState        State                  => _state;
+        internal        TaskCompletionSource  Closing                { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal        TaskCompletionSource  Release                { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private         WebSocketState        _state = WebSocketState.Open;
+
+        public override void Abort() => _state = WebSocketState.Aborted;
+
+        public override void Dispose() => Abort();
+
+        public override Task CloseAsync(WebSocketCloseStatus closeStatus, string? statusDescription, CancellationToken cancellationToken) => CloseOutputAsync(closeStatus, statusDescription, cancellationToken);
+
+        public override async Task CloseOutputAsync(WebSocketCloseStatus closeStatus, string? statusDescription, CancellationToken cancellationToken)
+        {
+            Closing.TrySetResult();
+            await Release.Task.WaitAsync(cancellationToken);
+            _state = WebSocketState.Closed;
+        }
+
+        public override Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken cancellationToken)
+        {
+            buffer[0] = 255; // Invalid UTF-8 in the upgrade probe.
+            return Task.FromResult(new WebSocketReceiveResult(1, WebSocketMessageType.Text, true));
+        }
+
+        public override Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType, bool endOfMessage, CancellationToken cancellationToken) => throw new NotSupportedException();
+    }
+
     private sealed class CapturedResponse : Response
     {
-        internal TaskCompletionSource Writing { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal MemoryStream Body { get; } = new();
-        internal bool BlockCompletion { get; init; }
+        internal TaskCompletionSource Writing         { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource Release         { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal MemoryStream         Body            { get; } = new();
+        internal bool                 BlockCompletion { get; init; }
 
         internal CapturedResponse(bool block = false)
         {
-            if (!block) { Release.SetResult(); }
+            if (!block)
+            {
+                Release.SetResult();
+            }
         }
 
         public override ValueTask FlushAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+
         public override async ValueTask CompleteAsync(CancellationToken ct = default)
         {
-            if (BlockCompletion) { Writing.TrySetResult(); await Release.Task.WaitAsync(ct); }
+            if (BlockCompletion)
+            {
+                Writing.TrySetResult();
+                await Release.Task.WaitAsync(ct);
+            }
             await StartAsync(ct);
             MarkCompleted();
         }
-        public override ValueTask AbortAsync(CancellationToken ct = default) { MarkAborted(); return ValueTask.CompletedTask; }
+
+        public override ValueTask AbortAsync(CancellationToken ct = default)
+        {
+            MarkAborted();
+            return ValueTask.CompletedTask;
+        }
+
         protected override ValueTask OnStartAsync(CancellationToken ct) => ValueTask.CompletedTask;
+
         protected override async ValueTask OnWriteAsync(ReadOnlyMemory<byte> bytes, CancellationToken ct)
         {
-            if (!BlockCompletion) { Writing.TrySetResult(); await Release.Task.WaitAsync(ct); }
+            if (!BlockCompletion)
+            {
+                Writing.TrySetResult();
+                await Release.Task.WaitAsync(ct);
+            }
             await Body.WriteAsync(bytes, ct);
         }
     }

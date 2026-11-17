@@ -27,7 +27,7 @@ public static class TemplateFormatter
         var edits = new List<object>();
         foreach (var token in tokens)
         {
-            if (token.Tag is not { } tag)
+            if (token.Tag is not {} tag)
             {
                 continue;
             }
@@ -47,7 +47,11 @@ public static class TemplateFormatter
             var formatted = text.ToString();
             if (formatted != document.Text.ToString(tag.Span))
             {
-                edits.Add(new { range = Position.Range(document.Text, tag.Span), newText = formatted });
+                edits.Add(new
+                {
+                    range   = Position.Range(document.Text, tag.Span),
+                    newText = formatted
+                });
             }
         }
 

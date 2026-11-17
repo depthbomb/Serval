@@ -54,12 +54,18 @@ public sealed class PasswordAuthenticationTests
     [Fact]
     public async Task AccountStoreSupportsDisabledUsersMissingUsersAndAtomicRehash()
     {
-        var store         = new AccountStore { Account = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User()) };
+        var store = new AccountStore
+        {
+            Account = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User())
+        };
         var authenticator = new PasswordAuthenticator(store, Hasher(20000));
         Assert.True((await authenticator.AuthenticateAsync("alice", "password")).Succeeded);
         Assert.Equal(1, store.Updates);
         Assert.False((await authenticator.AuthenticateAsync("alice", "wrong")).Succeeded);
-        store.Account = store.Account! with { Enabled = false };
+        store.Account = store.Account! with
+        {
+            Enabled = false
+        };
         Assert.False((await authenticator.AuthenticateAsync("alice", "password")).Succeeded);
         store.Account = null;
         Assert.False((await authenticator.AuthenticateAsync("unknown", "password")).Succeeded);
@@ -68,7 +74,11 @@ public sealed class PasswordAuthenticationTests
     [Fact]
     public async Task ConcurrentPasswordResetPreventsSignInDuringRehash()
     {
-        var store = new AccountStore { Account = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User()), AllowUpdate = false };
+        var store = new AccountStore
+        {
+            Account     = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User()),
+            AllowUpdate = false
+        };
         Assert.False((await new PasswordAuthenticator(store, Hasher(20000)).AuthenticateAsync("alice", "password")).Succeeded);
     }
 
@@ -87,7 +97,10 @@ public sealed class PasswordAuthenticationTests
         Assert.True((await authenticator.AuthenticateAsync("alice", "password")).Succeeded);
     }
 
-    private static Pbkdf2PasswordHasher Hasher(int iterations = 10000) => new(new Pbkdf2PasswordHasherOptions { Iterations = iterations });
+    private static Pbkdf2PasswordHasher Hasher(int iterations = 10000) => new(new Pbkdf2PasswordHasherOptions
+    {
+        Iterations = iterations
+    });
 
     private sealed class AccountStore : IPasswordAccountStore
     {
@@ -104,7 +117,10 @@ public sealed class PasswordAuthenticationTests
                 return ValueTask.FromResult(false);
             }
 
-            Account = Account with { PasswordHash = newHash };
+            Account = Account with
+            {
+                PasswordHash = newHash
+            };
             Updates++;
             return ValueTask.FromResult(true);
         }

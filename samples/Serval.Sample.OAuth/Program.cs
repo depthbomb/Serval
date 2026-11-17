@@ -39,12 +39,15 @@ public static class Program
 
     private static void ConfigureProvider(OAuthOptions options, IConfiguration configuration, int port)
     {
-        options.ClientId                = Required(configuration, "ClientId");
+        options.ClientId = Required(configuration, "ClientId");
 
         var issuer = configuration["OAuth:Issuer"];
         if (!string.IsNullOrWhiteSpace(issuer))
         {
-            options.OpenIdConnect = new OpenIdConnectOptions { Issuer = issuer };
+            options.OpenIdConnect = new OpenIdConnectOptions
+            {
+                Issuer = issuer
+            };
         }
         else
         {
@@ -56,9 +59,12 @@ public static class Program
         options.RedirectUri             = new Uri($"http://localhost:{port}/auth/callback");
         options.AllowLoopbackHttp       = true;
         options.CorrelationCookiePrefix = "Serval.Sample.OAuth.State.";
-        options.CorrelationCookie       = new CookieOptions { Secure = false };
-        options.ExpectedIssuer          = configuration["OAuth:ExpectedIssuer"];
-        options.ClientSecret            = configuration["OAuth:ClientSecret"];
+        options.CorrelationCookie = new CookieOptions
+        {
+            Secure = false
+        };
+        options.ExpectedIssuer = configuration["OAuth:ExpectedIssuer"];
+        options.ClientSecret   = configuration["OAuth:ClientSecret"];
         options.ClientAuthentication = options.ClientSecret is null
             ? OAuthClientAuthentication.None
             : configuration.GetValue("OAuth:ClientAuthentication", OAuthClientAuthentication.ClientSecretBasic);

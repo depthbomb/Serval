@@ -100,7 +100,7 @@ public sealed class Http3WireTests
             await Frames.WriteAsync(healthy, Frames.Headers, HardeningTests.FieldSection(RequestFields("/ok")), timeout.Token);
             healthy.CompleteWrites();
             using var body = new MemoryStream();
-            while (await Frames.ReadAsync(healthy, timeout.Token) is { } frame)
+            while (await Frames.ReadAsync(healthy, timeout.Token) is {} frame)
             {
                 var payload = await Frames.ReadPayloadAsync(healthy, frame.Length, 4096, timeout.Token);
                 if (frame.Type == Frames.Headers)
@@ -200,7 +200,7 @@ public sealed class Http3WireTests
             Assert.Equal(!fail, finalFields.Contains(("x-final", "only")));
             Assert.DoesNotContain(finalFields, field => field.Name == "link");
             using var body = new MemoryStream();
-            while (await Frames.ReadAsync(stream, timeout.Token) is { } frame)
+            while (await Frames.ReadAsync(stream, timeout.Token) is {} frame)
             {
                 Assert.Equal(Frames.Data, frame.Type);
                 body.Write(await Frames.ReadPayloadAsync(stream, frame.Length, 4096, timeout.Token));

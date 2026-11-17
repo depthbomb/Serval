@@ -27,7 +27,7 @@ internal sealed class ManifestChunk
 
 internal sealed class ManifestException : Exception
 {
-    public ManifestException(string message) : base(message) { }
+    public ManifestException(string message) : base(message) {}
 }
 
 internal static class ViteManifest

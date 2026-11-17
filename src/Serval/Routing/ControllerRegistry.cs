@@ -23,25 +23,12 @@ public sealed class ControllerRegistry
     private readonly List<Func<ServalOptions, Endpoint>> _endpoints = [];
 
     /// <summary>Adds a delegate endpoint without activating a controller or executing an action result.</summary>
-    public void Add(string method, string template, string? name, RequestDelegate handler, params MiddlewareAttribute[] middleware)
+    public void Add(string                       method,
+                    string                       template,
+                    string?                      name,
+                    RequestDelegate              handler,
+                    params MiddlewareAttribute[] middleware)
         => Add(method, template, name, handler, middleware, null);
-
-    internal void Add(string method, string template, string? name, RequestDelegate handler, MiddlewareAttribute[] middleware, Action<EndpointBuilder>? configure)
-    {
-        EnsureMutable();
-        ArgumentException.ThrowIfNullOrWhiteSpace(method);
-        ArgumentNullException.ThrowIfNull(handler);
-        ArgumentNullException.ThrowIfNull(middleware);
-
-        var attributes = middleware.ToArray();
-        _endpoints.Add(options =>
-        {
-            var endpoint = new EndpointBuilder(method.ToUpperInvariant(), template, name, null, options);
-            configure?.Invoke(endpoint);
-            endpoint.Validate(options);
-            return new Endpoint(endpoint, BuildPipeline(handler, endpoint.Middleware.Concat(attributes)));
-        });
-    }
 
     /// <typeparam name="TController">
     ///     The controller type, which must already be registered with dependency injection.
@@ -65,6 +52,29 @@ public sealed class ControllerRegistry
                                  params MiddlewareAttribute[]  middleware) where TController : class
         => Add(method, template, name, action, middleware, null);
 
+    internal void Add(string                   method,
+                      string                   template,
+                      string?                  name,
+                      RequestDelegate          handler,
+                      MiddlewareAttribute[]    middleware,
+                      Action<EndpointBuilder>? configure)
+    {
+        EnsureMutable();
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(method);
+        ArgumentNullException.ThrowIfNull(handler);
+        ArgumentNullException.ThrowIfNull(middleware);
+
+        var attributes = middleware.ToArray();
+        _endpoints.Add(options =>
+        {
+            var endpoint = new EndpointBuilder(method.ToUpperInvariant(), template, name, null, options);
+            configure?.Invoke(endpoint);
+            endpoint.Validate(options);
+            return new Endpoint(endpoint, BuildPipeline(handler, endpoint.Middleware.Concat(attributes)));
+        });
+    }
+
     internal void Add<TController>(string                        method,
                                    string                        template,
                                    string?                       name,
@@ -73,6 +83,7 @@ public sealed class ControllerRegistry
                                    Action<EndpointBuilder>?      configure) where TController : class
     {
         EnsureMutable();
+
         ArgumentException.ThrowIfNullOrWhiteSpace(method);
         ArgumentNullException.ThrowIfNull(action);
         ArgumentNullException.ThrowIfNull(middleware);
@@ -104,15 +115,14 @@ public sealed class ControllerRegistry
     private static RequestDelegate BuildPipeline<TController>(ControllerAction<TController>    action,
                                                               IEnumerable<MiddlewareAttribute> middleware) where TController : class
     {
-        RequestDelegate pipeline = async context =>
+        async ValueTask Pipeline(RequestContext context)
         {
             var controller     = context.Services.GetRequiredService<TController>();
             var controllerBase = controller as ControllerBase;
             controllerBase?.AttachContext(context);
             try
             {
-                var result = await action(controller, context)
-                             ?? throw new InvalidOperationException("A controller action must return an IActionResult.");
+                var result = await action(controller, context) ?? throw new InvalidOperationException("A controller action must return an IActionResult.");
                 await result.ExecuteAsync(context);
             }
             finally
@@ -120,8 +130,9 @@ public sealed class ControllerRegistry
                 // Deferred results can use the controller too; keep its context until they finish.
                 controllerBase?.DetachContext();
             }
-        };
-        return BuildPipeline(pipeline, middleware);
+        }
+
+        return BuildPipeline(Pipeline, middleware);
     }
 
     private static RequestDelegate BuildPipeline(RequestDelegate pipeline, IEnumerable<MiddlewareAttribute> middleware)

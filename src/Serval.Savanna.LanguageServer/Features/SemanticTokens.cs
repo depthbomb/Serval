@@ -22,7 +22,7 @@ public static class SemanticTokens
         var tokens = new List<SemanticToken>(csharp);
         foreach (var token in SavannaLexer.Tokenize(document, [], CancellationToken.None, true).Where(token => token.Kind == SavannaTokenKind.Directive))
         {
-            if (token.Tag is { } tag)
+            if (token.Tag is {} tag)
             {
                 tokens.Add(new SemanticToken(new TextSpan(tag.Span.Start + (tag.Closing ? 3 : 2), tag.Name.Length), "keyword"));
                 foreach (var attribute in tag.Attributes.Values)
@@ -98,7 +98,10 @@ public static class SemanticTokens
             previousEnd = token.Span.End;
         }
 
-        return new { data };
+        return new
+        {
+            data
+        };
     }
 
     private static int IndexOf(this IReadOnlyList<string> values, string value)

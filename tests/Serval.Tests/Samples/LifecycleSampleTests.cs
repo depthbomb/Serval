@@ -14,10 +14,10 @@ public sealed class LifecycleSampleTests
     [Fact]
     public async Task HandlersInitializeScopedStateAndSetFinalHeaders()
     {
-        await using var app = new SampleApplication("Lifecycles", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Lifecycles");
-        var response = await app.SendAsync("/work");
-        using var json = JsonDocument.Parse(response.Text);
+        await using var app      = new SampleApplication("Lifecycles", "--Logging:LogLevel:Default", "Information");
+        var             logs     = SampleLogProvider.Capture(app, "Lifecycles");
+        var             response = await app.SendAsync("/work");
+        using var       json     = JsonDocument.Parse(response.Text);
         Assert.Equal(json.RootElement.GetProperty("requestId").GetString(), response.Headers["X-Request-Id"]);
         Assert.Equal(json.RootElement.GetProperty("traceId").GetString(), response.Headers["X-Trace-Id"]);
         Assert.Equal("nosniff", response.Headers["X-Content-Type-Options"]);
@@ -35,9 +35,9 @@ public sealed class LifecycleSampleTests
     [InlineData("/partial", 200, true, "Aborted")]
     public async Task LifecycleSampleCoversFilesRedirectsErrorsAndAborts(string path, int status, bool aborted, string reason)
     {
-        await using var app = new SampleApplication("Lifecycles", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Lifecycles");
-        var response = await app.SendAsync(path);
+        await using var app      = new SampleApplication("Lifecycles", "--Logging:LogLevel:Default", "Information");
+        var             logs     = SampleLogProvider.Capture(app, "Lifecycles");
+        var             response = await app.SendAsync(path);
         Assert.Equal(status, response.StatusCode);
         Assert.Equal(aborted, response.Aborted);
         Assert.NotNull(response.Headers["X-Request-Id"]);
@@ -52,9 +52,9 @@ public sealed class LifecycleSampleTests
     [Fact]
     public async Task LocalCallbacksRunBeforeTheCorrespondingLifecycleHooks()
     {
-        await using var app = new SampleApplication("Lifecycles", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Lifecycles");
-        var response = await app.SendAsync("/callback");
+        await using var app      = new SampleApplication("Lifecycles", "--Logging:LogLevel:Default", "Information");
+        var             logs     = SampleLogProvider.Capture(app, "Lifecycles");
+        var             response = await app.SendAsync("/callback");
         Assert.Equal("callback", response.Headers["X-Action"]);
         logs.AssertEvents("timing received", "action starting", "timing starting", "headers starting",
             "action completed", "timing completed", "audit completed");
@@ -63,9 +63,9 @@ public sealed class LifecycleSampleTests
     [Fact]
     public async Task DeadlineProducesA408WithCompletionReasonAndFinalHeaders()
     {
-        await using var app = new SampleApplication("Lifecycles", "--timeout-ms", "40", "--Logging:LogLevel:Default", "Information");
-        var logs = SampleLogProvider.Capture(app, "Lifecycles");
-        var response = await app.SendAsync("/slow");
+        await using var app      = new SampleApplication("Lifecycles", "--timeout-ms", "40", "--Logging:LogLevel:Default", "Information");
+        var             logs     = SampleLogProvider.Capture(app, "Lifecycles");
+        var             response = await app.SendAsync("/slow");
         Assert.Equal(408, response.StatusCode);
         Assert.Equal("nosniff", response.Headers["X-Content-Type-Options"]);
         Assert.Contains("reason TimedOut", logs.Messages.Last());

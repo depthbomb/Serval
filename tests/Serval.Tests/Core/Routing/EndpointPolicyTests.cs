@@ -48,7 +48,10 @@ public sealed class EndpointPolicyTests
         Assert.Equal("api.items", selected.Name);
         Assert.Equal("/api/v2/items/{id}", selected.Template);
         Assert.Equal(typeof(object), selected.ControllerType);
-        Assert.Equal("/api/v2/items/34", app.Services.GetRequiredService<IUrlGenerator>().Path("api.items", new Dictionary<string, object?> { ["id"] = 34 }));
+        Assert.Equal("/api/v2/items/34", app.Services.GetRequiredService<IUrlGenerator>().Path("api.items", new Dictionary<string, object?>
+        {
+            ["id"] = 34
+        }));
     }
 
     [Theory]

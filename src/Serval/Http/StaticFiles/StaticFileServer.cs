@@ -3,11 +3,11 @@ namespace Serval.Http.StaticFiles;
 internal sealed class StaticFileServer
 {
     private readonly StaticFileMiddleware _middleware;
-    private readonly StaticFileOptions _options;
+    private readonly StaticFileOptions    _options;
 
     public StaticFileServer(ServalOptions options)
     {
-        _options = options.StaticFiles;
+        _options    = options.StaticFiles;
         _middleware = new StaticFileMiddleware(_options, options.TrailingSlashes);
     }
 

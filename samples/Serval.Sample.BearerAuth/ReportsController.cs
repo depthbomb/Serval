@@ -39,7 +39,11 @@ public sealed class ReportsController : ControllerBase
     public ValueTask<IActionResult> ListAsync(RequestContext context)
     {
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
-        return JsonAsync(new { user = context.User.Identity?.Name, reports = AvailableReports });
+        return JsonAsync(new
+        {
+            user    = context.User.Identity?.Name,
+            reports = AvailableReports
+        });
     }
 
     [Post("/reports/preview")]
@@ -47,7 +51,11 @@ public sealed class ReportsController : ControllerBase
     public ValueTask<IActionResult> PreviewAsync(RequestContext context)
     {
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
-        return JsonAsync(new { author = context.User.Identity?.Name, message = "The write policy passed. No report was saved." });
+        return JsonAsync(new
+        {
+            author  = context.User.Identity?.Name,
+            message = "The write policy passed. No report was saved."
+        });
     }
 
     [Get("/reports/{owner:alpha}")]
@@ -55,6 +63,10 @@ public sealed class ReportsController : ControllerBase
     public ValueTask<IActionResult> OwnerAsync(RequestContext context)
     {
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
-        return JsonAsync(new { owner = context.RouteValues["owner"], report = "Private summary" });
+        return JsonAsync(new
+        {
+            owner  = context.RouteValues["owner"],
+            report = "Private summary"
+        });
     }
 }

@@ -217,7 +217,7 @@ public sealed class Http2ProtocolTests
             Enumerable.Repeat((byte)id, 1000 + id).ToArray(), CancellationToken.None).AsTask()));
         stream.Position = 0;
         var ids = new HashSet<int>();
-        while (await Frames.ReadAsync(stream, CancellationToken.None) is { } frame)
+        while (await Frames.ReadAsync(stream, CancellationToken.None) is {} frame)
         {
             Assert.True(ids.Add(frame.StreamId));
             Assert.Equal(Frames.Data, frame.Type);
@@ -331,7 +331,7 @@ public sealed class Http2ProtocolTests
         await Task.WhenAll(pending.Append(first)).WaitAsync(TimeSpan.FromSeconds(3));
         stream.Position = 0;
         var found = false;
-        while (await Frames.ReadAsync(stream, CancellationToken.None) is { } frame)
+        while (await Frames.ReadAsync(stream, CancellationToken.None) is {} frame)
         {
             if (frame.Type == Frames.Ping)
             {

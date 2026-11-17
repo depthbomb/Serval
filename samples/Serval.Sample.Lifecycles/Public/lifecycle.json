@@ -1,1 +1,3 @@
-{"message":"Lifecycle handlers also cover static files."}
+{
+  "message": "Lifecycle handlers also cover static files."
+}

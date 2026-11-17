@@ -55,7 +55,7 @@ public static class ConditionalRequests
                 return false;
             }
 
-            var length = start + closing + 2;
+            var length    = start + closing + 2;
             var candidate = values[..length].ToString();
             if (!EntityTagHeaderValue.TryParse(candidate, out var parsed))
             {
@@ -63,7 +63,7 @@ public static class ConditionalRequests
             }
 
             matched |= parsed.Tag == tag;
-            values = values[length..].TrimStart();
+            values  =  values[length..].TrimStart();
             if (values.IsEmpty)
             {
                 return matched;
@@ -89,16 +89,21 @@ public static class ConditionalRequests
 public static class FileResponse
 {
     /// <summary>Writes a file response, supporting HEAD and conditional GET. A null cache policy leaves the existing header alone.</summary>
-    public static async ValueTask WriteAsync(RequestContext context, FileResource file, string? contentType = null, string? cacheControl = null, string? downloadName = null)
+    public static async ValueTask WriteAsync(RequestContext context,
+                                             FileResource   file,
+                                             string?        contentType  = null,
+                                             string?        cacheControl = null,
+                                             string?        downloadName = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(file);
+
         var response = context.Response;
-        contentType ??= MimeTypes.OctetStream;
-        response.Headers[HeaderNames.ContentType]         = contentType;
-        response.Headers[HeaderNames.LastModified]        = file.LastModified.ToString("R", CultureInfo.InvariantCulture);
-        response.Headers[HeaderNames.ETag]                = file.ETag;
-        response.Headers[HeaderNames.XContentTypeOptions] = "nosniff";
+        contentType                                       ??= MimeTypes.OctetStream;
+        response.Headers[HeaderNames.ContentType]         =   contentType;
+        response.Headers[HeaderNames.LastModified]        =   file.LastModified.ToString("R", CultureInfo.InvariantCulture);
+        response.Headers[HeaderNames.ETag]                =   file.ETag;
+        response.Headers[HeaderNames.XContentTypeOptions] =   "nosniff";
         if (cacheControl is not null)
         {
             response.Headers[HeaderNames.CacheControl] = cacheControl;

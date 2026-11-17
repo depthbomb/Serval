@@ -50,13 +50,13 @@ public sealed class CompositionTests
     [Fact]
     public async Task RegistrationPiecesCanBeUsedIndependently()
     {
-        await using var auth = new SecurityTestApplication(builder => builder.AddAuthenticationCore());
+        await using var auth    = new SecurityTestApplication(builder => builder.AddAuthenticationCore());
         await using var request = auth.Request();
         Assert.NotNull(request.Context.Services.GetService<IAuthenticationService>());
         Assert.Null(request.Context.Services.GetService<IAuthorizationService>());
         Assert.Null(request.Context.Services.GetService<IPasswordHasher>());
 
-        await using var policies = new SecurityTestApplication(builder => builder.AddAuthorization().AddPasswordHashing());
+        await using var policies      = new SecurityTestApplication(builder => builder.AddAuthorization().AddPasswordHashing());
         await using var policyRequest = policies.Request();
         Assert.Null(policyRequest.Context.Services.GetService<IAuthenticationService>());
         Assert.NotNull(policyRequest.Context.Services.GetService<IAuthorizationService>());
@@ -70,7 +70,8 @@ public sealed class CompositionTests
         var store = new MemoryAuthenticationSessionStore(clock, new MemoryAuthenticationSessionStoreOptions());
         var sessions = new AuthenticationSessionService(store, clock, new AuthenticationSessionOptions
         {
-            Lifetime = TimeSpan.FromMinutes(10), MaximumLifetime = TimeSpan.FromMinutes(15),
+            Lifetime        = TimeSpan.FromMinutes(10),
+            MaximumLifetime = TimeSpan.FromMinutes(15),
         });
         var first = await sessions.IssueAsync("custom", SecurityTestApplication.User());
         Assert.False((await sessions.ValidateAsync("other", first.Credential)).Succeeded);
@@ -88,7 +89,7 @@ public sealed class CompositionTests
     public void CsrfStateSupportsAnonymousBrowsersAndRotation()
     {
         var browser = new Dictionary<string, string>();
-        var token = CsrfTokens.Rotate(browser);
+        var token   = CsrfTokens.Rotate(browser);
         Assert.True(CsrfTokens.Validate(browser, token));
         Assert.False(CsrfTokens.Validate(new Dictionary<string, string>(), token));
         Assert.False(CsrfTokens.Validate(browser, null));

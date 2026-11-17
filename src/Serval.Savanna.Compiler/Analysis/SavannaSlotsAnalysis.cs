@@ -136,7 +136,7 @@ internal static class SavannaSlotsAnalysis
 
     internal sealed class Call
     {
-        public SavannaNode        Node     { get; }
+        public SavannaNode     Node     { get; }
         public HashSet<string> Supplied { get; }
         public bool            InSlot   { get; set; }
 

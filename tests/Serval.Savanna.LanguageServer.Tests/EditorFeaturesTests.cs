@@ -49,7 +49,11 @@ public sealed class EditorFeaturesTests
         var       snapshot  = Snapshot(workspace, declaration + "<#model type=\"Page\">{{ Model.Title }}");
         var       imports   = Parse("_Imports.svn", "<#using namespace=\"Example\"><#using namespace=\"System\">");
         var       documents = SavannaImports.Apply([imports, snapshot.Document]);
-        var       features  = new CSharpFeatures(snapshot with { Document = documents.Single(document => !document.IsImports), Templates = documents });
+        var features = new CSharpFeatures(snapshot with
+        {
+            Document = documents.Single(document => !document.IsImports),
+            Templates = documents
+        });
         Assert.Empty(await features.DiagnosticsAsync(CancellationToken.None));
     }
 
@@ -228,13 +232,20 @@ public sealed class EditorFeaturesTests
         Assert.Same(original, templates.GetCSharpFeatures(snapshot));
         Assert.Empty(await original.DiagnosticsAsync(CancellationToken.None));
 
-        var edited         = Parse("Index.svn", "{% model Example.Page %}{{ Model.Missing }}");
-        var editedSnapshot = snapshot with { Document = edited, Templates = [edited] };
-        var changed        = templates.GetCSharpFeatures(editedSnapshot)!;
+        var edited = Parse("Index.svn", "{% model Example.Page %}{{ Model.Missing }}");
+        var editedSnapshot = snapshot with
+        {
+            Document = edited,
+            Templates = [edited]
+        };
+        var changed = templates.GetCSharpFeatures(editedSnapshot)!;
         Assert.NotSame(original, changed);
         Assert.NotEmpty(await changed.DiagnosticsAsync(CancellationToken.None));
 
-        var projectEdited = editedSnapshot with { Project = snapshot.Project!.AddDocument("New.cs", "namespace Example; public class NewType {}").Project };
+        var projectEdited = editedSnapshot with
+        {
+            Project = snapshot.Project!.AddDocument("New.cs", "namespace Example; public class NewType {}").Project
+        };
         Assert.NotSame(changed, templates.GetCSharpFeatures(projectEdited));
         templates.InvalidateProjects();
         Assert.NotSame(changed, templates.GetCSharpFeatures(editedSnapshot));
@@ -277,7 +288,10 @@ public sealed class EditorFeaturesTests
                                 <#release><#unless condition="Model.Items.Length > 0">{{ Model.ReleaseMissing }}</#unless></#release>
                                 """;
         var snapshot = Snapshot(workspace, template);
-        snapshot = snapshot with { Project = snapshot.Project!.WithParseOptions(new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: debug ? ["DEBUG"] : [])) };
+        snapshot = snapshot with
+        {
+            Project = snapshot.Project!.WithParseOptions(new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: debug ? ["DEBUG"] : []))
+        };
         var diagnostics = JsonSerializer.SerializeToElement(await new CSharpFeatures(snapshot).DiagnosticsAsync(CancellationToken.None));
         var diagnostic  = Assert.Single(diagnostics.EnumerateArray());
         Assert.Equal("CS1061", diagnostic.GetProperty("code").GetString());

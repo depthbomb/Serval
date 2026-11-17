@@ -77,7 +77,10 @@ public sealed class SavannaTag
     /// </remarks>
     public static SavannaTag Read(string text, int start, string path, List<SavannaDiagnostic> diagnostics)
     {
-        var tag       = new SavannaTag { Closing = text[start + 1] == '/' };
+        var tag = new SavannaTag
+        {
+            Closing = text[start + 1] == '/'
+        };
         var offset    = start + (tag.Closing ? 3 : 2);
         var nameStart = offset;
         while (offset < text.Length && IsName(text[offset]))
@@ -169,7 +172,10 @@ public sealed class SavannaTag
             }
             else
             {
-                tag._attributes.Add(name, new SavannaAttribute(name, value, TextSpan.FromBounds(valueStart, valueEnd)) { NameSpan = new TextSpan(attributeStart, name.Length) });
+                tag._attributes.Add(name, new SavannaAttribute(name, value, TextSpan.FromBounds(valueStart, valueEnd))
+                {
+                    NameSpan = new TextSpan(attributeStart, name.Length)
+                });
             }
         }
 

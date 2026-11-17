@@ -2,37 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Serval Socket.IO sample</title>
-    <link rel="stylesheet" href="/socketio/site.css">
-    <script src="/socketio/socket.io.min.js" defer></script>
-    <script src="/socketio/client.js" defer></script>
+    <link href="/socketio/site.css" rel="stylesheet">
+    <script defer src="/socketio/socket.io.min.js"></script>
+    <script defer src="/socketio/client.js"></script>
 </head>
 <body>
 <main>
     <h1>Socket.IO with Serval</h1>
     <p>Open this page in two tabs, join the same room, and send a message. Each namespace has its own rooms.</p>
     <form id="connection">
-        <label>Namespace <select id="namespace"><option value="/chat">/chat</option><option value="/">/</option></select></label>
-        <label>Transport <select id="transport"><option value="upgrade">Polling, then WebSocket</option><option value="polling">Polling only</option><option value="websocket">WebSocket only</option></select></label>
+        <label>Namespace <select id="namespace">
+            <option value="/chat">/chat</option>
+            <option value="/">/</option>
+        </select></label>
+        <label>Transport <select id="transport">
+            <option value="upgrade">Polling, then WebSocket</option>
+            <option value="polling">Polling only</option>
+            <option value="websocket">WebSocket only</option>
+        </select></label>
         <button id="connect">Connect</button>
-        <button id="disconnect" type="button" disabled>Disconnect</button>
+        <button disabled id="disconnect" type="button">Disconnect</button>
     </form>
     <p id="status" role="status">Disconnected</p>
     <form id="join">
-        <label>Room <input id="room" value="lobby" maxlength="64" required></label>
+        <label>Room <input id="room" maxlength="64" required value="lobby"></label>
         <button class="online" disabled>Join room</button>
     </form>
     <form id="chat">
-        <label>Message <input id="message" maxlength="1000" required placeholder="Hello from Serval"></label>
+        <label>Message <input id="message" maxlength="1000" placeholder="Hello from Serval" required></label>
         <button class="online" disabled>Send</button>
     </form>
     <p>
-        <button id="binary" class="online" disabled>Echo UTF-8 binary</button>
-        <button id="question" class="online" disabled>Answer a server question</button>
+        <button class="online" disabled id="binary">Echo UTF-8 binary</button>
+        <button class="online" disabled id="question">Answer a server question</button>
     </p>
-    <p>The client reconnects after network interruptions. Join your room again after reconnecting. Message history is not replayed.</p>
-    <ol id="log" aria-label="Connection and message log" aria-live="polite"></ol>
+    <p>The client reconnects after network interruptions. Join your room again after reconnecting. Message history is
+        not replayed.</p>
+    <ol aria-label="Connection and message log" aria-live="polite" id="log"></ol>
 </main>
 </body>
 </html>

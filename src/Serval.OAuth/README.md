@@ -57,8 +57,10 @@ JWKS requests share the OAuth response-size and timeout limits.
 
 Sign-in always uses the authorization-code flow, S256 PKCE, a random nonce, single-use state, and browser correlation.
 The `openid` scope is added automatically. Before creating a session, Serval validates the ID-token signature, issuer,
-subject, audience, authorized party, timestamps, and nonce. It also checks `at_hash` and `c_hash` when present. Additional
-audiences require an explicit `AdditionalAudiences` entry; the client ID must still be an audience, and multiple audiences
+subject, audience, authorized party, timestamps, and nonce. It also checks `at_hash` and `c_hash` when present.
+Additional
+audiences require an explicit `AdditionalAudiences` entry; the client ID must still be an audience, and multiple
+audiences
 require `azp` to identify this client. `MaxAge` sends `max_age` and enforces `auth_time`.
 
 RS256 is the default signing algorithm. `SigningAlgorithms` can explicitly allow RS384/512, PS256/384/512, or
@@ -68,9 +70,10 @@ and retry, with a thirty-second cooldown shared by requests. Refresh failures fa
 validation results. Unknown signing algorithms, unsigned tokens, HMAC tokens, encrypted tokens, and critical JOSE
 extensions are rejected.
 
-Without a mapping callback, the session uses the validated ID-token principal, preserving provider claim names
-(`sub`, `name`, and `roles`). For local account lookup or creation, set `CreatePrincipal` and read
-`signIn.OpenIdConnect.Claims` or `signIn.OpenIdConnect.Principal`. This callback runs after validation. Identify external
+Without a mapping callback, the session uses the validated ID-token principal, preserving provider claim names (`sub`,
+`name`, and `roles`). For local account lookup or creation, set `CreatePrincipal` and read
+`signIn.OpenIdConnect.Claims` or `signIn.OpenIdConnect.Principal`. This callback runs after validation. Identify
+external
 accounts using both issuer and subject. Set `OpenIdConnect.GetClaimsFromUserInfoEndpoint = true` to fetch UserInfo;
 its `sub` must match the ID token before it is exposed through `signIn.OpenIdConnect.UserInfo`. UserInfo is not
 automatically merged into the principal.
@@ -89,6 +92,7 @@ implemented. Local sign-out only revokes the local session. The
 [OIDC Core](https://openid.net/specs/openid-connect-core-1_0.html) and
 [Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) specifications define the protocol requirements.
 
-The OAuth sample accepts `OAuth__Issuer` to enable this flow, alongside `OAuth__ClientId` and optional client credentials.
+The OAuth sample accepts `OAuth__Issuer` to enable this flow, alongside `OAuth__ClientId` and optional client
+credentials.
 
 See the [main README](https://github.com/depthbomb/serval/blob/master/README.md) for setup and examples.

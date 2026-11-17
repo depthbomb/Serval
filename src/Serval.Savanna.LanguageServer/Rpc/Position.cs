@@ -26,6 +26,18 @@ public readonly record struct Position(int Line, int Character)
     {
         var start = text.Lines.GetLinePosition(Math.Clamp(span.Start, 0, text.Length));
         var end   = text.Lines.GetLinePosition(Math.Clamp(span.End, 0, text.Length));
-        return new { start = new { line = start.Line, character = start.Character }, end = new { line = end.Line, character = end.Character } };
+        return new
+        {
+            start = new
+            {
+                line      = start.Line,
+                character = start.Character
+            },
+            end = new
+            {
+                line      = end.Line,
+                character = end.Character
+            }
+        };
     }
 }

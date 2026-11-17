@@ -47,7 +47,9 @@ public sealed class SignInController : ControllerBase
     public async ValueTask<IActionResult> LoginAsync(RequestContext context)
     {
         AbortUnless(_provider.Configured, StatusCodes.ServiceUnavailable, "Configure the OAuth provider described at / first.");
+
         await context.BeginOAuthSignInAsync("provider", "/auth/me");
+
         return Empty();
     }
 
@@ -55,6 +57,7 @@ public sealed class SignInController : ControllerBase
     public async ValueTask<IActionResult> CallbackAsync(RequestContext context)
     {
         AbortUnless(_provider.Configured, StatusCodes.ServiceUnavailable, "Configure the OAuth provider described at / first.");
+
         try
         {
             var signIn = await context.CompleteOAuthSignInAsync("provider");
@@ -71,13 +74,19 @@ public sealed class SignInController : ControllerBase
     public ValueTask<IActionResult> MeAsync(RequestContext context)
     {
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
-        return JsonAsync(new { name = context.User.Identity?.Name });
+        return JsonAsync(new
+        {
+            name = context.User.Identity?.Name
+        });
     }
 
     [Get("/auth/csrf")]
     [Authorize]
     public async ValueTask<IActionResult> CsrfAsync(RequestContext context)
-        => Json(new { token = await context.GetCsrfTokenAsync() });
+        => Json(new
+        {
+            token = await context.GetCsrfTokenAsync()
+        });
 
     [Post("/auth/logout")]
     [Authorize(Priority = -100)]
@@ -85,7 +94,9 @@ public sealed class SignInController : ControllerBase
     public async ValueTask<IActionResult> LogoutAsync(RequestContext context)
     {
         await context.SignOutAsync();
+
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
+
         return StatusCode(StatusCodes.NoContent);
     }
 }

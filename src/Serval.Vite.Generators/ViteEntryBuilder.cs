@@ -46,8 +46,11 @@ internal static class ViteEntryBuilder
 
         // An explicit stack handles deep graphs and cycles without using the compiler's call stack.
         // Each entry gets its own visited set: another page's entry can still be this page's dependency.
-        var visited = new HashSet<string>(StringComparer.Ordinal) { key };
-        var stack   = new Stack<(string Key, bool Expanded)>();
+        var visited = new HashSet<string>(StringComparer.Ordinal)
+        {
+            key
+        };
+        var stack = new Stack<(string Key, bool Expanded)>();
         PushImports(stack, chunk);
         while (stack.Count != 0)
         {

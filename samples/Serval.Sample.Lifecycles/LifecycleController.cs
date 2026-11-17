@@ -12,7 +12,7 @@ namespace Serval.Sample.Lifecycles;
 [Controller]
 public sealed class LifecycleController : ControllerBase
 {
-    private readonly RequestDetails                _details;
+    private readonly RequestDetails               _details;
     private readonly ILogger<LifecycleController> _logger;
 
     public LifecycleController(RequestDetails details, ILogger<LifecycleController> logger)
@@ -23,26 +23,26 @@ public sealed class LifecycleController : ControllerBase
 
     [Get("/")]
     public ValueTask<IActionResult> IndexAsync() => TextAsync("""
-        Request lifecycle handlers
+                                                              Request lifecycle handlers
 
-        Program.cs registers timing (-100), response headers (0), and audit (100).
-        Lower priorities run first in every phase; equal priorities keep registration order.
-        Handlers are scoped to one request and remain alive through completion.
+                                                              Program.cs registers timing (-100), response headers (0), and audit (100).
+                                                              Lower priorities run first in every phase; equal priorities keep registration order.
+                                                              Handlers are scoped to one request and remain alive through completion.
 
-        GET /work returns the ID initialized by OnRequestReceivedAsync and shared through DI.
-        Inspect X-Request-Id, X-Trace-Id, Server-Timing, and X-Content-Type-Options.
-        OnResponseStartingAsync sets these final headers, including on error responses.
-        OnRequestCompletedAsync logs the final status, reason, duration, and failure.
+                                                              GET /work returns the ID initialized by OnRequestReceivedAsync and shared through DI.
+                                                              Inspect X-Request-Id, X-Trace-Id, Server-Timing, and X-Content-Type-Options.
+                                                              OnResponseStartingAsync sets these final headers, including on error responses.
+                                                              OnRequestCompletedAsync logs the final status, reason, duration, and failure.
 
-        Try /crash (500), /missing (404), /lifecycle.json (static file), /work/ (redirect),
-        /slow (request timeout), and /partial (response aborted after headers were sent).
-        GET /callback adds callbacks for that action alone. They run before lifecycle hooks.
+                                                              Try /crash (500), /missing (404), /lifecycle.json (static file), /work/ (redirect),
+                                                              /slow (request timeout), and /partial (response aborted after headers were sent).
+                                                              GET /callback adds callbacks for that action alone. They run before lifecycle hooks.
 
-        Use lifecycle handlers for request initialization, final headers, and outcome logging.
-        Use middleware to wrap downstream work or stop a request, as in the Middleware sample.
-        Completion work is awaited before scoped services are disposed. Queue longer jobs to a
-        background service using independent data; do not retain request-scoped objects.
-        """);
+                                                              Use lifecycle handlers for request initialization, final headers, and outcome logging.
+                                                              Use middleware to wrap downstream work or stop a request, as in the Middleware sample.
+                                                              Completion work is awaited before scoped services are disposed. Queue longer jobs to a
+                                                              background service using independent data; do not retain request-scoped objects.
+                                                              """);
 
     [Get("/work")]
     public ValueTask<IActionResult> WorkAsync(RequestContext context) => JsonAsync(new
@@ -62,6 +62,7 @@ public sealed class LifecycleController : ControllerBase
             {
                 _logger.LogInformation("{TraceId}: action starting.", context.TraceId);
             }
+
             return ValueTask.CompletedTask;
         });
         context.Response.OnCompleted(() =>
@@ -70,8 +71,10 @@ public sealed class LifecycleController : ControllerBase
             {
                 _logger.LogInformation("{TraceId}: action completed.", context.TraceId);
             }
+
             return ValueTask.CompletedTask;
         });
+
         return TextAsync("Watch the console for local callbacks running before lifecycle hooks.");
     }
 

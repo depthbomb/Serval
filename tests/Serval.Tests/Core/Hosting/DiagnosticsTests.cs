@@ -53,11 +53,11 @@ public sealed class DiagnosticsTests
     [InlineData(HttpMethods.Query)]
     public async Task TracingPropagatesParentsAndMetricsUseTemplatesWithoutSensitiveValues(string method)
     {
-        var trace        = ActivityTraceId.CreateRandom();
-        var span         = ActivitySpanId.CreateRandom();
-        var activities   = new ConcurrentBag<Activity>();
-        var measurements = new ConcurrentBag<(double Value, Dictionary<string, object?> Tags)>();
-        using var listener = new ActivityListener();
+        var       trace        = ActivityTraceId.CreateRandom();
+        var       span         = ActivitySpanId.CreateRandom();
+        var       activities   = new ConcurrentBag<Activity>();
+        var       measurements = new ConcurrentBag<(double Value, Dictionary<string, object?> Tags)>();
+        using var listener     = new ActivityListener();
         listener.ShouldListenTo  = source => source.Name == ServalDiagnostics.InstrumentationName;
         listener.Sample          = (ref options) => options.Parent.TraceId == trace ? ActivitySamplingResult.AllDataAndRecorded : ActivitySamplingResult.None;
         listener.ActivityStopped = activities.Add;

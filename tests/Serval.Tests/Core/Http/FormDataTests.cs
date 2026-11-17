@@ -165,13 +165,27 @@ public sealed class FormDataTests
         request.FormOptions.TempDirectory   = directory;
         switch (limit)
         {
-            case "fields":       request.FormOptions.MaxFields               = 1; break;
-            case "keys":         request.FormOptions.MaxKeyLength            = 2; break;
-            case "values":       request.FormOptions.MaxValueLength          = 2; break;
-            case "files":        request.FormOptions.MaxFiles                = 0; break;
-            case "file-bytes":   request.FormOptions.MaxFileBytes            = 2; break;
-            case "headers":      request.FormOptions.MaxMultipartHeaders     = 1; break;
-            case "header-bytes": request.FormOptions.MaxMultipartHeaderBytes = 8; break;
+            case "fields":
+                request.FormOptions.MaxFields = 1;
+                break;
+            case "keys":
+                request.FormOptions.MaxKeyLength = 2;
+                break;
+            case "values":
+                request.FormOptions.MaxValueLength = 2;
+                break;
+            case "files":
+                request.FormOptions.MaxFiles = 0;
+                break;
+            case "file-bytes":
+                request.FormOptions.MaxFileBytes = 2;
+                break;
+            case "headers":
+                request.FormOptions.MaxMultipartHeaders = 1;
+                break;
+            case "header-bytes":
+                request.FormOptions.MaxMultipartHeaderBytes = 8;
+                break;
         }
 
         Assert.Equal(413, (await Assert.ThrowsAsync<HttpErrorException>(() => request.ReadFormAsync().AsTask())).StatusCode);
@@ -193,7 +207,10 @@ public sealed class FormDataTests
     {
         using var input = new MemoryStream([.. "body"u8]);
         await using var request = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11,
-            new Headers { [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded }, input, 100);
+            new Headers
+            {
+                [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded
+            }, input, 100);
         using var output = new MemoryStream();
         await request.CopyBodyToAsync(output);
         Assert.Equal("body"u8.ToArray(), output.ToArray());
@@ -224,7 +241,10 @@ public sealed class FormDataTests
         Directory.CreateDirectory(directory);
         await using var input = new WaitingBodyStream();
         var request = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11,
-            new Headers { [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded }, input, 100000);
+            new Headers
+            {
+                [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded
+            }, input, 100000);
         request.FormOptions.MemoryThreshold = 1;
         request.FormOptions.TempDirectory   = directory;
         var pending = request.ReadPostAsync().AsTask();
@@ -264,7 +284,7 @@ public sealed class FormDataTests
     [Fact]
     public async Task ExtendedFilenamesAndFinalBoundariesWithoutNewlinesWork()
     {
-        const string             body    = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"fallback\"; filename*=utf-8''%22%E7%8B%B8%22.txt\r\n\r\ndata\r\n--example--";
+        const string    body    = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"fallback\"; filename*=utf-8''%22%E7%8B%B8%22.txt\r\n\r\ndata\r\n--example--";
         await using var request = Request(body, "multipart/form-data; boundary=\"example\"");
         var             file    = Assert.Single((await request.ReadFormAsync()).Files);
         Assert.Equal("\"狸\".txt", file.FileName);
@@ -301,7 +321,10 @@ public sealed class FormDataTests
     private static Request Request(string body, string? type, long limit = 1000000) => Request(Encoding.UTF8.GetBytes(body), type, limit);
 
     private static Request Request(byte[] body, string? type, long limit = 1000000)
-        => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers { [HeaderNames.ContentType] = type }, new MemoryStream(body), limit);
+        => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers
+        {
+            [HeaderNames.ContentType] = type
+        }, new MemoryStream(body), limit);
 
     private sealed class WaitingBodyStream : Stream
     {
@@ -332,7 +355,7 @@ public sealed class FormDataTests
 
         public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
-        public override void Flush() { }
+        public override void Flush() {}
 
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
 

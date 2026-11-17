@@ -16,8 +16,11 @@ public sealed class QueryTransportTests
 {
     private static readonly SocketsHttpHandler ClientHandler = new()
     {
-        UseProxy   = false,
-        SslOptions = { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+        UseProxy = false,
+        SslOptions =
+        {
+            RemoteCertificateValidationCallback = (_, _, _, _) => true
+        },
     };
 
     [Fact]
@@ -33,12 +36,12 @@ public sealed class QueryTransportTests
 
     private static async Task ExerciseAsync(Version version, bool tls)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        await using var server = await TransportTestHost.StartAsync(version, tls, ClientHandler, ct: timeout.Token);
-        var client = server.Client;
+        using var       timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        await using var server  = await TransportTestHost.StartAsync(version, tls, ClientHandler, ct: timeout.Token);
+        var             client  = server.Client;
         foreach (var text in new[] { "find café", new string('x', 70_000) + " café" })
         {
-            var body = JsonSerializer.Serialize(new Message(text), TestJsonContext.Default.Message);
+            var       body     = JsonSerializer.Serialize(new Message(text), TestJsonContext.Default.Message);
             using var response = await SendQueryAsync(client, "/query/search", body, MimeTypes.Json, timeout.Token);
             Assert.Equal(version, response.Version);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -46,13 +49,7 @@ public sealed class QueryTransportTests
             Assert.Equal("\"application/json\"", Assert.Single(response.Headers.GetValues(HeaderNames.AcceptQuery)));
         }
 
-        foreach (var (body, contentType, status) in new[]
-        {
-            ("{}", null, HttpStatusCode.BadRequest),
-            ("{}", "invalid", HttpStatusCode.BadRequest),
-            ("{", MimeTypes.Json, HttpStatusCode.BadRequest),
-            ("{}", MimeTypes.PlainText, HttpStatusCode.UnsupportedMediaType),
-        })
+        foreach (var (body, contentType, status) in new[] { ("{}", null, HttpStatusCode.BadRequest), ("{}", "invalid", HttpStatusCode.BadRequest), ("{", MimeTypes.Json, HttpStatusCode.BadRequest), ("{}", MimeTypes.PlainText, HttpStatusCode.UnsupportedMediaType), })
         {
             using var response = await SendQueryAsync(client, "/query/search", body, contentType, timeout.Token);
             Assert.Equal(version, response.Version);

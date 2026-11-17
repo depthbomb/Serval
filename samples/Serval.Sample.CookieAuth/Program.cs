@@ -28,17 +28,25 @@ public static class Program
         var host = Host.CreateApplicationBuilder(args);
         var port = host.Configuration.GetValue("port", 8106);
         host.Services.AddSingleton<IPasswordAccountStore, DemoAccountStore>();
-        host.Services.AddServal(options => options.MaxRequestBodyBytes = 4096).AddGeneratedControllers().AddHttpListener(options =>
-        {
-            options.Prefixes.Clear();
-            options.Prefixes.Add($"http://localhost:{port}/");
-        }).AddAuthentication(options => options.DefaultScheme = "Cookies").AddCookie(configure: options =>
-        {
-            // Only the loopback demo uses HTTP. Use Secure and a __Host- name over HTTPS.
-            options.CookieName = "Serval.Sample.CookieAuth";
-            options.Cookie     = new CookieOptions { Secure = false, SameSite = SameSite.Strict };
-            options.Lifetime   = TimeSpan.FromMinutes(20);
-        }).AddPasswordAccounts<DemoAccountStore>();
+        host.Services.AddServal(options => options.MaxRequestBodyBytes = 4096)
+            .AddGeneratedControllers()
+            .AddHttpListener(options =>
+            {
+                options.Prefixes.Clear();
+                options.Prefixes.Add($"http://localhost:{port}/");
+            })
+            .AddAuthentication(options => options.DefaultScheme = "Cookies").AddCookie(configure: options =>
+            {
+                // Only the loopback demo uses HTTP. Use Secure and a __Host- name over HTTPS.
+                options.CookieName = "Serval.Sample.CookieAuth";
+                options.Cookie = new CookieOptions
+                {
+                    Secure   = false,
+                    SameSite = SameSite.Strict
+                };
+                options.Lifetime = TimeSpan.FromMinutes(20);
+            })
+            .AddPasswordAccounts<DemoAccountStore>();
 
         return host.Build();
     }

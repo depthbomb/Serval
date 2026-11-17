@@ -38,9 +38,15 @@ public sealed class MiddlewarePriorityTests
                 new RecordingAttribute("max", int.MaxValue),
                 new RecordingAttribute("positive", 10),
                 new RecordingAttribute("default"),
-                new RecordingAttribute("min", 20) { Priority = int.MinValue },
+                new RecordingAttribute("min", 20)
+                {
+                    Priority = int.MinValue
+                },
                 new RecordingAttribute("negative", -10),
-                new UseMiddlewareAttribute(typeof(RecordingMiddleware), "injected", 42) { Priority = 0 });
+                new UseMiddlewareAttribute(typeof(RecordingMiddleware), "injected", 42)
+                {
+                    Priority = 0
+                });
         });
         await using var request = app.Request();
         await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request.Context.Request, request.Response, CancellationToken.None);

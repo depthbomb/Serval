@@ -18,7 +18,7 @@ public sealed class NotesDbContext : DbContext
 {
     public DbSet<Note> Notes => Set<Note>();
 
-    public NotesDbContext(DbContextOptions<NotesDbContext> options) : base(options) { }
+    public NotesDbContext(DbContextOptions<NotesDbContext> options) : base(options) {}
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

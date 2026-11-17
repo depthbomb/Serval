@@ -15,9 +15,9 @@ public sealed class OpenIdConnectTests
     [Fact]
     public async Task CallbackCompletionValidatesIdentityWithoutMappingOrLocalSignIn()
     {
-        using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        await using var app = Application(http, options => options.CreatePrincipal = _ => throw new InvalidOperationException("Mapping belongs to the caller."));
+        using var       provider = new OidcTestProvider();
+        using var       http     = new HttpClient(provider);
+        await using var app      = Application(http, options => options.CreatePrincipal = _ => throw new InvalidOperationException("Mapping belongs to the caller."));
         var (callback, cookie, _) = await Begin(app, provider);
         await using var complete = app.Request(callback, cookie);
         complete.Context.User = SecurityTestApplication.User("existing-account");
@@ -34,9 +34,9 @@ public sealed class OpenIdConnectTests
     [Fact]
     public async Task DiscoveryNoncePkceAndValidatedIdentityCreateASessionAndRejectReplay()
     {
-        using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        OpenIdConnectIdentity? mapped = null;
+        using var              provider = new OidcTestProvider();
+        using var              http     = new HttpClient(provider);
+        OpenIdConnectIdentity? mapped   = null;
         await using var app = Application(http, options =>
         {
             options.OpenIdConnect!.GetClaimsFromUserInfoEndpoint = true;
@@ -52,14 +52,14 @@ public sealed class OpenIdConnectTests
         Assert.Equal(43, provider.Nonce.Length);
         Assert.NotEqual(query["state"].Single(), provider.Nonce);
         await using var complete = app.Request(callback, cookie);
-        var result = await complete.Context.CompleteOAuthSignInAsync("provider");
+        var             result   = await complete.Context.CompleteOAuthSignInAsync("provider");
         Assert.Equal("/account", result.ReturnUrl);
         Assert.Equal("Ada", result.Principal.Identity!.Name);
         Assert.Equal("subject", result.Principal.FindFirst("sub")!.Value);
         Assert.Equal("subject", mapped!.Claims.GetProperty("sub").GetString());
         Assert.Equal("UserInfo name", mapped.UserInfo!.Value.GetProperty("name").GetString());
         Assert.Equal(query["code_challenge"].Single(), OAuthClientTests.Challenge(OAuthClientTests.Form(provider.TokenBody!)["code_verifier"].Single()));
-        var session = SecurityTestApplication.Cookie(complete.Response, "__Host-Serval.Session=");
+        var             session       = SecurityTestApplication.Cookie(complete.Response, "__Host-Serval.Session=");
         await using var authenticated = app.Request(cookie: session);
         Assert.True((await authenticated.Context.AuthenticateAsync()).Succeeded);
         Assert.DoesNotContain(result.Tokens.IdToken!, string.Join(';', complete.Response.Headers.GetValues(HeaderNames.SetCookie)));
@@ -80,7 +80,10 @@ public sealed class OpenIdConnectTests
     [InlineData("ES512")]
     public async Task ExplicitAsymmetricAlgorithmsAreVerified(string algorithm)
     {
-        using var provider = new OidcTestProvider { Algorithm = algorithm };
+        using var provider = new OidcTestProvider
+        {
+            Algorithm = algorithm
+        };
         if (algorithm.StartsWith("ES", StringComparison.Ordinal))
         {
             provider.EcKey = ECDsa.Create(algorithm switch { "ES256" => ECCurve.NamedCurves.nistP256, "ES384" => ECCurve.NamedCurves.nistP384, _ => ECCurve.NamedCurves.nistP521 });
@@ -130,8 +133,8 @@ public sealed class OpenIdConnectTests
     public async Task InvalidIdentityNeverReachesMappingOrCreatesASession(string failure)
     {
         using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        var mapped = false;
+        using var http     = new HttpClient(provider);
+        var       mapped   = false;
         await using var app = Application(http, options =>
         {
             options.OpenIdConnect!.GetClaimsFromUserInfoEndpoint = true;
@@ -150,46 +153,99 @@ public sealed class OpenIdConnectTests
         {
             switch (failure)
             {
-                case "issuer": claims["iss"] = "https://attacker.test"; break;
-                case "issuer-slash": claims["iss"] = "https://provider.test/tenant/"; break;
-                case "audience": claims["aud"] = "other-client"; break;
-                case "audience-slash": claims["aud"] = "client/"; break;
-                case "extra-audience": claims["aud"] = new[] { "client", "untrusted" }; claims["azp"] = "client"; break;
-                case "azp": claims["azp"] = "other-client"; break;
-                case "nonce": claims["nonce"] = "other-attempt"; break;
-                case "missing-nonce": claims.Remove("nonce"); break;
-                case "expired": claims["exp"] = provider.Now.AddMinutes(-2).ToUnixTimeSeconds(); break;
-                case "future-iat": claims["iat"] = provider.Now.AddMinutes(2).ToUnixTimeSeconds(); break;
-                case "missing-iat": claims.Remove("iat"); break;
-                case "missing-exp": claims.Remove("exp"); break;
-                case "string-exp": claims["exp"] = "9999999999"; break;
-                case "huge-exp": claims["exp"] = long.MaxValue; break;
-                case "future-nbf": claims["nbf"] = provider.Now.AddMinutes(2).ToUnixTimeSeconds(); break;
-                case "empty-sub": claims["sub"] = ""; break;
-                case "numeric-sub": claims["sub"] = 123; break;
-                case "at-hash": claims["at_hash"] = "bad"; break;
-                case "c-hash": claims["c_hash"] = "bad"; break;
-                case "old-auth-time": claims["auth_time"] = provider.Now.AddHours(-1).ToUnixTimeSeconds(); break;
+                case "issuer":
+                    claims["iss"] = "https://attacker.test";
+                    break;
+                case "issuer-slash":
+                    claims["iss"] = "https://provider.test/tenant/";
+                    break;
+                case "audience":
+                    claims["aud"] = "other-client";
+                    break;
+                case "audience-slash":
+                    claims["aud"] = "client/";
+                    break;
+                case "extra-audience":
+                    claims["aud"] = new[] { "client", "untrusted" };
+                    claims["azp"] = "client";
+                    break;
+                case "azp":
+                    claims["azp"] = "other-client";
+                    break;
+                case "nonce":
+                    claims["nonce"] = "other-attempt";
+                    break;
+                case "missing-nonce":
+                    claims.Remove("nonce");
+                    break;
+                case "expired":
+                    claims["exp"] = provider.Now.AddMinutes(-2).ToUnixTimeSeconds();
+                    break;
+                case "future-iat":
+                    claims["iat"] = provider.Now.AddMinutes(2).ToUnixTimeSeconds();
+                    break;
+                case "missing-iat":
+                    claims.Remove("iat");
+                    break;
+                case "missing-exp":
+                    claims.Remove("exp");
+                    break;
+                case "string-exp":
+                    claims["exp"] = "9999999999";
+                    break;
+                case "huge-exp":
+                    claims["exp"] = long.MaxValue;
+                    break;
+                case "future-nbf":
+                    claims["nbf"] = provider.Now.AddMinutes(2).ToUnixTimeSeconds();
+                    break;
+                case "empty-sub":
+                    claims["sub"] = "";
+                    break;
+                case "numeric-sub":
+                    claims["sub"] = 123;
+                    break;
+                case "at-hash":
+                    claims["at_hash"] = "bad";
+                    break;
+                case "c-hash":
+                    claims["c_hash"] = "bad";
+                    break;
+                case "old-auth-time":
+                    claims["auth_time"] = provider.Now.AddHours(-1).ToUnixTimeSeconds();
+                    break;
             }
         };
         provider.ChangeHeader = header =>
         {
-            if (failure == "none") { header["alg"] = "none"; }
-            if (failure == "hmac") { header["alg"] = "HS256"; }
-            if (failure == "critical-header") { header["crit"] = new[] { "unknown" }; }
+            if (failure == "none")
+            {
+                header["alg"] = "none";
+            }
+            if (failure == "hmac")
+            {
+                header["alg"] = "HS256";
+            }
+            if (failure == "critical-header")
+            {
+                header["crit"] = new[] { "unknown" };
+            }
         };
         provider.ChangeToken = token => failure switch
         {
-            "bad-signature" => token[..(token.LastIndexOf('.') + 1)] + OidcTestProvider.Encode(new byte[256]),
-            "duplicate-claim" => token.Split('.')[0] + "." + OidcTestProvider.Encode(Encoding.UTF8.GetBytes("{\"sub\":\"one\",\"sub\":\"two\"}")) + ".sig",
-            "malformed" => "not-a-jwt",
-            "encrypted" => "a.b.c.d.e",
-            "oversized" => new string('a', 65537),
-            _ => token,
+            "bad-signature"   => token[..(token.LastIndexOf('.') + 1)] + OidcTestProvider.Encode(new byte[256]),
+            "duplicate-claim" => token.Split('.')[0]                   + "." + OidcTestProvider.Encode(Encoding.UTF8.GetBytes("{\"sub\":\"one\",\"sub\":\"two\"}")) + ".sig",
+            "malformed"       => "not-a-jwt",
+            "encrypted"       => "a.b.c.d.e",
+            "oversized"       => new string('a', 65537),
+            _                 => token,
         };
-        if (failure == "userinfo-sub") { provider.UserSubject = "attacker"; }
+        if (failure == "userinfo-sub")
+        {
+            provider.UserSubject = "attacker";
+        }
         await using var complete = app.Request(callback, cookie);
-        var error = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await complete.Context.CompleteOAuthSignInAsync("provider"));
+        var             error    = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await complete.Context.CompleteOAuthSignInAsync("provider"));
         Assert.Null(error.InnerException);
         Assert.False(mapped);
         Assert.DoesNotContain(complete.Response.Headers.GetValues(HeaderNames.SetCookie), value => value.StartsWith("__Host-Serval.Session=", StringComparison.Ordinal));
@@ -201,9 +257,9 @@ public sealed class OpenIdConnectTests
     [InlineData(true)]
     public async Task RotatedSigningKeysRefreshOnceIncludingReusedKeyIds(bool sameId)
     {
-        using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       provider = new OidcTestProvider();
+        using var       http     = new HttpClient(provider);
+        await using var app      = Application(http);
         var (callback, cookie, _) = await Begin(app, provider);
         provider.Rotate(sameId);
         await using var complete = app.Request(callback, cookie);
@@ -218,9 +274,9 @@ public sealed class OpenIdConnectTests
     [Fact]
     public async Task UnknownKeysCannotCauseUnboundedRefreshesAndRecoverAfterCooldown()
     {
-        using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       provider = new OidcTestProvider();
+        using var       http     = new HttpClient(provider);
+        await using var app      = Application(http);
         await Begin(app, provider);
         provider.ChangeHeader = header => header["kid"] = "unknown";
         for (var i = 0; i < 3; i++)
@@ -232,8 +288,8 @@ public sealed class OpenIdConnectTests
         Assert.Equal(2, provider.KeyCalls);
         provider.ChangeHeader = null;
         provider.Rotate();
-        app.Clock.Now += TimeSpan.FromSeconds(31);
-        var (valid, validCookie, _) = await Begin(app, provider);
+        app.Clock.Now               += TimeSpan.FromSeconds(31);
+        var (valid, validCookie, _) =  await Begin(app, provider);
         await using var complete = app.Request(valid, validCookie);
         await complete.Context.CompleteOAuthSignInAsync("provider");
         Assert.Equal(3, provider.KeyCalls);
@@ -255,18 +311,34 @@ public sealed class OpenIdConnectTests
         {
             switch (failure)
             {
-                case "issuer": metadata["issuer"] = "https://attacker.test"; break;
-                case "http-keys": metadata["jwks_uri"] = "http://provider.test/keys"; break;
-                case "missing-token": metadata.Remove("token_endpoint"); break;
-                case "implicit-only": metadata["response_types_supported"] = new[] { "id_token" }; break;
-                case "no-supported-algorithm": metadata["id_token_signing_alg_values_supported"] = new[] { "none" }; break;
-                case "plain-pkce": metadata["code_challenge_methods_supported"] = new[] { "plain" }; break;
-                case "endpoint-nonce": metadata["authorization_endpoint"] = "https://provider.test/authorize?nonce=override"; break;
-                case "endpoint-max-age": metadata["authorization_endpoint"] = "https://provider.test/authorize?max_age=0"; break;
+                case "issuer":
+                    metadata["issuer"] = "https://attacker.test";
+                    break;
+                case "http-keys":
+                    metadata["jwks_uri"] = "http://provider.test/keys";
+                    break;
+                case "missing-token":
+                    metadata.Remove("token_endpoint");
+                    break;
+                case "implicit-only":
+                    metadata["response_types_supported"] = new[] { "id_token" };
+                    break;
+                case "no-supported-algorithm":
+                    metadata["id_token_signing_alg_values_supported"] = new[] { "none" };
+                    break;
+                case "plain-pkce":
+                    metadata["code_challenge_methods_supported"] = new[] { "plain" };
+                    break;
+                case "endpoint-nonce":
+                    metadata["authorization_endpoint"] = "https://provider.test/authorize?nonce=override";
+                    break;
+                case "endpoint-max-age":
+                    metadata["authorization_endpoint"] = "https://provider.test/authorize?max_age=0";
+                    break;
             }
         };
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       http    = new HttpClient(provider);
+        await using var app     = Application(http);
         await using var request = app.Request("https://app.test/login");
         await Assert.ThrowsAsync<OAuthProtocolException>(async () => await request.Context.BeginOAuthSignInAsync("provider"));
         Assert.Empty(request.Response.Headers.GetValues(HeaderNames.SetCookie));
@@ -280,21 +352,30 @@ public sealed class OpenIdConnectTests
     {
         using var provider = new OidcTestProvider();
         provider.Respond = _ => failure == "redirect"
-            ? new HttpResponseMessage(HttpStatusCode.Redirect) { Headers = { Location = new Uri("https://attacker.test") } }
-            : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(new string('x', 2048)) };
-        using var http = new HttpClient(provider);
-        await using var app = Application(http, options => options.MaximumResponseBytes = 1024);
+            ? new HttpResponseMessage(HttpStatusCode.Redirect)
+            {
+                Headers =
+                {
+                    Location = new Uri("https://attacker.test")
+                }
+            }
+            : new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(new string('x', 2048))
+            };
+        using var       http    = new HttpClient(provider);
+        await using var app     = Application(http, options => options.MaximumResponseBytes = 1024);
         await using var request = app.Request("https://app.test/login");
-        var error = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await request.Context.BeginOAuthSignInAsync("provider"));
+        var             error   = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await request.Context.BeginOAuthSignInAsync("provider"));
         Assert.Equal(failure == "redirect" ? "unexpected_redirect" : "response_too_large", error.Error);
     }
 
     [Fact]
     public async Task DiscoveryIsSharedAcrossConcurrentRequestsAndExpires()
     {
-        using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       provider = new OidcTestProvider();
+        using var       http     = new HttpClient(provider);
+        await using var app      = Application(http);
         await Task.WhenAll(Enumerable.Range(0, 8).Select(async _ =>
         {
             await using var request = app.Request("https://app.test/login");
@@ -313,11 +394,11 @@ public sealed class OpenIdConnectTests
         using var provider = new OidcTestProvider();
         provider.ChangeClaims = claims =>
         {
-            claims["aud"] = new[] { "client", "api" };
-            claims["azp"] = "client";
+            claims["aud"]       = new[] { "client", "api" };
+            claims["azp"]       = "client";
             claims["auth_time"] = provider.Now.ToUnixTimeSeconds();
-            claims["at_hash"] = OidcTestProvider.Encode(SHA256.HashData(Encoding.ASCII.GetBytes("access-secret"))[..16]);
-            claims["c_hash"] = OidcTestProvider.Encode(SHA256.HashData(Encoding.ASCII.GetBytes("code"))[..16]);
+            claims["at_hash"]   = OidcTestProvider.Encode(SHA256.HashData(Encoding.ASCII.GetBytes("access-secret"))[..16]);
+            claims["c_hash"]    = OidcTestProvider.Encode(SHA256.HashData(Encoding.ASCII.GetBytes("code"))[..16]);
         };
         using var http = new HttpClient(provider);
         await using var app = Application(http, options =>
@@ -338,11 +419,14 @@ public sealed class OpenIdConnectTests
     [InlineData("request_uri")]
     public async Task AdditionalParametersCannotOverrideManagedOidcSecurity(string name)
     {
-        using var provider = new OidcTestProvider();
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
-        await using var request = app.Request("https://app.test/login");
-        await Assert.ThrowsAsync<ArgumentException>(async () => await request.Context.BeginOAuthSignInAsync("provider", parameters: new Dictionary<string, string> { [name] = "override" }));
+        using var       provider = new OidcTestProvider();
+        using var       http     = new HttpClient(provider);
+        await using var app      = Application(http);
+        await using var request  = app.Request("https://app.test/login");
+        await Assert.ThrowsAsync<ArgumentException>(async () => await request.Context.BeginOAuthSignInAsync("provider", parameters: new Dictionary<string, string>
+        {
+            [name] = "override"
+        }));
     }
 
     [Theory]
@@ -352,8 +436,8 @@ public sealed class OpenIdConnectTests
     {
         using var provider = new OidcTestProvider();
         provider.ChangeMetadata = metadata => metadata["authorization_response_iss_parameter_supported"] = required;
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       http = new HttpClient(provider);
+        await using var app  = Application(http);
         var (callback, cookie, _) = await Begin(app, provider);
         await using var request = app.Request(callback + (issuer is null ? "" : "&iss=" + Uri.EscapeDataString(issuer)), cookie);
         Assert.Equal("invalid_issuer", (await Assert.ThrowsAsync<OAuthProtocolException>(async () => await request.Context.CompleteOAuthSignInAsync("provider"))).Error);
@@ -366,20 +450,23 @@ public sealed class OpenIdConnectTests
     public async Task DiscoveryDeadlineAndCallerCancellationStopSignIn(bool callerCancellation)
     {
         using var provider = new OidcTestProvider();
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var       entered  = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         provider.RespondAsync = async (_, ct) =>
         {
             entered.SetResult();
             await Task.Delay(Timeout.InfiniteTimeSpan, ct);
             throw new InvalidOperationException("Unreachable");
         };
-        using var http = new HttpClient(provider);
-        using var cts = new CancellationTokenSource();
-        await using var app = Application(http, options => options.BackchannelTimeout = callerCancellation ? TimeSpan.FromSeconds(10) : TimeSpan.FromMilliseconds(100));
+        using var       http    = new HttpClient(provider);
+        using var       cts     = new CancellationTokenSource();
+        await using var app     = Application(http, options => options.BackchannelTimeout = callerCancellation ? TimeSpan.FromSeconds(10) : TimeSpan.FromMilliseconds(100));
         await using var request = app.Request("https://app.test/login", cancellationToken: cts.Token);
-        var begin = request.Context.BeginOAuthSignInAsync("provider").AsTask();
+        var             begin   = request.Context.BeginOAuthSignInAsync("provider").AsTask();
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        if (callerCancellation) { cts.Cancel(); }
+        if (callerCancellation)
+        {
+            cts.Cancel();
+        }
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => begin);
         Assert.Empty(request.Response.Headers.GetValues(HeaderNames.SetCookie));
     }
@@ -397,19 +484,61 @@ public sealed class OpenIdConnectTests
         {
             if (failure == "missing-id-token" && request.RequestUri!.AbsolutePath == "/token")
             {
-                return OidcTestProvider.Json(new { access_token = "secret", token_type = "Bearer" });
+                return OidcTestProvider.Json(new
+                {
+                    access_token = "secret",
+                    token_type   = "Bearer"
+                });
             }
-            if (request.RequestUri!.AbsolutePath != "/keys" || failure == "missing-id-token") { return null; }
+            if (request.RequestUri!.AbsolutePath != "/keys" || failure == "missing-id-token")
+            {
+                return null;
+            }
             return failure switch
             {
-                "empty-keys" => OidcTestProvider.Json(new { keys = Array.Empty<object>() }),
-                "symmetric-key" => OidcTestProvider.Json(new { keys = new[] { new { kty = "oct", k = "c2VjcmV0" } } }),
-                "encryption-key" => OidcTestProvider.Json(new { keys = new[] { new { kty = "RSA", use = "enc" } } }),
-                _ => OidcTestProvider.Json(new { keys = new[] { new { kty = "RSA", kid = "first", n = "!invalid!", e = "AQAB" } } }),
+                "empty-keys" => OidcTestProvider.Json(new
+                {
+                    keys = Array.Empty<object>()
+                }),
+                "symmetric-key" => OidcTestProvider.Json(new
+                {
+                    keys = new[]
+                    {
+                        new
+                        {
+                            kty = "oct",
+                            k   = "c2VjcmV0"
+                        }
+                    }
+                }),
+                "encryption-key" => OidcTestProvider.Json(new
+                {
+                    keys = new[]
+                    {
+                        new
+                        {
+                            kty = "RSA",
+                            use = "enc"
+                        }
+                    }
+                }),
+                _ => OidcTestProvider.Json(new
+                {
+                    keys = new[]
+                    {
+                        new
+                        {
+                            kty = "RSA",
+                            kid = "first",
+                            n   = "!invalid!",
+                            e   = "AQAB"
+                        }
+                    }
+                }),
             };
         };
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       http = new HttpClient(provider);
+        await using var app  = Application(http);
         await Assert.ThrowsAsync<OAuthProtocolException>(async () =>
         {
             var (callback, cookie, _) = await Begin(app, provider);
@@ -427,8 +556,8 @@ public sealed class OpenIdConnectTests
             header["jku"] = "https://attacker.test/keys";
             header["x5u"] = "https://attacker.test/certificate";
         };
-        using var http = new HttpClient(provider);
-        await using var app = Application(http);
+        using var       http = new HttpClient(provider);
+        await using var app  = Application(http);
         var (callback, cookie, _) = await Begin(app, provider);
         await using var complete = app.Request(callback, cookie);
         await complete.Context.CompleteOAuthSignInAsync("provider");
@@ -446,26 +575,26 @@ public sealed class OpenIdConnectTests
         var builder = new ServiceCollection().AddServal().AddAuthentication().AddCookie();
         builder.AddOpenIdConnect("oidc", options =>
         {
-            options.ClientId = "client";
-            options.RedirectUri = new Uri("https://app.test/callback");
+            options.ClientId              = "client";
+            options.RedirectUri           = new Uri("https://app.test/callback");
             options.OpenIdConnect!.Issuer = "https://provider.test";
         });
         Assert.Throws<ArgumentException>(() => builder.AddOAuth("oauth", options =>
         {
-            options.ClientId = "client";
+            options.ClientId              = "client";
             options.AuthorizationEndpoint = new Uri("https://provider.test/auth");
-            options.TokenEndpoint = new Uri("https://provider.test/token");
-            options.RedirectUri = new Uri("https://app.test/callback");
-            options.CreatePrincipal = _ => ValueTask.FromResult(SecurityTestApplication.User());
+            options.TokenEndpoint         = new Uri("https://provider.test/token");
+            options.RedirectUri           = new Uri("https://app.test/callback");
+            options.CreatePrincipal       = _ => ValueTask.FromResult(SecurityTestApplication.User());
         }));
     }
 
     private static SecurityTestApplication Application(HttpClient http, Action<OAuthOptions>? configure = null)
         => new(builder => builder.AddAuthentication(options => options.DefaultScheme = "Cookies").AddCookie(configure: options => options.CookieName = "__Host-Serval.Session").AddOpenIdConnect("provider", options =>
         {
-            options.ClientId = "client";
-            options.RedirectUri = new Uri("https://app.test/callback");
-            options.Backchannel = http;
+            options.ClientId              = "client";
+            options.RedirectUri           = new Uri("https://app.test/callback");
+            options.Backchannel           = http;
             options.OpenIdConnect!.Issuer = "https://provider.test/tenant";
             options.Scopes.Add("profile");
             configure?.Invoke(options);
@@ -477,7 +606,7 @@ public sealed class OpenIdConnectTests
         await request.Context.BeginOAuthSignInAsync("provider", "/account");
         var query = OAuthClientTests.Query(new Uri(request.Response.Headers[HeaderNames.Location]!));
         provider.Nonce = query["nonce"].Single();
-        provider.Now = app.Clock.Now;
+        provider.Now   = app.Clock.Now;
         return ("https://app.test/callback?code=code&state=" + query["state"].Single(), SecurityTestApplication.Cookie(request.Response), query);
     }
 }

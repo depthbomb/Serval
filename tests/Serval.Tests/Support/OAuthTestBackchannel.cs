@@ -17,7 +17,10 @@ internal sealed class OAuthTestBackchannel : HttpMessageHandler
     public Func<OAuthTestRequest, HttpResponseMessage>? Respond  { get; set; }
 
     public static HttpResponseMessage Json(string json, HttpStatusCode status = HttpStatusCode.OK)
-        => new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+        => new(status)
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {

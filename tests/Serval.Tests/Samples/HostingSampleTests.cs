@@ -26,19 +26,35 @@ public sealed class HostingSampleTests
         string location;
         await using (var sample = await RunningSample.StartAsync(Program.Build, "--ConnectionStrings:Notes", connection))
         {
-            using var created = await sample.Client.PostAsJsonAsync("/notes", new { title = "  Persist me  ", body = "First version" });
+            using var created = await sample.Client.PostAsJsonAsync("/notes", new
+            {
+                title = "  Persist me  ",
+                body  = "First version"
+            });
             Assert.Equal(HttpStatusCode.Created, created.StatusCode);
             location = created.Headers.Location!.ToString();
             var note = (await created.Content.ReadFromJsonAsync<Note>())!;
             Assert.Equal("Persist me", note.Title);
             Assert.Equal(location, $"/notes/{note.Id}");
 
-            using var invalid = await sample.Client.PostAsJsonAsync("/notes", new { title = "", body = "Invalid" });
+            using var invalid = await sample.Client.PostAsJsonAsync("/notes", new
+            {
+                title = "",
+                body  = "Invalid"
+            });
             Assert.Equal(HttpStatusCode.UnprocessableContent, invalid.StatusCode);
-            using var oversized = await sample.Client.PostAsJsonAsync("/notes", new { title = "Invalid", body = new string('x', 4001) });
+            using var oversized = await sample.Client.PostAsJsonAsync("/notes", new
+            {
+                title = "Invalid",
+                body  = new string('x', 4001)
+            });
             Assert.Equal(HttpStatusCode.UnprocessableContent, oversized.StatusCode);
 
-            using var replaced = await sample.Client.PutAsJsonAsync(location, new { title = "Saved", body = "Second version" });
+            using var replaced = await sample.Client.PutAsJsonAsync(location, new
+            {
+                title = "Saved",
+                body  = "Second version"
+            });
             Assert.Equal(HttpStatusCode.OK, replaced.StatusCode);
             var reads = await Task.WhenAll(Enumerable.Range(0, 12).Select(_ => sample.Client.GetFromJsonAsync<Note>(location)));
             Assert.All(reads, value => Assert.Equal("Second version", value!.Body));
@@ -146,7 +162,11 @@ public sealed class HostingSampleTests
         await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync());
     }
 
-    private static string ConnectionString(string path) => new SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString();
+    private static string ConnectionString(string path) => new SqliteConnectionStringBuilder
+    {
+        DataSource = path,
+        Pooling    = false
+    }.ToString();
 
     private static async Task ReplaceSourceAsync(string path, string content)
     {
@@ -218,7 +238,10 @@ public sealed class HostingSampleTests
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 await host.StartAsync(timeout.Token);
-                return new RunningSample(host, new HttpClient(new SocketsHttpHandler { UseProxy = false })
+                return new RunningSample(host, new HttpClient(new SocketsHttpHandler
+                {
+                    UseProxy = false
+                })
                 {
                     BaseAddress = new Uri($"http://localhost:{port}"),
                     Timeout     = TimeSpan.FromSeconds(5),

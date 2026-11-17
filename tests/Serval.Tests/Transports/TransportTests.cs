@@ -25,8 +25,11 @@ public sealed class TransportTests
 {
     private static readonly SocketsHttpHandler ClientHandler = new()
     {
-        UseProxy   = false,
-        SslOptions = { RemoteCertificateValidationCallback = (_, _, _, _) => true },
+        UseProxy = false,
+        SslOptions =
+        {
+            RemoteCertificateValidationCallback = (_, _, _, _) => true
+        },
     };
 
     [Fact]
@@ -37,14 +40,21 @@ public sealed class TransportTests
             Serval_Sample_TransportsControllers.Register(serval);
             serval.AddController<object>(HttpMethods.Get, "/transport/cookies", null, (_, context) =>
             {
-                var options = new CookieOptions { Secure = false, Expires = DateTimeOffset.UtcNow.AddDays(1) };
+                var options = new CookieOptions
+                {
+                    Secure  = false,
+                    Expires = DateTimeOffset.UtcNow.AddDays(1)
+                };
                 context.Response.Cookies.Set("first", "one", options);
                 context.Response.Cookies.Set("second", "two", options);
                 return ValueTask.FromResult<IActionResult>(new TextResult("cookies"));
             });
             serval.AddController<object>(HttpMethods.Get, "/transport/early-hints", null, async (_, context) =>
             {
-                var hints = new Headers { [HeaderNames.Link] = "</site.css>; rel=preload; as=style" };
+                var hints = new Headers
+                {
+                    [HeaderNames.Link] = "</site.css>; rel=preload; as=style"
+                };
                 Assert.False(context.Response.SupportsEarlyHints);
                 Assert.False(await context.Response.SendEarlyHintsAsync(hints, context.RequestAborted));
                 Assert.False(context.Response.HasStarted);
@@ -177,7 +187,7 @@ public sealed class TransportTests
     {
         await using var server = await TransportTestHost.StartAsync(HttpVersion.Version30, true, ClientHandler,
             serval => Serval_Sample_TransportsControllers.Register(serval));
-        var client = server.Client;
+        var       client   = server.Client;
         using var response = await client.GetAsync("/test/items/12");
         Assert.Equal(HttpVersion.Version30, response.Version);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

@@ -76,7 +76,7 @@ public sealed class RequestScopeTests
     public async Task CleanupFailuresDoNotReplaceTheOriginalApplicationError()
     {
         var             original = new HttpErrorException(409, "An intentional conflict.");
-        await using var app = new DisposalFailureApplication((_, _) => throw original);
+        await using var app      = new DisposalFailureApplication((_, _) => throw original);
 
         await app.HandleAsync();
 
@@ -91,7 +91,7 @@ public sealed class RequestScopeTests
     public async Task CleanupFailuresDoNotMaskTransportExceptions()
     {
         var             original = new RequestTransportException("The stream was reset.");
-        await using var app = new DisposalFailureApplication((_, _) => throw original);
+        await using var app      = new DisposalFailureApplication((_, _) => throw original);
 
         var thrown = await Assert.ThrowsAsync<RequestTransportException>(() => app.HandleAsync().AsTask());
 
@@ -126,7 +126,7 @@ public sealed class RequestScopeTests
     {
         var             original  = new InvalidOperationException("Action failed.");
         var             rendering = new InvalidOperationException("Error rendering failed.");
-        await using var app = new DisposalFailureApplication((_, _) => throw original, rendering);
+        await using var app       = new DisposalFailureApplication((_, _) => throw original, rendering);
 
         await app.HandleAsync();
 
@@ -168,7 +168,11 @@ public sealed class RequestScopeTests
             context.Response.Headers["X-Test-Trace"] = context.TraceId;
             return action(controller, context);
         });
-        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        return services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateScopes  = true,
+            ValidateOnBuild = true
+        });
     }
 
     private static RequestHandler Handler(ServiceProvider services, IServiceScopeFactory factory, IRequestExceptionHandler errors, ILogger<RequestHandler> logger)
@@ -181,19 +185,22 @@ public sealed class RequestScopeTests
 
     private sealed class DisposalFailureApplication : IAsyncDisposable
     {
-        public Exception Cleanup { get; } = new InvalidOperationException("Cleanup failed.");
-        public FailingDisposalScope Scope { get; }
-        public RecordingExceptionHandler Errors { get; }
-        public RecordingLogger Logger { get; } = new();
-        public RecordingResponse Response { get; } = new();
-        private readonly ServiceProvider _services;
-        private readonly RequestHandler _handler;
+        public           Exception                 Cleanup  { get; } = new InvalidOperationException("Cleanup failed.");
+        public           FailingDisposalScope      Scope    { get; }
+        public           RecordingExceptionHandler Errors   { get; }
+        public           RecordingLogger           Logger   { get; } = new();
+        public           RecordingResponse         Response { get; } = new();
+        private readonly ServiceProvider           _services;
+        private readonly RequestHandler            _handler;
 
         public DisposalFailureApplication(ControllerAction<object> action, Exception? handlerFailure = null)
         {
             _services = Application(action);
-            Scope = new FailingDisposalScope(_services.CreateScope(), Cleanup);
-            Errors = new RecordingExceptionHandler { Failure = handlerFailure };
+            Scope     = new FailingDisposalScope(_services.CreateScope(), Cleanup);
+            Errors = new RecordingExceptionHandler
+            {
+                Failure = handlerFailure
+            };
             _handler = Handler(_services, new TestScopeFactory(() => Scope), Errors, Logger);
         }
 

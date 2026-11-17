@@ -284,7 +284,7 @@ public sealed class TransportTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         while (true)
         {
-            var payload = await client.GetStringAsync(PollUrl(url, sid), timeout.Token);
+            var     payload     = await client.GetStringAsync(PollUrl(url, sid), timeout.Token);
             string? application = null;
             foreach (var packet in payload.Split('\x1e'))
             {
@@ -299,7 +299,10 @@ public sealed class TransportTests
                 }
             }
 
-            if (application is not null) { return application; }
+            if (application is not null)
+            {
+                return application;
+            }
         }
     }
 

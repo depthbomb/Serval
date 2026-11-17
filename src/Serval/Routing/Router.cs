@@ -19,7 +19,7 @@ internal sealed class Router : IUrlGenerator, IEndpointMatcher
 
     public Router(ControllerRegistry registry, ServalOptions options)
     {
-        _options = options;
+        _options    = options;
         _dispatcher = new RoutingMiddleware(this, options.AutomaticOptions);
         options.Validate();
         var endpoints  = registry.Freeze(options).Select(registration => (Registration: registration, Template: new RouteTemplate(registration.Template, options))).ToArray();

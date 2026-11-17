@@ -1,13 +1,13 @@
 import {appendLog} from "./log.js";
 
-const connectButton    = document.querySelector("#socket-connect");
+const connectButton = document.querySelector("#socket-connect");
 const disconnectButton = document.querySelector("#socket-disconnect");
-const textButton       = document.querySelector("#socket-send-text");
-const binaryButton     = document.querySelector("#socket-send-binary");
-const form             = document.querySelector("#socket-form");
-const messageInput     = document.querySelector("#socket-message");
-const status           = document.querySelector("#socket-status");
-const log              = document.querySelector("#socket-log");
+const textButton = document.querySelector("#socket-send-text");
+const binaryButton = document.querySelector("#socket-send-binary");
+const form = document.querySelector("#socket-form");
+const messageInput = document.querySelector("#socket-message");
+const status = document.querySelector("#socket-status");
+const log = document.querySelector("#socket-log");
 let socket = null;
 
 function updateControls(message) {

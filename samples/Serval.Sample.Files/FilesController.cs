@@ -32,6 +32,7 @@ public sealed class FilesController : ControllerBase
     {
         // Resolve an application-owned name rather than combining an untrusted path.
         AbortUnless(context.RouteValues["name"] == "report", StatusCodes.NotFound, "Unknown download.");
+
         return FileAsync(Path.Combine(AppContext.BaseDirectory, "Downloads", "report.csv"), "text/csv; charset=utf-8", "report.csv");
     }
 
@@ -48,7 +49,7 @@ public sealed class FilesController : ControllerBase
     {
         // An application's access check belongs here, before checking validators or opening the file.
         var resolver = new StaticFileResolver(Path.Combine(AppContext.BaseDirectory, "Downloads"));
-        var path = resolver.Resolve("/report.csv") ?? throw new HttpErrorException(StatusCodes.NotFound);
+        var path     = resolver.Resolve("/report.csv") ?? throw new HttpErrorException(StatusCodes.NotFound);
         await FileResponse.WriteAsync(context, new FileResource(path), "text/csv; charset=utf-8", "private, no-cache", "report.csv");
         return Empty();
     }
@@ -56,17 +57,21 @@ public sealed class FilesController : ControllerBase
     [Post("/uploads/digest")]
     public async ValueTask<IActionResult> DigestAsync(RequestContext context)
     {
-        await using var body = context.Request.OpenBodyStream(context.RequestAborted);
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        var buffer = new byte[8192];
-        var length = 0L;
-        int read;
+        await using var body   = context.Request.OpenBodyStream(context.RequestAborted);
+        using var       hash   = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var             buffer = new byte[8192];
+        var             length = 0L;
+        int             read;
         while ((read = await body.ReadAsync(buffer, context.RequestAborted)) != 0)
         {
             hash.AppendData(buffer, 0, read);
             length += read;
         }
 
-        return Json(new { length, sha256 = Convert.ToHexString(hash.GetHashAndReset()) });
+        return Json(new
+        {
+            length,
+            sha256 = Convert.ToHexString(hash.GetHashAndReset())
+        });
     }
 }

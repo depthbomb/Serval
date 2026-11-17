@@ -14,15 +14,15 @@ public sealed class StaticFileTests
     [Fact]
     public async Task IndependentFileMountsAndConditionalDownloadsSharePublicPieces()
     {
-        var assets = CreateRoot();
+        var assets    = CreateRoot();
         var downloads = CreateRoot();
         await File.WriteAllTextAsync(Path.Combine(assets, "custom.asset"), "asset");
         await File.WriteAllTextAsync(Path.Combine(downloads, "report.txt"), "report");
         var mount = new StaticFileMiddleware(new StaticFileOptions
         {
-            DirectoryPath = assets,
+            DirectoryPath       = assets,
             ContentTypeResolver = _ => "application/custom",
-            CachePolicy = _ => "public, max-age=3600",
+            CachePolicy         = _ => "public, max-age=3600",
         });
         var resolver = new StaticFileResolver(downloads);
         Assert.Null(resolver.Resolve("/../report.txt"));

@@ -17,12 +17,12 @@ public static class Program
     {
         if (args.Length > 0 && args[0] == "server")
         {
-            var port = int.Parse(args[1]);
+            var port    = int.Parse(args[1]);
             var builder = Host.CreateApplicationBuilder();
             builder.Logging.ClearProviders();
             builder.Services.AddServal().AddSocketIO(io => io.MapNamespace<EchoHandler>("/"), options =>
             {
-                options.MaxQueuedBytes = 16_000_000;
+                options.MaxQueuedBytes   = 16_000_000;
                 options.MaxQueuedPackets = 1024;
             }).AddHttpListener(options =>
             {
@@ -36,16 +36,29 @@ public static class Program
 
         var options = new SocketIOOptions();
         options.Validate();
-        object[] json = ["event", new Message { Index = 42, Text = new string('x', 128) }];
-        object[] binary = ["event", new BinaryMessage { Data = new byte[4096] }];
+        object[] json =
+        [
+            "event", new Message
+            {
+                Index = 42,
+                Text  = new string('x', 128)
+            }
+        ];
+        object[] binary =
+        [
+            "event", new BinaryMessage
+            {
+                Data = new byte[4096]
+            }
+        ];
         using var document = JsonDocument.Parse("[{\"index\":42,\"text\":\"hello\"}]");
-        var results = new[]
+        var       results  = new[] { Measure("encode-json", () => _consumed += PacketCodec.Encode(2, "/chat", 5, json, options)[0].Data.Length), Measure("encode-binary-4KiB", () => _consumed += PacketCodec.Encode(2, "/chat", 5, binary, options)[1].Data.Length), Measure("decode-typed-json", () => _consumed += new SocketIOArguments(document.RootElement, [], options.Json).Get<Message>(0)!.Index), };
+        Console.WriteLine(JsonSerializer.Serialize(new
         {
-            Measure("encode-json", () => _consumed += PacketCodec.Encode(2, "/chat", 5, json, options)[0].Data.Length),
-            Measure("encode-binary-4KiB", () => _consumed += PacketCodec.Encode(2, "/chat", 5, binary, options)[1].Data.Length),
-            Measure("decode-typed-json", () => _consumed += new SocketIOArguments(document.RootElement, [], options.Json).Get<Message>(0)!.Index),
-        };
-        Console.WriteLine(JsonSerializer.Serialize(new { runtime = RuntimeInformation.FrameworkDescription, processors = Environment.ProcessorCount, results }));
+            runtime    = RuntimeInformation.FrameworkDescription,
+            processors = Environment.ProcessorCount,
+            results
+        }));
         GC.KeepAlive(_consumed);
     }
 
@@ -57,26 +70,32 @@ public static class Program
             action();
         }
 
-        var elapsed = new double[7];
+        var elapsed     = new double[7];
         var allocations = new double[7];
         for (var sample = 0; sample < elapsed.Length; sample++)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
-            var before = GC.GetAllocatedBytesForCurrentThread();
+            var before  = GC.GetAllocatedBytesForCurrentThread();
             var started = Stopwatch.GetTimestamp();
             for (var index = 0; index < iterations; index++)
             {
                 action();
             }
 
-            elapsed[sample] = Stopwatch.GetElapsedTime(started).TotalNanoseconds / iterations;
-            allocations[sample] = (GC.GetAllocatedBytesForCurrentThread() - before) / (double)iterations;
+            elapsed[sample]     = Stopwatch.GetElapsedTime(started).TotalNanoseconds / iterations;
+            allocations[sample] = (GC.GetAllocatedBytesForCurrentThread() - before)  / (double)iterations;
         }
 
         Array.Sort(elapsed);
         Array.Sort(allocations);
-        return new { name, nanoseconds = elapsed[3], bytes = allocations[3], samples = elapsed };
+        return new
+        {
+            name,
+            nanoseconds = elapsed[3],
+            bytes       = allocations[3],
+            samples     = elapsed
+        };
     }
 }
 
@@ -97,8 +116,8 @@ public sealed class EchoHandler : SocketIOHandler
 
 public sealed class Message
 {
-    public int Index { get; set; }
-    public string Text { get; set; } = "";
+    public int    Index { get; set; }
+    public string Text  { get; set; } = "";
 }
 
 public sealed class BinaryMessage

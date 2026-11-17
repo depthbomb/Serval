@@ -1,9 +1,9 @@
 import {appendLog} from "./log.js";
 
 const startButton = document.querySelector("#events-start");
-const stopButton  = document.querySelector("#events-stop");
-const status      = document.querySelector("#events-status");
-const log         = document.querySelector("#events-log");
+const stopButton = document.querySelector("#events-stop");
+const status = document.querySelector("#events-status");
+const log = document.querySelector("#events-log");
 let source = null;
 
 function stopEvents(message) {

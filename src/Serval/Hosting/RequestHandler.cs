@@ -106,7 +106,7 @@ internal sealed class RequestHandler : IRequestHandler
             {
                 var contentTypes = request.Headers.GetValues(HeaderNames.ContentType);
                 if (contentTypes.Count != 1 || !MediaTypeHeaderValue.TryParse(contentTypes[0], out var contentType)
-                    || contentType.Parameters.GroupBy(parameter => parameter.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
+                                            || contentType.Parameters.GroupBy(parameter => parameter.Name, StringComparer.OrdinalIgnoreCase).Any(group => group.Count() > 1))
                 {
                     throw new HttpErrorException(StatusCodes.BadRequest, "QUERY requires a valid Content-Type.");
                 }

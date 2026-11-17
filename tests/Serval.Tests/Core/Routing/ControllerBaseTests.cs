@@ -140,12 +140,23 @@ public sealed class BaseHelperController : ControllerBase
         Assert.Same(Context.User, User);
         Items["tag"] = tag;
         DisableRequestTimeout();
-        Assert.False(await SendEarlyHintsAsync(new Headers { [HeaderNames.Link] = "</site.css>; rel=preload; as=style" }));
+        Assert.False(await SendEarlyHintsAsync(new Headers
+        {
+            [HeaderNames.Link] = "</site.css>; rel=preload; as=style"
+        }));
         await Task.Yield();
         Assert.Equal(tag, Items["tag"]);
         Response.Headers["X-Context"] = "yes";
         AbortUnless(id == RouteValue<int>("id"), StatusCodes.BadRequest);
-        return Json(new { id, user = User.Identity!.Name, url = Urls.Path("controller-base.info", new Dictionary<string, object?> { ["id"] = id }) });
+        return Json(new
+        {
+            id,
+            user = User.Identity!.Name,
+            url = Urls.Path("controller-base.info", new Dictionary<string, object?>
+            {
+                ["id"] = id
+            })
+        });
     }
 
     [Get("/deferred/{mode}")]

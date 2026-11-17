@@ -35,7 +35,7 @@ public sealed class FormBindingTests
     public async Task FilesBindAndFormParsingRunsInsideMiddleware()
     {
         await using var app      = new TestApplication();
-        const string             body     = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\n\r\nhello\r\n--example--\r\n";
+        const string    body     = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\n\r\nhello\r\n--example--\r\n";
         var             response = await app.SendAsync("/form-bindings/file", "POST", body, "multipart/form-data; boundary=example");
         Assert.Equal(200, response.StatusCode);
         Assert.Equal("a.txt:5:1:missing", response.Text);

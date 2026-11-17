@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
     <title>Serval streaming samples</title>
-    <link rel="stylesheet" href="/streaming/site.css">
-    <script type="module" src="/streaming/events.js"></script>
-    <script type="module" src="/streaming/socket.js"></script>
+    <link href="/streaming/site.css" rel="stylesheet">
+    <script src="/streaming/events.js" type="module"></script>
+    <script src="/streaming/socket.js" type="module"></script>
 </head>
 <body>
 <main>
@@ -20,10 +20,10 @@
             with <code>Last-Event-ID</code> to pick up where it left off.</p>
         <div class="controls">
             <button id="events-start" type="button">Start events</button>
-            <button id="events-stop" type="button" disabled>Stop events</button>
+            <button disabled id="events-stop" type="button">Stop events</button>
             <span id="events-status" role="status">Stopped</span>
         </div>
-        <ol id="events-log" class="log" role="log" aria-label="Server-sent events"></ol>
+        <ol aria-label="Server-sent events" class="log" id="events-log" role="log"></ol>
         <p>Starting again creates a new sequence. The client closes after event 10. A reconnect with
             <code>Last-Event-ID: 10</code> gets HTTP 204, which also stops automatic reconnects.</p>
     </section>
@@ -34,18 +34,18 @@
             The server echoes the same bytes and message type, including fragmented messages.</p>
         <div class="controls">
             <button id="socket-connect" type="button">Connect</button>
-            <button id="socket-disconnect" type="button" disabled>Disconnect</button>
+            <button disabled id="socket-disconnect" type="button">Disconnect</button>
             <span id="socket-status" role="status">Disconnected</span>
         </div>
         <form id="socket-form">
             <label for="socket-message">Message</label>
-            <input id="socket-message" name="message" value="Hello, Serval!" maxlength="1024" required>
+            <input id="socket-message" maxlength="1024" name="message" required value="Hello, Serval!">
             <div class="controls">
-                <button id="socket-send-text" type="submit" disabled>Send text</button>
-                <button id="socket-send-binary" type="submit" disabled>Send binary</button>
+                <button disabled id="socket-send-text" type="submit">Send text</button>
+                <button disabled id="socket-send-binary" type="submit">Send binary</button>
             </div>
         </form>
-        <ol id="socket-log" class="log" role="log" aria-label="WebSocket messages"></ol>
+        <ol aria-label="WebSocket messages" class="log" id="socket-log" role="log"></ol>
         <p>The server limits each message to 64 KiB and disconnects idle clients after two minutes.
             This page keeps the latest 100 log entries.</p>
     </section>

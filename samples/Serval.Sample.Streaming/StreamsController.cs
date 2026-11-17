@@ -33,8 +33,8 @@ public sealed class StreamsController : ControllerBase
         AbortIf(supplied.Count > 1 ||
                 supplied.Count == 1 &&
                 (!int.TryParse(supplied[0], NumberStyles.None, CultureInfo.InvariantCulture, out last) || last is < 0 or > 10),
-                StatusCodes.BadRequest,
-                "Last-Event-ID must be an integer from 0 through 10.");
+            StatusCodes.BadRequest,
+            "Last-Event-ID must be an integer from 0 through 10.");
 
         if (last == 10)
         {

@@ -7,7 +7,7 @@ namespace Serval.Middleware;
 
 internal sealed class ApplicationPipeline
 {
-    private bool _frozen;
+    private bool             _frozen;
     private RequestDelegate? _terminal;
 
     private readonly List<Func<RequestContext, RequestDelegate, ValueTask>> _middleware = [];
@@ -15,6 +15,7 @@ internal sealed class ApplicationPipeline
     internal void Add(Func<RequestContext, RequestDelegate, ValueTask> middleware)
     {
         ArgumentNullException.ThrowIfNull(middleware);
+
         if (_frozen)
         {
             throw new InvalidOperationException("Middleware registration is closed after the host starts.");
@@ -25,7 +26,7 @@ internal sealed class ApplicationPipeline
 
     internal RequestDelegate Build(RequestDelegate terminal)
     {
-        _frozen = true;
+        _frozen  = true;
         terminal = _terminal ?? terminal;
         for (var index = _middleware.Count - 1; index >= 0; index--)
         {
@@ -40,6 +41,7 @@ internal sealed class ApplicationPipeline
     internal void SetTerminal(RequestDelegate terminal)
     {
         ArgumentNullException.ThrowIfNull(terminal);
+
         if (_frozen)
         {
             throw new InvalidOperationException("Dispatch configuration is closed after the host starts.");

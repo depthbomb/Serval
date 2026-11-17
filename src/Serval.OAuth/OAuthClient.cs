@@ -196,7 +196,8 @@ public sealed class OAuthClient : IDisposable
     /// </exception>
     /// <exception cref="OperationCanceledException">The caller cancels or the backchannel deadline expires.</exception>
     /// <exception cref="InvalidOperationException">No user-information endpoint is configured.</exception>
-    public async ValueTask<JsonElement> GetUserInformationAsync(OAuthTokenResponse tokens, CancellationToken cancellationToken = default)
+    public async ValueTask<JsonElement> GetUserInformationAsync(OAuthTokenResponse tokens,
+                                                                CancellationToken  cancellationToken = default)
     {
         var endpoint = (OpenIdConnect is null ? _options.UserInformationEndpoint : (await OpenIdConnect.GetAsync(cancellationToken)).UserInformationEndpoint)
                        ?? throw new InvalidOperationException("A user information endpoint is required.");
@@ -211,7 +212,10 @@ public sealed class OAuthClient : IDisposable
         return await SendAsync(request, "user_information", false, timeout.Token);
     }
 
-    internal OAuthAuthorizationRequest CreateOidcAuthorizationRequest(Uri endpoint, Uri redirectUri, string nonce, IReadOnlyDictionary<string, string>? parameters)
+    internal OAuthAuthorizationRequest CreateOidcAuthorizationRequest(Uri                                  endpoint,
+                                                                      Uri                                  redirectUri,
+                                                                      string                               nonce,
+                                                                      IReadOnlyDictionary<string, string>? parameters)
     {
         OpenIdConnectOptions.ValidateParameters(parameters);
         OpenIdConnectOptions.ValidateParameters(_options.AuthorizationParameters);
@@ -225,8 +229,12 @@ public sealed class OAuthClient : IDisposable
         return await SendAsync(request, operation, false, timeout.Token);
     }
 
-    private OAuthAuthorizationRequest CreateAuthorizationRequestCore(Uri endpoint, Uri redirectUri, string? state,
-        IEnumerable<string>? scopes, IReadOnlyDictionary<string, string>? parameters, string? nonce = null)
+    private OAuthAuthorizationRequest CreateAuthorizationRequestCore(Uri                                  endpoint,
+                                                                     Uri                                  redirectUri,
+                                                                     string?                              state,
+                                                                     IEnumerable<string>?                 scopes,
+                                                                     IReadOnlyDictionary<string, string>? parameters,
+                                                                     string?                              nonce = null)
     {
         _options.ValidateUri(redirectUri, nameof(redirectUri));
         state ??= OAuthProtocol.RandomToken();
@@ -253,7 +261,7 @@ public sealed class OAuthClient : IDisposable
         {
             query.Add("nonce", nonce);
             var oidc = ((OAuthOptions)_options).OpenIdConnect!;
-            if (oidc.MaxAge is { } maxAge)
+            if (oidc.MaxAge is {} maxAge)
             {
                 query.Add("max_age", ((long)maxAge.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
@@ -273,10 +281,10 @@ public sealed class OAuthClient : IDisposable
                                                            CancellationToken          cancellationToken)
     {
         OAuthProtocol.AddParameters(form, _options.TokenParameters);
-        using var timeout = CreateTimeout(cancellationToken);
-        var endpoint = OpenIdConnect is null ? _options.TokenEndpoint : (await OpenIdConnect.GetAsync(timeout.Token)).TokenEndpoint;
-        using var request = FormRequest(endpoint, form);
-        var       root    = await SendAsync(request, operation, false, timeout.Token);
+        using var timeout  = CreateTimeout(cancellationToken);
+        var       endpoint = OpenIdConnect is null ? _options.TokenEndpoint : (await OpenIdConnect.GetAsync(timeout.Token)).TokenEndpoint;
+        using var request  = FormRequest(endpoint, form);
+        var       root     = await SendAsync(request, operation, false, timeout.Token);
 
         timeout.Token.ThrowIfCancellationRequested();
 

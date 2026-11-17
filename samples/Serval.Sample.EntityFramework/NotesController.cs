@@ -49,7 +49,13 @@ public sealed class NotesController : ControllerBase
         var offset = context.Request.Query.ContainsKey("offset") ? context.Request.QueryValue<int>("offset") : 0;
         var limit  = context.Request.Query.ContainsKey("limit") ? context.Request.QueryValue<int>("limit") : 20;
         AbortIf(offset < 0 || limit is < 1 or > 100, StatusCodes.BadRequest, "Offset must be nonnegative; limit must be 1 through 100.");
-        var notes = await _database.Notes.AsNoTracking().OrderBy(note => note.Id).Skip(offset).Take(limit).ToArrayAsync(context.RequestAborted);
+
+        var notes = await _database.Notes
+                                   .AsNoTracking()
+                                   .OrderBy(note => note.Id)
+                                   .Skip(offset)
+                                   .Take(limit)
+                                   .ToArrayAsync(context.RequestAborted);
         return Json(notes, NotesJsonContext.Default.NoteArray);
     }
 
@@ -59,6 +65,7 @@ public sealed class NotesController : ControllerBase
         var id   = RouteValue<int>("id");
         var note = await _database.Notes.AsNoTracking().SingleOrDefaultAsync(note => note.Id == id, context.RequestAborted);
         AbortIf(note is null, StatusCodes.NotFound, "Note not found.");
+
         return Json(note, NotesJsonContext.Default.Note);
     }
 
@@ -74,7 +81,10 @@ public sealed class NotesController : ControllerBase
         _database.Notes.Add(note);
         await _database.SaveChangesAsync(context.RequestAborted);
 
-        context.Response.Headers[HeaderNames.Location] = context.Urls.Path("notes.show", new Dictionary<string, object?> { ["id"] = note.Id });
+        context.Response.Headers[HeaderNames.Location] = context.Urls.Path("notes.show", new Dictionary<string, object?>
+        {
+            ["id"] = note.Id
+        });
         return Json(note, NotesJsonContext.Default.Note, StatusCodes.Created);
     }
 
@@ -85,7 +95,9 @@ public sealed class NotesController : ControllerBase
         var note  = await _database.Notes.FindAsync([RouteValue<int>("id")], context.RequestAborted) ?? throw new HttpErrorException(StatusCodes.NotFound, "Note not found.");
         note.Title = input.Title!.Trim();
         note.Body  = input.Body ?? "";
+
         await _database.SaveChangesAsync(context.RequestAborted);
+
         return Json(note, NotesJsonContext.Default.Note);
     }
 
@@ -94,7 +106,9 @@ public sealed class NotesController : ControllerBase
     {
         var note = await _database.Notes.FindAsync([RouteValue<int>("id")], context.RequestAborted) ?? throw new HttpErrorException(StatusCodes.NotFound, "Note not found.");
         _database.Notes.Remove(note);
+
         await _database.SaveChangesAsync(context.RequestAborted);
+
         return StatusCode(StatusCodes.NoContent);
     }
 
@@ -102,6 +116,7 @@ public sealed class NotesController : ControllerBase
     {
         var input = await context.Request.ReadJsonAsync(NotesJsonContext.Default.NoteInput, context.RequestAborted);
         AbortIf(string.IsNullOrWhiteSpace(input.Title) || input.Title.Length > 120 || input.Body?.Length > 4000, StatusCodes.UnprocessableContent, "Provide a title of 1-120 characters and a body of at most 4000 characters.");
+
         return input;
     }
 }
