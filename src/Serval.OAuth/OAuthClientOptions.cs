@@ -41,7 +41,7 @@ public class OAuthClientOptions
     /// <summary>The optional authorization endpoint, required for browser authorization requests.</summary>
     public Uri? AuthorizationEndpoint { get; set; }
 
-    /// <summary>The required token endpoint used for code exchange, refresh, and client credentials.</summary>
+    /// <summary>The token endpoint for OAuth operations. OIDC obtains it from discovery instead.</summary>
     public Uri TokenEndpoint { get; set; } = null!;
 
     /// <summary>The optional endpoint used by GetUserInformationAsync.</summary>
@@ -103,7 +103,10 @@ public class OAuthClientOptions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ClientId);
 
-        ValidateUri(TokenEndpoint, nameof(TokenEndpoint));
+        if (this is not OAuthOptions { OpenIdConnect: not null })
+        {
+            ValidateUri(TokenEndpoint, nameof(TokenEndpoint));
+        }
 
         foreach (var endpoint in new[] { AuthorizationEndpoint, UserInformationEndpoint, RevocationEndpoint })
         {
@@ -154,6 +157,9 @@ public class OAuthClientOptions
 /// <summary>Adds browser sign-in, correlation, and local-session settings to an OAuth client.</summary>
 public sealed class OAuthOptions : OAuthClientOptions
 {
+    /// <summary>Enables discovery and validated OpenID Connect code-flow sign-in when configured.</summary>
+    public OpenIdConnectOptions? OpenIdConnect { get; set; }
+
     /// <summary>
     ///     The absolute callback URI. Must have no query, user information, or fragment, and must satisfy the endpoint
     ///     transport policy.
@@ -178,8 +184,8 @@ public sealed class OAuthOptions : OAuthClientOptions
     public string? ExpectedIssuer { get; set; }
 
     /// <summary>
-    ///     The required callback that maps provider tokens or user information to a principal with an authenticated
-    ///     identity.
+    ///     Maps provider data to an authenticated principal. Required for OAuth; OIDC defaults to the validated ID-token
+    ///     principal. OIDC mapping runs only after validation and receives OpenIdConnect on the sign-in context.
     /// </summary>
     public Func<OAuthSignInContext, ValueTask<ClaimsPrincipal>>? CreatePrincipal { get; set; }
 
@@ -187,11 +193,21 @@ public sealed class OAuthOptions : OAuthClientOptions
     {
         base.Validate();
 
-        ValidateUri(AuthorizationEndpoint, nameof(AuthorizationEndpoint));
+        if (OpenIdConnect is null)
+        {
+            ValidateUri(AuthorizationEndpoint, nameof(AuthorizationEndpoint));
+        }
+        else
+        {
+            OpenIdConnect.Validate(this);
+        }
         ValidateUri(RedirectUri, nameof(RedirectUri));
 
         ArgumentException.ThrowIfNullOrWhiteSpace(SignInScheme);
-        ArgumentNullException.ThrowIfNull(CreatePrincipal);
+        if (OpenIdConnect is null)
+        {
+            ArgumentNullException.ThrowIfNull(CreatePrincipal);
+        }
 
         if (RedirectUri.Query.Length != 0)
         {
@@ -248,6 +264,9 @@ public sealed class OAuthRequestContext
 /// <summary>Provides the callback with provider tokens and the current request.</summary>
 public sealed class OAuthSignInContext
 {
+    /// <summary>The validated OIDC identity, or null for ordinary OAuth providers.</summary>
+    public OpenIdConnectIdentity? OpenIdConnect { get; internal init; }
+
     /// <summary>The browser callback request and its scoped services.</summary>
     public RequestContext Request { get; }
 

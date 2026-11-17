@@ -13,7 +13,7 @@ still an internal, pre-1.0 project, so APIs and template syntax may change.
 - Request-scoped services, composable middleware, cancellation, configurable limits, and error handling.
 - Text, JSON, files, redirects, static-file serving, and an optional `index.html` fallback for client-side routes.
 - Streaming responses, server-sent events, and transport-specific features such as WebSockets and Early Hints.
-- Cookie and bearer authentication, authorization policies, password hashing, CSRF helpers, and OAuth sign-in.
+- Cookie and bearer authentication, authorization policies, password hashing, CSRF helpers, and OAuth/OIDC sign-in.
 - Signed route URLs with readable, authenticated route and query data and optional expiration.
 - Compiled Savanna templates and generated Vite asset references, with Rider integration and frontend HMR support.
 
@@ -30,7 +30,7 @@ These ten projects produce NuGet packages. Build them locally or consume them th
 |--------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | [Serval](src/Serval)                                               | Hosting, controllers, routing, middleware, HTTP helpers, and static files.             |
 | [Serval.Authentication](src/Serval.Authentication)                 | Authentication, sessions, authorization, password hashing, and CSRF helpers.           |
-| [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and provider sign-in, including authorization code flows with PKCE.  |
+| [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and OIDC sign-in with discovery, PKCE, and validated ID tokens.       |
 | [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed route URLs, verified payload data, request validation, and optional expiration. |
 | [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, binary payloads, acknowledgements, namespaces, and in-memory rooms.  |
 | [Serval.Savanna](src/Serval.Savanna)                               | Compiled HTML templates with typed models, layouts, includes, and components.          |
@@ -625,7 +625,3 @@ requires the .NET SDK; building it also needs JDK 25. On Windows:
 ```
 
 Install the ZIP from `integrations/Rider/build/distributions` through Rider's plugin settings.
-
-## License
-
-[MIT](LICENSE), copyright Caprine Logic.

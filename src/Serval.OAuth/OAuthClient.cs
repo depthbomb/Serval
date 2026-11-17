@@ -17,6 +17,8 @@ namespace Serval.OAuth;
 /// </remarks>
 public sealed class OAuthClient : IDisposable
 {
+    internal OpenIdConnectProvider? OpenIdConnect { get; }
+
     private readonly HttpClient         _http;
     private readonly OAuthClientOptions _options;
     private readonly bool               _ownsHttp;
@@ -24,7 +26,9 @@ public sealed class OAuthClient : IDisposable
     /// <summary>Validates options and creates or uses a backchannel HTTP client.</summary>
     /// <param name="options">The provider endpoints, credentials, and request settings.</param>
     /// <remarks>A default client disables redirects and cookies. A supplied client remains application-owned.</remarks>
-    public OAuthClient(OAuthClientOptions options)
+    public OAuthClient(OAuthClientOptions options) : this(options, TimeProvider.System) {}
+
+    internal OAuthClient(OAuthClientOptions options, TimeProvider time)
     {
         options.Validate();
 
@@ -39,12 +43,17 @@ public sealed class OAuthClient : IDisposable
         {
             Timeout = Timeout.InfiniteTimeSpan,
         };
+        if (options is OAuthOptions { OpenIdConnect: not null } oidc)
+        {
+            OpenIdConnect = new OpenIdConnectProvider(this, oidc, time);
+        }
     }
 
     /// <summary>Disposes the HTTP client only when this instance created it.</summary>
     /// <remarks>An application-supplied backchannel remains open.</remarks>
     public void Dispose()
     {
+        OpenIdConnect?.Dispose();
         if (_ownsHttp)
         {
             _http.Dispose();
@@ -70,34 +79,7 @@ public sealed class OAuthClient : IDisposable
                                                                 IReadOnlyDictionary<string, string>? parameters = null)
     {
         var endpoint = _options.AuthorizationEndpoint ?? throw new InvalidOperationException("An authorization endpoint is required.");
-        _options.ValidateUri(redirectUri, nameof(redirectUri));
-        state ??= OAuthProtocol.RandomToken();
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(state);
-
-        var verifier = OAuthProtocol.RandomToken();
-        var query = new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["client_id"]             = _options.ClientId,
-            ["redirect_uri"]          = redirectUri.AbsoluteUri,
-            ["response_type"]         = "code",
-            ["state"]                 = state,
-            ["code_challenge"]        = OAuthProtocol.Challenge(verifier),
-            ["code_challenge_method"] = "S256",
-        };
-        var scope = OAuthProtocol.Scope(scopes ?? _options.Scopes);
-        if (scope.Length != 0)
-        {
-            query.Add("scope", scope);
-        }
-
-        OAuthProtocol.AddParameters(query, _options.AuthorizationParameters);
-        if (parameters is not null)
-        {
-            OAuthProtocol.AddParameters(query, parameters);
-        }
-
-        return new OAuthAuthorizationRequest(OAuthProtocol.AuthorizationUri(endpoint, query), state, verifier);
+        return CreateAuthorizationRequestCore(endpoint, redirectUri, state, scopes, parameters);
     }
 
     /// <summary>Exchanges an authorization code and PKCE verifier for tokens.</summary>
@@ -189,7 +171,8 @@ public sealed class OAuthClient : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
-        var endpoint = _options.RevocationEndpoint ?? throw new InvalidOperationException("A revocation endpoint is required.");
+        var endpoint = (OpenIdConnect is null ? _options.RevocationEndpoint : (await OpenIdConnect.GetAsync(cancellationToken)).RevocationEndpoint)
+                       ?? throw new InvalidOperationException("A revocation endpoint is required.");
         var form = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["token"] = token
@@ -215,7 +198,8 @@ public sealed class OAuthClient : IDisposable
     /// <exception cref="InvalidOperationException">No user-information endpoint is configured.</exception>
     public async ValueTask<JsonElement> GetUserInformationAsync(OAuthTokenResponse tokens, CancellationToken cancellationToken = default)
     {
-        var endpoint = _options.UserInformationEndpoint ?? throw new InvalidOperationException("A user information endpoint is required.");
+        var endpoint = (OpenIdConnect is null ? _options.UserInformationEndpoint : (await OpenIdConnect.GetAsync(cancellationToken)).UserInformationEndpoint)
+                       ?? throw new InvalidOperationException("A user information endpoint is required.");
         if (!tokens.TokenType.Equals(HttpAuthenticationSchemes.Bearer, StringComparison.OrdinalIgnoreCase))
         {
             throw new OAuthProtocolException("unsupported_token_type");
@@ -227,13 +211,71 @@ public sealed class OAuthClient : IDisposable
         return await SendAsync(request, "user_information", false, timeout.Token);
     }
 
+    internal OAuthAuthorizationRequest CreateOidcAuthorizationRequest(Uri endpoint, Uri redirectUri, string nonce, IReadOnlyDictionary<string, string>? parameters)
+    {
+        OpenIdConnectOptions.ValidateParameters(parameters);
+        OpenIdConnectOptions.ValidateParameters(_options.AuthorizationParameters);
+        return CreateAuthorizationRequestCore(endpoint, redirectUri, null, _options.Scopes.Prepend("openid"), parameters, nonce);
+    }
+
+    internal async ValueTask<JsonElement> GetDocumentAsync(Uri address, string operation, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, address);
+        using var timeout = CreateTimeout(ct);
+        return await SendAsync(request, operation, false, timeout.Token);
+    }
+
+    private OAuthAuthorizationRequest CreateAuthorizationRequestCore(Uri endpoint, Uri redirectUri, string? state,
+        IEnumerable<string>? scopes, IReadOnlyDictionary<string, string>? parameters, string? nonce = null)
+    {
+        _options.ValidateUri(redirectUri, nameof(redirectUri));
+        state ??= OAuthProtocol.RandomToken();
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(state);
+
+        var verifier = OAuthProtocol.RandomToken();
+        var query = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["client_id"]             = _options.ClientId,
+            ["redirect_uri"]          = redirectUri.AbsoluteUri,
+            ["response_type"]         = "code",
+            ["state"]                 = state,
+            ["code_challenge"]        = OAuthProtocol.Challenge(verifier),
+            ["code_challenge_method"] = "S256",
+        };
+        var scope = OAuthProtocol.Scope(scopes ?? _options.Scopes);
+        if (scope.Length != 0)
+        {
+            query.Add("scope", scope);
+        }
+
+        if (nonce is not null)
+        {
+            query.Add("nonce", nonce);
+            var oidc = ((OAuthOptions)_options).OpenIdConnect!;
+            if (oidc.MaxAge is { } maxAge)
+            {
+                query.Add("max_age", ((long)maxAge.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+        }
+
+        OAuthProtocol.AddParameters(query, _options.AuthorizationParameters);
+        if (parameters is not null)
+        {
+            OAuthProtocol.AddParameters(query, parameters);
+        }
+
+        return new OAuthAuthorizationRequest(OAuthProtocol.AuthorizationUri(endpoint, query), state, verifier);
+    }
+
     private async ValueTask<OAuthTokenResponse> TokenAsync(string                     operation,
                                                            Dictionary<string, string> form,
                                                            CancellationToken          cancellationToken)
     {
         OAuthProtocol.AddParameters(form, _options.TokenParameters);
-        using var request = FormRequest(_options.TokenEndpoint, form);
         using var timeout = CreateTimeout(cancellationToken);
+        var endpoint = OpenIdConnect is null ? _options.TokenEndpoint : (await OpenIdConnect.GetAsync(timeout.Token)).TokenEndpoint;
+        using var request = FormRequest(endpoint, form);
         var       root    = await SendAsync(request, operation, false, timeout.Token);
 
         timeout.Token.ThrowIfCancellationRequested();
@@ -381,6 +423,7 @@ public sealed class OAuthClient : IDisposable
             AccessToken    = OAuthProtocol.String(root, "access_token") ?? "",
             TokenType      = OAuthProtocol.String(root, "token_type")   ?? "",
             RefreshToken   = OAuthProtocol.String(root, "refresh_token"),
+            IdToken        = OAuthProtocol.String(root, "id_token"),
             ExpiresIn      = expires,
             Scope          = OAuthProtocol.String(root, "scope"),
             AdditionalData = root.Clone(),

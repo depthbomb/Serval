@@ -12,6 +12,9 @@ namespace Serval.OAuth;
 /// <summary>Stores the server-side data for one pending browser sign-in attempt.</summary>
 public sealed class OAuthState
 {
+    /// <summary>The OIDC nonce bound to this attempt, or null for OAuth.</summary>
+    public string? Nonce { get; init; }
+
     /// <summary>The provider scheme that owns this attempt.</summary>
     public required string Scheme { get; init; }
 
@@ -37,6 +40,7 @@ public sealed class OAuthState
     /// <returns>An isolated copy suitable for storage or request processing.</returns>
     public OAuthState Copy() => new()
     {
+        Nonce           = Nonce,
         Scheme          = Scheme,
         CorrelationHash = CorrelationHash,
         CodeVerifier    = CodeVerifier,

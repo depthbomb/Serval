@@ -20,11 +20,26 @@ public static class OAuthBuilderExtensions
             throw new ArgumentException($"OAuth client '{name}' is already registered.", nameof(name));
         }
 
-        services.AddKeyedSingleton<OAuthClient>(name, (_, _) => new OAuthClient(options));
+        services.AddKeyedSingleton<OAuthClient>(name, (provider, _) => new OAuthClient(options, provider.GetService<TimeProvider>() ?? TimeProvider.System));
     }
 
     extension(AuthenticationBuilder builder)
     {
+        /// <summary>Registers OIDC code-flow sign-in with discovery, PKCE, nonce, and ID-token validation.</summary>
+        /// <param name="scheme">The unique provider scheme.</param>
+        /// <param name="configure">Configures client credentials, callback URI, and OpenIdConnect.Issuer.</param>
+        /// <returns>The authentication builder. Use BeginOAuthSignInAsync and CompleteOAuthSignInAsync for this scheme.</returns>
+        public AuthenticationBuilder AddOpenIdConnect(string scheme, Action<OAuthOptions> configure)
+        {
+            ArgumentNullException.ThrowIfNull(configure);
+            return builder.AddOAuth(scheme, options =>
+            {
+                options.OpenIdConnect = new OpenIdConnectOptions();
+                configure(options);
+                ArgumentNullException.ThrowIfNull(options.OpenIdConnect);
+            });
+        }
+
         /// <summary>Registers an OAuth provider, client, and default in-memory state store.</summary>
         /// <param name="scheme">The unique OAuth scheme name.</param>
         /// <param name="configure">

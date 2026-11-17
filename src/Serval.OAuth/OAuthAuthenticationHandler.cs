@@ -96,11 +96,23 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
             throw new InvalidOperationException("Secure OAuth correlation cookies require an HTTPS request.");
         }
 
-        var authorization = _client.CreateAuthorizationRequest(_options.RedirectUri, parameters: parameters);
+        string? nonce = null;
+        OAuthAuthorizationRequest authorization;
+        if (_client.OpenIdConnect is { } provider)
+        {
+            var configuration = await provider.GetAsync(context.RequestAborted);
+            nonce = OAuthProtocol.RandomToken();
+            authorization = _client.CreateOidcAuthorizationRequest(configuration.AuthorizationEndpoint, _options.RedirectUri, nonce, parameters);
+        }
+        else
+        {
+            authorization = _client.CreateAuthorizationRequest(_options.RedirectUri, parameters: parameters);
+        }
         var correlation   = OAuthProtocol.RandomToken();
         var expiry        = _time.GetUtcNow() + _options.StateLifetime;
         await _states.StoreAsync(Hash(authorization.State), new OAuthState
         {
+            Nonce           = nonce,
             Scheme          = scheme,
             CorrelationHash = Hash(correlation),
             CodeVerifier    = authorization.CodeVerifier,
@@ -171,6 +183,15 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
             throw new OAuthProtocolException("invalid_issuer");
         }
 
+        if (_client.OpenIdConnect is { } oidcProvider)
+        {
+            var configuration = await oidcProvider.GetAsync(context.RequestAborted);
+            if ((issuer is not null || configuration.RequiresCallbackIssuer) && issuer != _options.OpenIdConnect!.Issuer)
+            {
+                throw new OAuthProtocolException("invalid_issuer");
+            }
+        }
+
         var error = Query(context, "error");
         var code  = Query(context, "code");
         if (error is not null)
@@ -183,14 +204,22 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
             throw new OAuthProtocolException("missing_code");
         }
 
-        var tokens    = await _client.ExchangeCodeAsync(code, state.RedirectUri, state.CodeVerifier, context.RequestAborted);
-        var principal = await _options.CreatePrincipal!(new OAuthSignInContext(context, scheme, _client, tokens));
+        var tokens = await _client.ExchangeCodeAsync(code, state.RedirectUri, state.CodeVerifier, context.RequestAborted);
+        OpenIdConnectIdentity? identity = null;
+        if (_options.OpenIdConnect is not null)
+        {
+            identity = await new OpenIdConnectValidator(_client, _options, _time).ValidateAsync(tokens, state, code, scheme, context.RequestAborted);
+        }
+
+        var signInContext = new OAuthSignInContext(context, scheme, _client, tokens) { OpenIdConnect = identity };
+        var principal = _options.CreatePrincipal is { } createPrincipal ? await createPrincipal(signInContext) : identity!.Principal;
+        context.RequestAborted.ThrowIfCancellationRequested();
         if (principal is null || !principal.Identities.Any(identity => identity.IsAuthenticated))
         {
             throw new OAuthProtocolException("invalid_identity");
         }
 
-        // Tokens remain server-side. The mapping callback controls account linking and token storage.
+        // Tokens remain server-side. An optional mapping callback controls account linking and token storage.
         await context.SignInAsync(principal, _options.SignInScheme, state.Properties);
         return new OAuthSignInResult(principal, tokens, state.ReturnUrl);
     }

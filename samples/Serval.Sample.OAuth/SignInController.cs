@@ -25,11 +25,12 @@ public sealed class SignInController : ControllerBase
 
     [Get("/")]
     public ValueTask<IActionResult> IndexAsync(RequestContext context) => TextAsync($"""
-                                                                                     OAuth authorization-code sign-in with PKCE and server-side cookie sessions
+                                                                                     OAuth/OIDC authorization-code sign-in with PKCE and server-side cookie sessions
                                                                                      Provider configured: {_provider.Configured}
                                                                                      Set environment variables before starting:
-                                                                                       OAuth__ClientId, OAuth__AuthorizationEndpoint, OAuth__TokenEndpoint,
-                                                                                       OAuth__UserInformationEndpoint
+                                                                                       OAuth__ClientId and OAuth__Issuer for OIDC discovery and validated ID tokens.
+                                                                                     For plain OAuth, replace Issuer with OAuth__AuthorizationEndpoint,
+                                                                                       OAuth__TokenEndpoint, OAuth__UserInformationEndpoint.
                                                                                      Optional: OAuth__ClientSecret, OAuth__ClientAuthentication (ClientSecretBasic or
                                                                                      ClientSecretPost), OAuth__Scopes (space separated), OAuth__ExpectedIssuer,
                                                                                      OAuth__IdClaim (default sub), OAuth__NameClaim (default name).
@@ -37,8 +38,8 @@ public sealed class SignInController : ControllerBase
                                                                                      GET /auth/login starts sign-in. GET /auth/me shows the local identity.
                                                                                      GET /auth/csrf returns a token for POST /auth/logout (X-CSRF-Token header).
                                                                                      Missing provider configuration makes /auth/login return 503.
-                                                                                     Tokens stay on the server. This sample uses the provider's profile endpoint;
-                                                                                     it does not implement OIDC ID-token validation. Local logout revokes only the
+                                                                                     Tokens stay on the server. OIDC uses validated ID-token claims; plain OAuth
+                                                                                     uses the provider's profile endpoint. Local logout revokes only the
                                                                                      local session, not the provider session or grants. Use HTTPS outside loopback.
                                                                                      """);
 

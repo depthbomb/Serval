@@ -40,9 +40,19 @@ public static class Program
     private static void ConfigureProvider(OAuthOptions options, IConfiguration configuration, int port)
     {
         options.ClientId                = Required(configuration, "ClientId");
-        options.AuthorizationEndpoint   = new Uri(Required(configuration, "AuthorizationEndpoint"));
-        options.TokenEndpoint           = new Uri(Required(configuration, "TokenEndpoint"));
-        options.UserInformationEndpoint = new Uri(Required(configuration, "UserInformationEndpoint"));
+
+        var issuer = configuration["OAuth:Issuer"];
+        if (!string.IsNullOrWhiteSpace(issuer))
+        {
+            options.OpenIdConnect = new OpenIdConnectOptions { Issuer = issuer };
+        }
+        else
+        {
+            options.AuthorizationEndpoint   = new Uri(Required(configuration, "AuthorizationEndpoint"));
+            options.TokenEndpoint           = new Uri(Required(configuration, "TokenEndpoint"));
+            options.UserInformationEndpoint = new Uri(Required(configuration, "UserInformationEndpoint"));
+        }
+
         options.RedirectUri             = new Uri($"http://localhost:{port}/auth/callback");
         options.AllowLoopbackHttp       = true;
         options.CorrelationCookiePrefix = "Serval.Sample.OAuth.State.";
@@ -55,6 +65,11 @@ public static class Program
         foreach (var scope in (configuration["OAuth:Scopes"] ?? "profile").Split(' ', StringSplitOptions.RemoveEmptyEntries))
         {
             options.Scopes.Add(scope);
+        }
+
+        if (options.OpenIdConnect is not null)
+        {
+            return;
         }
 
         var idClaim   = configuration["OAuth:IdClaim"]   ?? "sub";

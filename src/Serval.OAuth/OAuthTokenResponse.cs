@@ -24,6 +24,9 @@ public sealed class OAuthTokenResponse
     /// <summary>The optional refresh token returned by the provider.</summary>
     public string? RefreshToken { get; init; }
 
+    /// <summary>The unvalidated ID token. Browser OIDC completion validates it before creating a session.</summary>
+    public string? IdToken { get; init; }
+
     /// <summary>The optional nonnegative token lifetime measured from issuance.</summary>
     public TimeSpan? ExpiresIn { get; init; }
 
