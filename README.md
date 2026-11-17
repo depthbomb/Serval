@@ -445,6 +445,22 @@ matching endpoints, handles automatic OPTIONS and 405, and returns false only fo
 `automaticOptions: false` to disable synthesized OPTIONS responses. HEAD selection follows `ServalOptions.AutomaticHead`.
 `CanonicalPathMiddleware.TryRedirectAsync` provides the default slash redirect behavior as a separate step.
 
+### Mount files and choose fallbacks
+
+Create separate `StaticFileMiddleware` instances with their own `StaticFileOptions` for different directories. Call
+`TryServeAsync(context, relativePath)` when mounting under a prefix. `ContentTypeResolver` selects a MIME type, and
+`CachePolicy` can choose caching from each `FileResource`. `FileContentTypes.Get` provides the default extension lookup.
+
+An application dispatcher can check assets, call `RoutingMiddleware.TryHandleAsync`, then decide whether an unmatched
+GET or HEAD should receive an SPA shell. For example, require an HTML navigation request and exclude `/api` and asset
+paths before calling `files.TryServeAsync(context, "/index.html")`. Check whether routing handled the request;
+an action's deliberate 404 should remain its response.
+
+For a protected download, authorize first, resolve the path with `StaticFileResolver`, inspect a `FileResource`, and call
+`FileResponse.WriteAsync(context, file, contentType, "private, no-cache", downloadName)`. The same writer supports HEAD
+and conditional GET. `ConditionalRequests.IsNotModified` also works with validators for non-file resources. Resolver
+roots must be application-controlled; resolution does not lock filesystem entries against other writers.
+
 ### Feed a custom parser from the request body
 
 ```csharp

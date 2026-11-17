@@ -20,6 +20,12 @@ public enum StaticFilePriority
 /// <summary>Configures optional static-file serving for GET and HEAD requests.</summary>
 public sealed class StaticFileOptions
 {
+    /// <summary>Resolves media types from physical file paths. Return null for unknown types.</summary>
+    public Func<string, string?> ContentTypeResolver { get; set; } = FileContentTypes.Get;
+
+    /// <summary>Optionally selects Cache-Control per file. Null uses CacheControl.</summary>
+    public Func<FileResource, string>? CachePolicy { get; set; }
+
     /// <summary>
     ///     The existing directory to serve, or null to disable static files. No directory listing is provided.
     /// </summary>
@@ -53,6 +59,7 @@ public sealed class StaticFileOptions
 
     internal void Validate()
     {
+        ArgumentNullException.ThrowIfNull(ContentTypeResolver);
         if (!Enum.IsDefined(Priority))
         {
             throw new ArgumentOutOfRangeException(nameof(Priority));

@@ -11,6 +11,52 @@ namespace Serval.Tests.Core.Http;
 
 public sealed class StaticFileTests
 {
+    [Fact]
+    public async Task IndependentFileMountsAndConditionalDownloadsSharePublicPieces()
+    {
+        var assets = CreateRoot();
+        var downloads = CreateRoot();
+        await File.WriteAllTextAsync(Path.Combine(assets, "custom.asset"), "asset");
+        await File.WriteAllTextAsync(Path.Combine(downloads, "report.txt"), "report");
+        var mount = new StaticFileMiddleware(new StaticFileOptions
+        {
+            DirectoryPath = assets,
+            ContentTypeResolver = _ => "application/custom",
+            CachePolicy = _ => "public, max-age=3600",
+        });
+        var resolver = new StaticFileResolver(downloads);
+        Assert.Null(resolver.Resolve("/../report.txt"));
+        Assert.Null(resolver.Resolve("/%2e%2e/report.txt"));
+        await using var app = new TestApplication(configureBuilder: builder => builder.DispatchWith(async context =>
+        {
+            if (await mount.TryServeAsync(context))
+            {
+                return;
+            }
+
+            var path = resolver.Resolve(context.Request.Url.AbsolutePath);
+            if (path is null)
+            {
+                context.Response.StatusCode = 404;
+                return;
+            }
+
+            await FileResponse.WriteAsync(context, new FileResource(path, "\"content,hash\""), FileContentTypes.Get(path), "private, no-cache", "report.txt");
+        }));
+        var asset = await app.SendAsync("/custom.asset");
+        Assert.Equal("application/custom", asset.Headers[HeaderNames.ContentType]);
+        Assert.Equal("public, max-age=3600", asset.Headers[HeaderNames.CacheControl]);
+        var download = await app.SendAsync("/report.txt");
+        Assert.Equal("report", download.Text);
+        Assert.Equal("private, no-cache", download.Headers[HeaderNames.CacheControl]);
+        Assert.Equal(304, (await app.SendAsync("/report.txt", configureHeaders: headers => headers[HeaderNames.IfNoneMatch] = "\"other\", W/\"content,hash\"")).StatusCode);
+        Assert.Equal(200, (await app.SendAsync("/report.txt", configureHeaders: headers => headers[HeaderNames.IfNoneMatch] = "\"content,hash\"invalid")).StatusCode);
+        var head = await app.SendAsync("/report.txt", HttpMethods.Head);
+        Assert.Empty(head.Text);
+        Assert.Contains("report.txt", head.Headers[HeaderNames.ContentDisposition]!);
+        Assert.Throws<ArgumentException>(() => new FileResource(Path.Combine(downloads, "report.txt"), "unquoted"));
+    }
+
     [Theory]
     [InlineData("font.OTF", "font/otf")]
     [InlineData("song.m4a", "audio/mp4")]
