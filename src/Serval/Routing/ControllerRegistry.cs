@@ -22,6 +22,27 @@ public sealed class ControllerRegistry
     private          bool                                _frozen;
     private readonly List<Func<ServalOptions, Endpoint>> _endpoints = [];
 
+    /// <summary>Adds a delegate endpoint without activating a controller or executing an action result.</summary>
+    public void Add(string method, string template, string? name, RequestDelegate handler, params MiddlewareAttribute[] middleware)
+        => Add(method, template, name, handler, middleware, null);
+
+    internal void Add(string method, string template, string? name, RequestDelegate handler, MiddlewareAttribute[] middleware, Action<EndpointBuilder>? configure)
+    {
+        EnsureMutable();
+        ArgumentException.ThrowIfNullOrWhiteSpace(method);
+        ArgumentNullException.ThrowIfNull(handler);
+        ArgumentNullException.ThrowIfNull(middleware);
+
+        var attributes = middleware.ToArray();
+        _endpoints.Add(options =>
+        {
+            var endpoint = new EndpointBuilder(method.ToUpperInvariant(), template, name, null, options);
+            configure?.Invoke(endpoint);
+            endpoint.Validate(options);
+            return new Endpoint(endpoint, BuildPipeline(handler, endpoint.Middleware.Concat(attributes)));
+        });
+    }
+
     /// <typeparam name="TController">
     ///     The controller type, which must already be registered with dependency injection.
     /// </typeparam>
@@ -100,6 +121,11 @@ public sealed class ControllerRegistry
                 controllerBase?.DetachContext();
             }
         };
+        return BuildPipeline(pipeline, middleware);
+    }
+
+    private static RequestDelegate BuildPipeline(RequestDelegate pipeline, IEnumerable<MiddlewareAttribute> middleware)
+    {
         // Wrapping builds the pipeline inside out, so the lowest priority is added last and entered first.
         foreach (var attribute in middleware.OrderBy(attribute => attribute.Priority).Reverse())
         {

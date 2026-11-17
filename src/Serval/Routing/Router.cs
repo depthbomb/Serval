@@ -10,15 +10,17 @@ using Serval.Http.Constants;
 
 namespace Serval.Routing;
 
-internal sealed class Router : IUrlGenerator
+internal sealed class Router : IUrlGenerator, IEndpointMatcher
 {
     private readonly EndpointIndex                           _index;
     private readonly FrozenDictionary<string, RouteTemplate> _namedRoutes;
     private readonly ServalOptions                           _options;
+    private readonly RoutingMiddleware                       _dispatcher;
 
     public Router(ControllerRegistry registry, ServalOptions options)
     {
         _options = options;
+        _dispatcher = new RoutingMiddleware(this, options.AutomaticOptions);
         options.Validate();
         var endpoints  = registry.Freeze(options).Select(registration => (Registration: registration, Template: new RouteTemplate(registration.Template, options))).ToArray();
         var duplicates = endpoints.GroupBy(endpoint => (endpoint.Registration.Method, endpoint.Template.Signature)).FirstOrDefault(group => group.Count() > 1);
@@ -48,7 +50,7 @@ internal sealed class Router : IUrlGenerator
         return path;
     }
 
-    public async ValueTask<bool> TryDispatchAsync(RequestContext context)
+    public EndpointMatch Match(RequestContext context)
     {
         var path             = context.Request.Url.AbsolutePath;
         var hasTrailingSlash = path.Length > 1 && path.EndsWith('/');
@@ -93,17 +95,9 @@ internal sealed class Router : IUrlGenerator
             }
         }
 
-        if (selected is not null)
-        {
-            context.RouteValues = selectedValues!;
-            context.ApplyEndpoint(selected.Description);
-            await selected.Description.Pipeline(context);
-            return true;
-        }
-
         if (allowed.Count == 0)
         {
-            return false;
+            return new EndpointMatch(null, null, allowed);
         }
 
         if (_options.AutomaticHead && allowed.Contains(HttpMethods.Get))
@@ -111,27 +105,11 @@ internal sealed class Router : IUrlGenerator
             allowed.Add(HttpMethods.Head);
         }
 
-        if (_options.AutomaticOptions)
-        {
-            allowed.Add(HttpMethods.Options);
-        }
-
-        var allow = string.Join(", ", allowed.Order(StringComparer.Ordinal));
-        if (_options.AutomaticOptions && context.Request.Method == HttpMethods.Options)
-        {
-            context.Response.StatusCode                 = StatusCodes.NoContent;
-            context.Response.Headers[HeaderNames.Allow] = allow;
-            return true;
-        }
-
-        throw new HttpErrorException(StatusCodes.MethodNotAllowed, "This HTTP method is not supported for this route.")
-        {
-            Headers =
-            {
-                [HeaderNames.Allow] = allow
-            },
-        };
+        return new EndpointMatch(selected?.Description, selectedValues, allowed);
     }
+
+    public ValueTask<bool> TryDispatchAsync(RequestContext context)
+        => _dispatcher.TryHandleAsync(context);
 
     private sealed record RouteEndpoint(Endpoint Description, RouteTemplate Template)
     {

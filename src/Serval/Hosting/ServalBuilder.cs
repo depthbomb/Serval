@@ -98,6 +98,22 @@ public sealed class ServalBuilder
         return this;
     }
 
+    /// <summary>Replaces default routing, static files, redirects, and not-found handling with an application dispatcher.</summary>
+    /// <remarks>Request scopes, framing checks, cancellation, exception handling, and response cleanup still apply. Applies application-wide.</remarks>
+    public ServalBuilder DispatchWith(RequestDelegate dispatcher)
+    {
+        _pipeline.SetTerminal(dispatcher);
+        return this;
+    }
+
+    /// <summary>Registers a delegate endpoint with the same groups, metadata, limits, and middleware as controllers.</summary>
+    public ServalBuilder AddEndpoint(string method, string template, RequestDelegate handler, string? name = null, params MiddlewareAttribute[] middleware)
+    {
+        var path = _prefix.Length == 0 ? template : _prefix + "/" + template.TrimStart('/');
+        Controllers.Add(method, path, name is null ? null : _namePrefix + name, handler, middleware, ConfigureEndpoint);
+        return this;
+    }
+
     /// <summary>Activates application middleware per request with constructor injection and asynchronous disposal.</summary>
     public ServalBuilder UseMiddleware<TMiddleware>(params object[] arguments) where TMiddleware : class, IMiddleware
     {
@@ -213,6 +229,7 @@ public static class ServalServiceCollectionExtensions
             services.AddSingleton(pipeline);
             services.AddSingleton(lifecycle);
             services.AddSingleton<Router>();
+            services.AddSingleton<IEndpointMatcher>(provider => provider.GetRequiredService<Router>());
             services.AddSingleton<StaticFileServer>();
             services.AddSingleton<IUrlGenerator>(provider => provider.GetRequiredService<Router>());
             services.TryAddSingleton<IRequestExceptionHandler, DefaultRequestExceptionHandler>();

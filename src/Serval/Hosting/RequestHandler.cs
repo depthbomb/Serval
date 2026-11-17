@@ -26,6 +26,7 @@ internal sealed class RequestHandler : IRequestHandler
     private readonly Router                   _router;
     private readonly IServiceProvider         _services;
     private readonly StaticFileServer         _staticFiles;
+    private readonly CanonicalPathMiddleware  _canonicalPaths;
     private readonly Type[]                   _lifecycleHandlers;
 
     public RequestHandler(IServiceProvider         services,
@@ -40,6 +41,7 @@ internal sealed class RequestHandler : IRequestHandler
         _services          = services;
         _router            = router;
         _staticFiles       = staticFiles;
+        _canonicalPaths    = new CanonicalPathMiddleware(options.TrailingSlashes);
         _exceptionHandler  = exceptionHandler;
         _options           = options;
         _logger            = logger;
@@ -110,6 +112,7 @@ internal sealed class RequestHandler : IRequestHandler
                 }
             }
 
+            ValidateRequest(context);
             await _pipeline(context);
             if (!response.IsAborted)
             {
@@ -217,7 +220,7 @@ internal sealed class RequestHandler : IRequestHandler
         }
     }
 
-    private async ValueTask DispatchAsync(RequestContext context)
+    private void ValidateRequest(RequestContext context)
     {
         var request       = context.Request;
         var contentLength = request.Headers[HeaderNames.ContentLength];
@@ -241,8 +244,11 @@ internal sealed class RequestHandler : IRequestHandler
         {
             throw new HttpErrorException(StatusCodes.RequestHeaderFieldsTooLarge);
         }
+    }
 
-        if (await RedirectCanonicalPathAsync(context))
+    private async ValueTask DispatchAsync(RequestContext context)
+    {
+        if (await _canonicalPaths.TryRedirectAsync(context))
         {
             return;
         }
@@ -271,26 +277,6 @@ internal sealed class RequestHandler : IRequestHandler
         {
             TimeoutSource = timeout,
         };
-
-    private async ValueTask<bool> RedirectCanonicalPathAsync(RequestContext context)
-    {
-        var path = context.Request.Url.AbsolutePath;
-        if (path.StartsWith("//", StringComparison.Ordinal))
-        {
-            throw new HttpErrorException(StatusCodes.BadRequest, "The request path must start with a single slash.");
-        }
-
-        var hasTrailingSlash = path.Length > 1    && path.EndsWith('/');
-        var redirect         = path        != "/" && (_options.TrailingSlashes == TrailingSlashBehavior.RedirectToWithoutSlash && hasTrailingSlash || _options.TrailingSlashes == TrailingSlashBehavior.RedirectToWithSlash && !hasTrailingSlash);
-        if (!redirect)
-        {
-            return false;
-        }
-
-        var canonical = _options.TrailingSlashes == TrailingSlashBehavior.RedirectToWithSlash ? path + "/" : path.TrimEnd('/');
-        await context.Response.RedirectAsync(canonical                                               + context.Request.Url.Query, StatusCodes.PermanentRedirect, context.RequestAborted);
-        return true;
-    }
 
     private void ReportCleanupFailure(Exception exception, string stage, string? traceId)
     {

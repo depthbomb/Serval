@@ -38,7 +38,7 @@ public sealed class RequestContext
     /// <summary>Decoded values captured by the selected route, keyed by parameter name.</summary>
     public IReadOnlyDictionary<string, string> RouteValues { get; internal set; }
 
-    /// <summary>The selected controller endpoint, or null for files, redirects, unmatched routes, and automatic OPTIONS.</summary>
+    /// <summary>The selected endpoint, or null for files, redirects, unmatched routes, and automatic OPTIONS.</summary>
     public Endpoint? Endpoint { get; internal set; }
 
     /// <summary>A shared per-request bag for middleware and application state.</summary>

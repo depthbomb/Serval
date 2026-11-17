@@ -398,6 +398,53 @@ contains `IsValid` and `Errors`, so an action can redisplay submitted values or 
 `result.ThrowIfInvalid()` selects the usual exception-based behavior. Parsing errors and validator exceptions still
 propagate; only reported field errors are returned as data.
 
+## Composing request handling
+
+Controllers, static files, and authentication helpers use public pieces that applications can also call directly.
+The examples below belong in application methods; configure builders before starting the host.
+
+### Select an endpoint before running it
+
+`AddEndpoint` registers a `RequestDelegate` with groups, names, metadata, limits, and endpoint middleware. Its
+`Endpoint.ControllerType` is null. Controllers remain an optional adapter that activates a scoped instance and executes
+an `IActionResult`.
+
+```csharp
+public static void ConfigureRoutes(ServalBuilder builder)
+{
+    builder.AddEndpoint("GET", "/health", context => context.Response.WriteTextAsync("ready"), name: "health");
+    builder.DispatchWith(async context =>
+    {
+        var matcher = context.Services.GetRequiredService<IEndpointMatcher>();
+        var match = matcher.Match(context);
+        if (match.Endpoint is not null)
+        {
+            match.Apply(context);
+            // Inspect metadata or authorize here, before executing endpoint middleware and the handler.
+            await match.ExecuteAsync(context);
+            return;
+        }
+
+        context.Response.StatusCode = match.AllowedMethods.Count == 0 ? 404 : 405;
+        if (match.AllowedMethods.Count > 0)
+        {
+            context.Response.Headers["Allow"] = string.Join(", ", match.AllowedMethods);
+        }
+    });
+}
+```
+
+`Match` leaves the response and selected endpoint unchanged. `Apply` installs route values and enforces endpoint body
+limits and deadlines; call it before middleware reads the body. `ExecuteAsync` also applies those policies. Application
+code controls which endpoint to execute and should execute it once.
+
+`DispatchWith` replaces the default canonical redirect, routing, static-file, and 404 sequence. Request scopes,
+framing checks, cancellation, exception handling, lifecycle hooks, and cleanup remain active. For standard method
+handling, use `RoutingMiddleware.TryHandleAsync(context)` instead of manually handling the match result; it runs
+matching endpoints, handles automatic OPTIONS and 405, and returns false only for an unmatched path. Construct it with
+`automaticOptions: false` to disable synthesized OPTIONS responses. HEAD selection follows `ServalOptions.AutomaticHead`.
+`CanonicalPathMiddleware.TryRedirectAsync` provides the default slash redirect behavior as a separate step.
+
 ## Signed URLs
 
 Run the [signed URL sample](samples/Serval.Sample.SignedUrls) with

@@ -8,7 +8,7 @@ using Serval.Middleware;
 
 namespace Serval.Routing;
 
-/// <summary>Describes a selected controller endpoint. Available to middleware through RequestContext.Endpoint.</summary>
+/// <summary>Describes a selected endpoint. Available to middleware through RequestContext.Endpoint.</summary>
 public sealed class Endpoint
 {
     /// <summary>The registered HTTP method, including GET when handling an automatic HEAD fallback.</summary>
@@ -20,8 +20,8 @@ public sealed class Endpoint
     /// <summary>The optional name used for URL generation.</summary>
     public string? Name { get; }
 
-    /// <summary>The controller resolved from request services.</summary>
-    public Type ControllerType { get; }
+    /// <summary>The controller resolved from request services, or null for a delegate endpoint.</summary>
+    public Type? ControllerType { get; }
 
     /// <summary>Application metadata in registration order. Keep metadata objects immutable after startup.</summary>
     public IReadOnlyList<object> Metadata { get; }
@@ -52,7 +52,7 @@ public sealed class Endpoint
     public T? GetMetadata<T>() where T : class => Metadata.OfType<T>().LastOrDefault();
 }
 
-/// <summary>Configures a controller endpoint during startup, before its immutable description is created.</summary>
+/// <summary>Configures an endpoint during startup, before its immutable description is created.</summary>
 public sealed class EndpointBuilder
 {
     /// <summary>The registered HTTP method.</summary>
@@ -64,8 +64,8 @@ public sealed class EndpointBuilder
     /// <summary>The optional route name.</summary>
     public string? Name { get; }
 
-    /// <summary>The controller service type.</summary>
-    public Type ControllerType { get; }
+    /// <summary>The controller service type, or null for a delegate endpoint.</summary>
+    public Type? ControllerType { get; }
 
     /// <summary>The request deadline measured from request arrival; null retains the application default.</summary>
     public TimeSpan? RequestTimeout { get; set; }
@@ -82,7 +82,7 @@ public sealed class EndpointBuilder
     /// <summary>Middleware combined with controller/action attributes and ordered by priority.</summary>
     public IList<MiddlewareAttribute> Middleware { get; } = new List<MiddlewareAttribute>();
 
-    internal EndpointBuilder(string method, string template, string? name, Type controllerType, ServalOptions options)
+    internal EndpointBuilder(string method, string template, string? name, Type? controllerType, ServalOptions options)
     {
         Method              = method;
         Template            = template;

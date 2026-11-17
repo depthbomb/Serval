@@ -30,7 +30,7 @@ public static class Program
         {
             options.TrailingSlashes          = TrailingSlashBehavior.RedirectToWithoutSlash;
             options.RouteConstraints["slug"] = (value, _) => value.Length is > 0 and <= 64 && value.All(character => char.IsAsciiLetterLower(character) || char.IsAsciiDigit(character) || character == '-');
-        }).AddGeneratedControllers().AddHttpListener(options =>
+        }).AddGeneratedControllers().AddEndpoint("GET", "/health", context => context.Response.WriteTextAsync("ready"), name: "health").AddHttpListener(options =>
         {
             options.Prefixes.Clear();
             options.Prefixes.Add($"http://localhost:{port}/");
