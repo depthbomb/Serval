@@ -23,6 +23,32 @@ In the login action, call `await context.BeginOAuthSignInAsync("identity", "/")`
 `await context.CompleteOAuthSignInAsync("identity")` and redirect to the returned `ReturnUrl`. These are the same
 methods used by ordinary OAuth providers. Catch `OAuthProtocolException` and show a generic login failure.
 
+For account linking, enrollment, or MFA, use `CompleteOAuthCallbackAsync` instead. It consumes the callback and performs
+the same protocol validation, then returns before account mapping, principal assignment, or local sign-in:
+
+```csharp
+public static async ValueTask<OAuthCallbackResult> VerifyExternalIdentityAsync(RequestContext context)
+{
+    var callback = await context.CompleteOAuthCallbackAsync("identity");
+    var identity = callback.SignInContext.OpenIdConnect
+        ?? throw new InvalidOperationException("This endpoint requires OIDC.");
+    // Use the validated issuer and subject for account lookup or a pending MFA attempt.
+    // Keep pending state server-side. Issue the local session only after application checks finish.
+    return callback;
+}
+```
+
+The result includes `SignInContext` (client, tokens, and validated OIDC identity), `ReturnUrl`, and `Properties` from
+the pending attempt. Account-linking code can preserve the already authenticated `context.User` while validating the
+external account. A sign-in controller can call `context.SignInAsync(localPrincipal, properties: callback.Properties)`
+after its account checks. For MFA, persist only the required pending identity in short-lived browser-bound state and
+create the session after MFA succeeds; do not retain the request context across requests.
+
+`CreatePrincipal` is optional when handling completion in application code. Ordinary OAuth returns provider tokens,
+which require provider-specific identity verification before local sign-in. The combined `CompleteOAuthSignInAsync`
+helper still requires `CreatePrincipal` for ordinary OAuth and uses the validated OIDC principal by default for OIDC.
+Both completion methods consume the same single-use state, so call exactly one for each callback.
+
 Discovery uses the configured issuer's `/.well-known/openid-configuration` endpoint, including its path. The issuer
 must match exactly, including any trailing slash. Set `MetadataAddress` for a different discovery location. Endpoints
 come from discovery; do not also configure OAuth endpoint properties. HTTPS is required, with the existing explicit

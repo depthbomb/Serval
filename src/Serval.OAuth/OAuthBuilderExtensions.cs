@@ -116,6 +116,10 @@ public static class OAuthContextExtensions
 
     extension(RequestContext context)
     {
+        /// <summary>Validates and consumes a provider callback without mapping an account, assigning User, or issuing a session.</summary>
+        public ValueTask<OAuthCallbackResult> CompleteOAuthCallbackAsync(string scheme)
+            => Handler(context, scheme).CompleteCallbackAsync(context, scheme);
+
         /// <summary>Begins a browser authorization flow through the selected provider.</summary>
         /// <param name="scheme">The registered OAuth provider scheme.</param>
         /// <param name="returnUrl">The local return path starting with a single slash; defaults to /.</param>

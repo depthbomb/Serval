@@ -149,6 +149,29 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
     /// </exception>
     public async ValueTask<OAuthSignInResult> CompleteAsync(RequestContext context, string scheme)
     {
+        if (_options.CreatePrincipal is null && _options.OpenIdConnect is null)
+        {
+            throw new InvalidOperationException("Configure CreatePrincipal or map the result of CompleteCallbackAsync in application code.");
+        }
+
+        var callback = await CompleteCallbackAsync(context, scheme);
+        var principal = _options.CreatePrincipal is {} createPrincipal
+            ? await createPrincipal(callback.SignInContext)
+            : callback.SignInContext.OpenIdConnect?.Principal ?? throw new InvalidOperationException("Configure CreatePrincipal or map the result of CompleteCallbackAsync in application code.");
+        context.RequestAborted.ThrowIfCancellationRequested();
+        if (principal is null || !principal.Identities.Any(identity => identity.IsAuthenticated))
+        {
+            throw new OAuthProtocolException("invalid_identity");
+        }
+
+        await context.SignInAsync(principal, _options.SignInScheme, callback.Properties);
+        return new OAuthSignInResult(principal, callback.SignInContext.Tokens, callback.ReturnUrl);
+    }
+
+    /// <summary>Consumes and validates a browser callback without mapping an account or creating a local session.</summary>
+    /// <remarks>Includes all correlation, PKCE, issuer, and OIDC checks. Plain OAuth tokens alone do not establish an identity.</remarks>
+    public async ValueTask<OAuthCallbackResult> CompleteCallbackAsync(RequestContext context, string scheme)
+    {
         EnsureWritable(context);
         SetPrivateResponse(context);
 
@@ -212,16 +235,8 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
         }
 
         var signInContext = new OAuthSignInContext(context, scheme, _client, tokens) { OpenIdConnect = identity };
-        var principal = _options.CreatePrincipal is { } createPrincipal ? await createPrincipal(signInContext) : identity!.Principal;
         context.RequestAborted.ThrowIfCancellationRequested();
-        if (principal is null || !principal.Identities.Any(identity => identity.IsAuthenticated))
-        {
-            throw new OAuthProtocolException("invalid_identity");
-        }
-
-        // Tokens remain server-side. An optional mapping callback controls account linking and token storage.
-        await context.SignInAsync(principal, _options.SignInScheme, state.Properties);
-        return new OAuthSignInResult(principal, tokens, state.ReturnUrl);
+        return new OAuthCallbackResult(signInContext, state.ReturnUrl, state.Properties);
     }
 
     private static string? Query(RequestContext context, string name)

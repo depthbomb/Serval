@@ -164,17 +164,36 @@ public sealed class OAuthSignInTests
     }
 
     [Fact]
-    public void ProvidersRequireDistinctCallbacksAndExplicitIdentityMapping()
+    public void ProvidersRequireDistinctCallbacksButAllowApplicationOwnedIdentityMapping()
     {
         using var http    = new HttpClient(new OAuthTestBackchannel());
         var       builder = new ServiceCollection().AddServal().AddAuthentication().AddCookie();
         builder.AddOAuth("one", options => Configure(options, http));
         Assert.Throws<ArgumentException>(() => builder.AddOAuth("two", options => Configure(options, http)));
-        Assert.Throws<ArgumentNullException>(() => builder.AddOAuth("three", options =>
+        builder.AddOAuth("three", options =>
+        {
+            Configure(options, http);
+            options.RedirectUri = new Uri("https://app.test/manual-callback");
+            options.CreatePrincipal = null;
+        });
+    }
+
+    [Fact]
+    public async Task PlainOAuthCompletionCanReturnTokensWithoutIdentityMappingOrASession()
+    {
+        using var http = new HttpClient(new OAuthTestBackchannel());
+        await using var app = new SecurityTestApplication(builder => builder.AddAuthenticationCore().AddOAuth("provider", options =>
         {
             Configure(options, http);
             options.CreatePrincipal = null;
         }));
+        var (state, cookie) = await Begin(app);
+        await using var request = app.Request("https://app.test/callback?code=code&state=" + state, cookie);
+        var result = await request.Context.CompleteOAuthCallbackAsync("provider");
+        Assert.Null(result.SignInContext.OpenIdConnect);
+        Assert.Equal("access-secret", result.SignInContext.Tokens.AccessToken);
+        Assert.False(request.Context.User.Identity!.IsAuthenticated);
+        Assert.DoesNotContain(request.Response.Headers.GetValues(HeaderNames.SetCookie), value => value.StartsWith("__Host-Serval.Session=", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -13,6 +13,25 @@ namespace Serval.Tests.OAuth;
 public sealed class OpenIdConnectTests
 {
     [Fact]
+    public async Task CallbackCompletionValidatesIdentityWithoutMappingOrLocalSignIn()
+    {
+        using var provider = new OidcTestProvider();
+        using var http = new HttpClient(provider);
+        await using var app = Application(http, options => options.CreatePrincipal = _ => throw new InvalidOperationException("Mapping belongs to the caller."));
+        var (callback, cookie, _) = await Begin(app, provider);
+        await using var complete = app.Request(callback, cookie);
+        complete.Context.User = SecurityTestApplication.User("existing-account");
+        var result = await complete.Context.CompleteOAuthCallbackAsync("provider");
+        Assert.Equal("subject", result.SignInContext.OpenIdConnect!.Claims.GetProperty("sub").GetString());
+        Assert.Equal("existing-account", complete.Context.User.Identity!.Name);
+        Assert.Equal("/account", result.ReturnUrl);
+        Assert.DoesNotContain(complete.Response.Headers.GetValues(HeaderNames.SetCookie), value => value.StartsWith("__Host-Serval.Session=", StringComparison.Ordinal));
+        await using var replay = app.Request(callback, cookie);
+        await Assert.ThrowsAsync<OAuthProtocolException>(() => replay.Context.CompleteOAuthCallbackAsync("provider").AsTask());
+        Assert.Equal(1, provider.TokenCalls);
+    }
+
+    [Fact]
     public async Task DiscoveryNoncePkceAndValidatedIdentityCreateASessionAndRejectReplay()
     {
         using var provider = new OidcTestProvider();

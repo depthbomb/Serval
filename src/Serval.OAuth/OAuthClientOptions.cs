@@ -184,7 +184,7 @@ public sealed class OAuthOptions : OAuthClientOptions
     public string? ExpectedIssuer { get; set; }
 
     /// <summary>
-    ///     Maps provider data to an authenticated principal. Required for OAuth; OIDC defaults to the validated ID-token
+    ///     Maps provider data to an authenticated principal for CompleteOAuthSignInAsync. OIDC defaults to the validated ID-token
     ///     principal. OIDC mapping runs only after validation and receives OpenIdConnect on the sign-in context.
     /// </summary>
     public Func<OAuthSignInContext, ValueTask<ClaimsPrincipal>>? CreatePrincipal { get; set; }
@@ -204,11 +204,6 @@ public sealed class OAuthOptions : OAuthClientOptions
         ValidateUri(RedirectUri, nameof(RedirectUri));
 
         ArgumentException.ThrowIfNullOrWhiteSpace(SignInScheme);
-        if (OpenIdConnect is null)
-        {
-            ArgumentNullException.ThrowIfNull(CreatePrincipal);
-        }
-
         if (RedirectUri.Query.Length != 0)
         {
             throw new ArgumentException("The browser callback URI must not contain a query.", nameof(RedirectUri));
