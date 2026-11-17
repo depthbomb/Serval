@@ -63,7 +63,7 @@ public sealed class ServalBuilder
         return this;
     }
 
-    /// <summary>Adds a scoped input validator. Generated FromBody bindings run registered validators before the action.</summary>
+    /// <summary>Adds a scoped input validator. Use InputValidation or FromBody(Validate = true) to run it.</summary>
     public ServalBuilder AddInputValidator<TInput, TValidator>() where TValidator : class, IInputValidator<TInput>
     {
         Services.TryAddEnumerable(ServiceDescriptor.Scoped<IInputValidator<TInput>, TValidator>());

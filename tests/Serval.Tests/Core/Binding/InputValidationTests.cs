@@ -11,6 +11,18 @@ namespace Serval.Tests.Core.Binding;
 public sealed class InputValidationTests
 {
     [Fact]
+    public async Task BindingOnlyAndNonthrowingValidationLeaveResponsePolicyToTheAction()
+    {
+        await using var app = new TestApplication(configureBuilder: builder => builder.AddInputValidator<ValidationTestInput, NameValidator>());
+        var bindingOnly = await app.SendAsync("/validation/binding-only", "POST", "{}", "application/json");
+        Assert.Equal(200, bindingOnly.StatusCode);
+        Assert.Equal("bound", bindingOnly.Text);
+        var evaluated = await app.SendAsync("/validation/evaluate", "POST", "{}", "application/json");
+        Assert.Equal(200, evaluated.StatusCode);
+        Assert.Equal("Name is required.", evaluated.Text);
+    }
+
+    [Fact]
     public async Task GeneratedBindingCollectsFieldErrorsAndDoesNotInvokeAction()
     {
         await using var app = new TestApplication(configureBuilder: builder => builder
@@ -99,8 +111,18 @@ public sealed record ValidationTestInput(string? Name);
 [Route("/validation")]
 public sealed class ValidationTestController : ControllerBase
 {
+    [Post("/binding-only")]
+    public ValueTask<IActionResult> BindingOnly([FromBody] ValidationTestInput input) => TextAsync("bound");
+
+    [Post("/evaluate")]
+    public async ValueTask<IActionResult> Evaluate([FromBody] ValidationTestInput input)
+    {
+        var result = await InputValidation.EvaluateAsync(Context, input);
+        return Text(result.IsValid ? "valid" : result.Errors["name"][0]);
+    }
+
     [Post("/body")]
-    public ValueTask<IActionResult> Body([FromBody] ValidationTestInput input)
+    public ValueTask<IActionResult> Body([FromBody(Validate = true)] ValidationTestInput input)
     {
         Response.Headers["X-Action"] = "called";
         return TextAsync("ok");

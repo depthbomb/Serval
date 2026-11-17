@@ -45,7 +45,8 @@ public sealed class ValidationErrors
         }
     }
 
-    internal IReadOnlyDictionary<string, string[]> Snapshot()
+    /// <summary>Copies the current errors for application inspection without throwing.</summary>
+    public IReadOnlyDictionary<string, string[]> Snapshot()
         => _errors.ToDictionary(pair => pair.Key, pair => pair.Value.ToArray(), StringComparer.Ordinal).AsReadOnly();
 }
 
@@ -71,20 +72,62 @@ public sealed class InputValidationException : Exception
 /// <summary>Runs validators registered for an input type. Also used by generated FromBody bindings.</summary>
 public static class InputValidation
 {
-    /// <summary>Runs all registered validators in registration order and throws when any reports errors.</summary>
-    /// <remarks>No validators means no extra validation. Parsing and nullability checks remain the caller's responsibility.</remarks>
-    public static async ValueTask ValidateAsync<T>(RequestContext context, T input)
+    /// <summary>Runs registered validators and returns an immutable result without rejecting the request.</summary>
+    public static async ValueTask<InputValidationResult> EvaluateAsync<T>(RequestContext context, T input)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ValidationErrors? errors = null;
+        var errors = new ValidationErrors();
         foreach (var validator in context.Services.GetServices<IInputValidator<T>>())
         {
             context.RequestAborted.ThrowIfCancellationRequested();
-            errors ??= new ValidationErrors();
             await validator.ValidateAsync(input, errors, context, context.RequestAborted);
         }
 
         context.RequestAborted.ThrowIfCancellationRequested();
-        errors?.ThrowIfInvalid();
+        return new InputValidationResult(errors);
+    }
+
+    /// <summary>Runs all registered validators in registration order and throws when any reports errors.</summary>
+    /// <remarks>No validators means no extra validation. Parsing and nullability checks remain the caller's responsibility.</remarks>
+    public static async ValueTask ValidateAsync<T>(RequestContext context, T input)
+    {
+        (await EvaluateAsync(context, input)).ThrowIfInvalid();
+    }
+}
+
+/// <summary>An immutable set of field errors, independent of HTTP response policy.</summary>
+public sealed class InputValidationResult
+{
+    /// <summary>Whether all validators accepted the input.</summary>
+    public bool IsValid => Errors.Count == 0;
+
+    /// <summary>Client-visible errors with read-only message collections.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Errors { get; }
+
+    /// <summary>Snapshots the supplied errors.</summary>
+    public InputValidationResult(ValidationErrors errors)
+    {
+        ArgumentNullException.ThrowIfNull(errors);
+        Errors = errors.Snapshot().ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)Array.AsReadOnly(pair.Value), StringComparer.Ordinal).AsReadOnly();
+    }
+
+    /// <summary>Uses the framework's exception-based rejection policy when errors exist.</summary>
+    public void ThrowIfInvalid()
+    {
+        if (IsValid)
+        {
+            return;
+        }
+
+        var errors = new ValidationErrors();
+        foreach (var (field, messages) in Errors)
+        {
+            foreach (var message in messages)
+            {
+                errors.Add(field, message);
+            }
+        }
+
+        throw new InputValidationException(errors);
     }
 }

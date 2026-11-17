@@ -382,7 +382,8 @@ injection.
 Their `ValidateAsync(input, errors, context, ct)` method adds client-visible messages with
 `errors.Add("email", "Enter a valid email address.")`. An empty field name represents an object-level error.
 
-Generated `[FromBody]` bindings run all validators registered for that input type before invoking the action.
+Generated `[FromBody]` bindings only deserialize. Use `[FromBody(Validate = true)]` to run all validators registered
+for that input type before invoking the action. Existing actions that relied on automatic validation need this opt-in.
 Validators run in registration order and collect all reported errors. Invalid input returns 422 with
 `code: "validation_failed"` and an `errors` object mapping field names to message arrays. Malformed input still returns
 the existing parsing error; unexpected validator exceptions use the ordinary exception handler.
@@ -391,6 +392,11 @@ For models assembled from form or POST fields, controllers can call `await Valid
 Plain controllers and middleware can call `InputValidation.ValidateAsync(context, input)`. With no registered
 validators this adds no application rules. JSON member nullability and business rules remain explicit validation work.
 You can also construct `ValidationErrors` directly and call `ThrowIfInvalid()` for one-off checks.
+
+For an HTML form or another response policy, call `InputValidation.EvaluateAsync(context, input)`. Its immutable result
+contains `IsValid` and `Errors`, so an action can redisplay submitted values or return its own response. Calling
+`result.ThrowIfInvalid()` selects the usual exception-based behavior. Parsing errors and validator exceptions still
+propagate; only reported field errors are returned as data.
 
 ## Signed URLs
 

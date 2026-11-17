@@ -61,7 +61,11 @@ public sealed class FromHeaderAttribute : Attribute
 ///     Uses the configured JSON metadata and the usual request cancellation, content-type checks, and body limit.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class FromBodyAttribute : Attribute;
+public sealed class FromBodyAttribute : Attribute
+{
+    /// <summary>Whether to run registered validators and reject invalid input before the action. Defaults to false.</summary>
+    public bool Validate { get; set; }
+}
 
 /// <summary>Binds a scalar, scalar array, UploadedFile, or UploadedFile array from a URL-encoded or multipart form.</summary>
 /// <remarks>Multiple form parameters share one parse. Cannot be combined with FromBody on the same action.</remarks>

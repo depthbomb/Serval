@@ -66,7 +66,10 @@ internal static class BindingEmitter
 
                 plan.ReadsBody = true;
                 plan.Statements.Add($"var {argument} = await context.Request.ReadJsonAsync<{typeName}>(context.RequestAborted);");
-                plan.Statements.Add($"await global::Serval.Validation.InputValidation.ValidateAsync(context, {argument});");
+                if (attributes[0].NamedArguments.Any(pair => pair.Key == "Validate" && pair.Value.Value is true))
+                {
+                    plan.Statements.Add($"await global::Serval.Validation.InputValidation.ValidateAsync(context, {argument});");
+                }
                 continue;
             }
 
