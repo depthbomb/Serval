@@ -133,20 +133,66 @@ public static class AuthenticationBuilderExtensions
         /// <exception cref="InvalidOperationException">Authentication was already registered.</exception>
         public AuthenticationBuilder AddAuthentication(Action<AuthenticationOptions>? configure = null)
         {
-            if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(AuthenticationOptions)))
+            var authentication = builder.AddAuthenticationCore(configure);
+            builder.AddAuthorization();
+            builder.AddPasswordHashing();
+            return authentication;
+        }
+
+        /// <summary>Registers scheme resolution and authentication without authorization or password services.</summary>
+        public AuthenticationBuilder AddAuthenticationCore(Action<AuthenticationOptions>? configure = null)
+        {
+            if (builder.Services.Any(descriptor => descriptor.ServiceType == typeof(AuthenticationRegistration)))
             {
                 throw new InvalidOperationException("Authentication has already been registered.");
             }
 
-            var options = new AuthenticationOptions();
+            var options = GetOptions(builder.Services);
             configure?.Invoke(options);
-            builder.Services.AddSingleton(options);
+            builder.Services.AddSingleton(new AuthenticationRegistration());
             builder.Services.TryAddSingleton(TimeProvider.System);
             builder.Services.TryAddScoped<IAuthenticationService, AuthenticationService>();
-            builder.Services.TryAddScoped<IAuthorizationService, AuthorizationService>();
-            builder.Services.TryAddSingleton(new Pbkdf2PasswordHasherOptions());
-            builder.Services.TryAddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
             return new AuthenticationBuilder(builder, options);
         }
+
+        /// <summary>Registers policy and resource authorization independently of credential authentication.</summary>
+        public ServalBuilder AddAuthorization(Action<AuthenticationOptions>? configure = null)
+        {
+            var options = GetOptions(builder.Services);
+            configure?.Invoke(options);
+            builder.Services.TryAddScoped<IAuthorizationService, AuthorizationService>();
+            return builder;
+        }
+
+        /// <summary>Registers the default password hasher without authentication schemes.</summary>
+        public ServalBuilder AddPasswordHashing(Action<Pbkdf2PasswordHasherOptions>? configure = null)
+        {
+            var existing = builder.Services.LastOrDefault(descriptor => descriptor.ServiceType == typeof(Pbkdf2PasswordHasherOptions));
+            if (configure is not null && existing is not null && existing.ImplementationInstance is not Pbkdf2PasswordHasherOptions)
+            {
+                throw new InvalidOperationException("Configure factory-provided password options through their registration.");
+            }
+
+            var options = existing?.ImplementationInstance as Pbkdf2PasswordHasherOptions ?? new Pbkdf2PasswordHasherOptions();
+            configure?.Invoke(options);
+            builder.Services.TryAddSingleton(options);
+            builder.Services.TryAddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+            return builder;
+        }
+    }
+
+    private sealed class AuthenticationRegistration;
+
+    private static AuthenticationOptions GetOptions(IServiceCollection services)
+    {
+        var existing = services.LastOrDefault(descriptor => descriptor.ServiceType == typeof(AuthenticationOptions));
+        if (existing is not null)
+        {
+            return existing.ImplementationInstance as AuthenticationOptions ?? throw new InvalidOperationException("Register authentication options through the Serval builder.");
+        }
+
+        var options = new AuthenticationOptions();
+        services.AddSingleton(options);
+        return options;
     }
 }

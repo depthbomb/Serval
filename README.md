@@ -479,6 +479,12 @@ The lease enforces cumulative body limits and request cancellation and leaves th
 before using another raw reader, which continues at the current position. Concurrent reads and mixing raw reads with
 cached form data or streaming multipart are rejected. JSON, forms, and multipart use the same bounded reader.
 
+### Choose an authentication result explicitly
+
+Register only the services needed with `AddAuthenticationCore`, `AddAuthorization`, and `AddPasswordHashing`.
+`AddAuthentication` composes all three for existing applications. Authorization can evaluate a supplied principal
+without registering authentication schemes or password services.
+
 ## Signed URLs
 
 Run the [signed URL sample](samples/Serval.Sample.SignedUrls) with

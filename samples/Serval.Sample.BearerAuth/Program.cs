@@ -31,7 +31,7 @@ public static class Program
         {
             options.Prefixes.Clear();
             options.Prefixes.Add($"http://localhost:{port}/");
-        }).AddAuthentication(options =>
+        }).AddAuthorization().AddAuthenticationCore(options =>
         {
             options.DefaultScheme             = "Bearer";
             options.Policies["reports.read"]  = new AuthorizationPolicy().RequireClaim("permission", "reports.read");
