@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Serval.Jobs/Serval.Jobs.csproj"/>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="11.0.0"/>
+  </ItemGroup>
+</Project>

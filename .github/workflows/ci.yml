@@ -48,6 +48,10 @@ jobs:
         run: dotnet build Serval.slnx --configuration Release --no-restore --disable-build-servers
       - name: Test framework and samples
         run: dotnet test tests/Serval.Tests/Serval.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/framework
+      - name: Test recurring jobs and sample
+        run: dotnet test tests/Serval.Jobs.Tests/Serval.Jobs.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/jobs
+      - name: Verify jobs package integration
+        run: ./tests/Serval.Jobs.Tests/VerifyJobsPackage.ps1
       - name: Test Socket.IO protocols and official JavaScript client
         run: dotnet test tests/Serval.SocketIO.Tests/Serval.SocketIO.Tests.csproj --configuration Release --no-build --no-restore --disable-build-servers --logger trx --results-directory TestResults/socketio
       - name: Verify Vite package integration

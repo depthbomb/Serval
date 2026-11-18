@@ -2,6 +2,7 @@
   <Folder Name="/Framework/">
     <Project Path="src/Serval/Serval.csproj"/>
     <Project Path="src/Serval.Authentication/Serval.Authentication.csproj"/>
+    <Project Path="src/Serval.Jobs/Serval.Jobs.csproj"/>
     <Project Path="src/Serval.Savanna/Serval.Savanna.csproj"/>
     <Project Path="src/Serval.OAuth/Serval.OAuth.csproj"/>
     <Project Path="src/Serval.SignedUrls/Serval.SignedUrls.csproj"/>
@@ -15,6 +16,7 @@
   </Folder>
   <Folder Name="/Build tooling/">
     <Project Path="src/Serval.Generators/Serval.Generators.csproj"/>
+    <Project Path="src/Serval.Jobs.Generators/Serval.Jobs.Generators.csproj"/>
     <Project Path="src/Serval.Savanna.Compiler/Serval.Savanna.Compiler.csproj"/>
     <Project Path="src/Serval.Savanna.Generators/Serval.Savanna.Generators.csproj"/>
     <Project Path="src/Serval.Vite.Generators/Serval.Vite.Generators.csproj"/>
@@ -23,6 +25,7 @@
     <Project Path="src/Serval.Savanna.LanguageServer/Serval.Savanna.LanguageServer.csproj"/>
   </Folder>
   <Folder Name="/Samples/">
+    <Project Path="samples/Serval.Sample.Jobs/Serval.Sample.Jobs.csproj"/>
     <Project Path="samples/Serval.Sample.Vite/Serval.Sample.Vite.csproj"/>
     <Project Path="samples/Serval.Sample.Savanna/Serval.Sample.Savanna.csproj"/>
     <Project Path="samples/Serval.Sample.Routing/Serval.Sample.Routing.csproj"/>
@@ -43,11 +46,13 @@
     <Project Path="samples/Serval.Sample.BackgroundServices/Serval.Sample.BackgroundServices.csproj"/>
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="tests/Serval.Jobs.Tests/Serval.Jobs.Tests.csproj"/>
     <Project Path="tests/Serval.Tests/Serval.Tests.csproj"/>
     <Project Path="tests/Serval.SocketIO.Tests/Serval.SocketIO.Tests.csproj"/>
     <Project Path="tests/Serval.Savanna.LanguageServer.Tests/Serval.Savanna.LanguageServer.Tests.csproj"/>
   </Folder>
   <Folder Name="/Benchmarks/">
+    <Project Path="benchmarks/Serval.Jobs.Benchmarks/Serval.Jobs.Benchmarks.csproj"/>
     <Project Path="benchmarks/Serval.SocketIO.Benchmarks/Serval.SocketIO.Benchmarks.csproj"/>
   </Folder>
 </Solution>

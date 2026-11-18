@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Caprine.CronTimer" Version="0.1.0"/>
+    <PackageReference Include="Caprine.Durations" Version="0.1.0"/>
+    <ProjectReference Include="../../src/Serval/Serval.csproj"/>
+    <ProjectReference Include="../../src/Serval.Jobs/Serval.Jobs.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
+    <ProjectReference Include="../../src/Serval.Generators/Serval.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="../../src/Serval.Jobs.Generators/Serval.Jobs.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+  </ItemGroup>
+</Project>

@@ -15,6 +15,7 @@ still an internal, pre-1.0 project, so APIs and template syntax may change.
 - Streaming responses, server-sent events, and transport-specific features such as WebSockets and Early Hints.
 - Cookie and bearer authentication, authorization policies, password hashing, CSRF helpers, and OAuth/OIDC sign-in.
 - Signed route URLs with readable, authenticated route and query data and optional expiration.
+- Recurring background jobs with periodic or cron schedules, scoped DI, and runtime controls.
 - Compiled Savanna templates and generated Vite asset references, with Rider integration and frontend HMR support.
 
 `RequestContext` carries request state, services, and endpoint metadata. Optional `ControllerBase` provides result,
@@ -24,12 +25,13 @@ static files, timeouts, and trace ID generation.
 
 ## Packages
 
-These ten projects produce NuGet packages. Build them locally or consume them through your internal feed.
+These eleven projects produce NuGet packages. Build them locally or consume them through your internal feed.
 
 | Package                                                            | Purpose                                                                                |
 |--------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | [Serval](src/Serval)                                               | Hosting, controllers, routing, middleware, HTTP helpers, and static files.             |
 | [Serval.Authentication](src/Serval.Authentication)                 | Authentication, sessions, authorization, password hashing, and CSRF helpers.           |
+| [Serval.Jobs](src/Serval.Jobs)                                     | Recurring scoped jobs, periodic and cron schedules, and an injectable job registry.    |
 | [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and OIDC sign-in with discovery, PKCE, and validated ID tokens.      |
 | [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed route URLs, verified payload data, request validation, and optional expiration. |
 | [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, binary payloads, acknowledgements, namespaces, and in-memory rooms.  |
@@ -577,6 +579,115 @@ absolute HTTP(S) request URLs and ignores their origin. Signatures do not cover 
 request body. Tokens are readable and reusable until they expire, so keep sensitive data out of them and apply any
 additional authentication, authorization, or single-use checks your endpoint needs.
 
+## Recurring jobs
+
+`Serval.Jobs` runs class-based background jobs through the same host and DI container as controllers. Implement
+`IJob` and use a schedule attribute for generated registration:
+
+```csharp
+using Microsoft.Extensions.Logging;
+using Serval.Generated;
+using Serval.Jobs;
+
+[PeriodicJob(30_000, Name = "cleanup")]
+public sealed class CleanupJob : IJob
+{
+    private readonly ILogger<CleanupJob> _logger;
+
+    public CleanupJob(ILogger<CleanupJob> logger)
+    {
+        _logger = logger;
+    }
+
+    public ValueTask ExecuteAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        _logger.LogInformation("Cleanup ran.");
+        return ValueTask.CompletedTask;
+    }
+}
+```
+
+During host setup, call `host.Services.AddServal().AddGeneratedJobs()`. It returns the same `ServalBuilder`, so
+controllers
+and a transport can follow in the same chain.
+
+Use `[CronJob("0 2 * * *", Name = "cleanup")]` instead to run daily at 02:00 UTC with `Caprine.CronTimer`.
+`TimeZoneId` selects a system time zone; `Options` accepts `CronExpressionOptions` flags for seconds, years, nicknames,
+and calendar modifiers. Periodic intervals are milliseconds, from 1 through 4,294,967,294, matching `PeriodicTimer`.
+The first execution waits for the first tick. Cron defaults to UTC, and uses the timer's daylight saving behavior.
+
+To parse schedules at compile time, reference a static member implemented by Caprine's generators:
+
+```csharp
+using Caprine.CronTimer;
+using Caprine.Durations;
+
+internal static partial class Schedules
+{
+    [GeneratedDuration("5s", DurationParseOptions.Strict)]
+    internal static partial TimeSpan PulseInterval { get; }
+
+    [GeneratedCronExpression("*/15 * * * * *", CronExpressionOptions.IncludeSeconds)]
+    internal static partial CronExpression CalendarExpression { get; }
+}
+```
+
+Use `[PeriodicJob(typeof(Schedules), nameof(Schedules.PulseInterval))]` on a job class, or
+`[CronJob(typeof(Schedules), nameof(Schedules.CalendarExpression))]` for cron. Add package references to
+`Caprine.CronTimer` and `Caprine.Durations` in the application to use their generators. Durations remains optional for
+`Serval.Jobs`. Registration still uses `AddGeneratedJobs()`.
+
+The member must be declared on the referenced type and accessible to generated code: a static get-only property or a
+non-generic parameterless static method returning `TimeSpan` or `CronExpression` by value. Internal members work within
+the same assembly. Serval emits a direct reference and evaluates the member once during registration. It also accepts
+ordinary members, so schedules can be shared without requiring either generator. Periodic values are checked against
+`PeriodicTimer` limits during registration. For cron members, set syntax options on the expression's declaration;
+`TimeZoneId` remains on `[CronJob]`. Serval reports invalid references and conflicting options at compile time.
+
+Call `AddGeneratedJobs` once. It registers the attributed job classes, their singleton registry, and the hosted service
+that runs their schedules. Definitions cannot be added, deleted, or rescheduled afterward. Names are case-sensitive and
+default to the fully qualified class name. Duplicate names fail registration. Each job is registered as a scoped
+service.
+
+Inject the singleton `JobRegistry` into a controller or service:
+
+```csharp
+var snapshots = registry.GetJobs();
+var cleanup = registry.GetJob("cleanup");
+registry.Pause("cleanup");
+var ran = await registry.RunAsync("cleanup", ct);
+registry.Resume("cleanup");
+```
+
+Snapshots include the schedule, paused/running/scheduled flags, last start and completion times, run and failure counts,
+and the last error. `ScheduleError` reports a timer failure separately from a job failure. `RunAsync` waits for
+execution
+and scope disposal, returns false when another run is active, and propagates job exceptions to its caller. It accepts
+runs only while the host is running. Pausing prevents new scheduled runs, leaves an admitted execution alone, and still
+allows manual runs. Resuming keeps the existing timer cadence.
+
+Each execution resolves a new job and its dependencies in a fresh asynchronously disposed scope. A registration never
+overlaps itself, including scope disposal and manual triggers; different registrations run independently. Long scheduled
+runs coalesce timer ticks into one pending tick. Ticks consumed while paused or during a manual run are skipped. A tick
+coalesced during an in-flight scheduled run can be consumed after that run finishes, including after a pause/resume.
+There is no unbounded run queue. Scheduled job errors are logged, recorded, and followed by the next tick.
+
+The host starts timers, cancels executions on shutdown, and waits for their scopes to be disposed. Jobs must observe
+their cancellation token. An existing `TimeProvider` registration controls both timer kinds and recorded timestamps.
+All state is in memory and local to one host; every application instance runs its own jobs, with no persistence,
+distributed locks, or replay across restarts.
+
+The bundled generator emits typed registration calls and diagnoses unsupported job classes, conflicting names, mixed
+schedule attributes, invalid periodic literals, and invalid member references. Literal cron syntax and platform time-zone
+IDs are validated during registration by the runtime library. Caprine's generated schedule members validate their literals
+at compile time. Generated job classes must be public, concrete, non-generic, non-file-local, and
+top-level. To use jobs defined in a referenced assembly instead, call `Serval.Generated.MyLibraryJobs.Register(serval)`
+for an assembly named `MyLibrary`.
+Repository project references need the analyzer reference shown in
+the [jobs sample](samples/Serval.Sample.Jobs/Serval.Sample.Jobs.csproj);
+NuGet consumers get it from the package.
+
 ## Socket.IO
 
 `Serval.SocketIO` supports Socket.IO 4.x clients using the default JSON/binary parser: Socket.IO protocol 5 over
@@ -672,6 +783,7 @@ Run any sample with `dotnet run --project samples/<project-name>`.
 | [Transports](samples/Serval.Sample.Transports)                 | HTTP transport selection and protocol examples.                                        | 8110 |
 | [EntityFramework](samples/Serval.Sample.EntityFramework)       | Request-scoped database access with EF Core and SQLite.                                | 8111 |
 | [BackgroundServices](samples/Serval.Sample.BackgroundServices) | Startup work, background imports, and shared state.                                    | 8112 |
+| [Jobs](samples/Serval.Sample.Jobs)                             | Periodic and cron jobs, scoped DI, and controller access to registry controls.         | 8121 |
 | [Savanna](samples/Serval.Sample.Savanna)                       | Typed templates, nested layouts, includes, and components.                             | 8113 |
 | [Vite](samples/Serval.Sample.Vite)                             | Generated asset references, Savanna rendering, and frontend HMR.                       | 8114 |
 | [SignedUrls](samples/Serval.Sample.SignedUrls)                 | Permanent and expiring links, signed payloads, middleware, and manual validation.      | 8115 |
@@ -696,6 +808,16 @@ For HMR, run it with `-p:ViteDevelopment=true`, start `npm --prefix samples/Serv
 second terminal, and open <http://localhost:5173/>. Its project file and Vite configuration show how the two servers fit
 together. The transports sample accepts `-- --http2` or `-- --http3`; HTTP/3 requires QUIC support on the host.
 
+Run `dotnet run --project samples/Serval.Sample.Jobs` and use `curl.exe http://localhost:8121/jobs` to inspect both
+jobs.
+Try `curl.exe -X POST http://localhost:8121/jobs/pulse/pause`, then replace `pause` with `run` or `resume`. The
+`calendar`
+job has the same controls. Both jobs write to the console through an injected logger. Pulse takes one second so you can
+try overlapping requests and see the conflict response.
+The sample's [Schedules.cs](samples/Serval.Sample.Jobs/Schedules.cs) uses Caprine's generators for both schedule kinds;
+the job attributes reference those properties with `typeof` and `nameof`.
+The sample binds to localhost and exposes these controls without authentication.
+
 ## Working on the repository
 
 - [src/](src): framework packages, generators, the shared Savanna compiler, and the Savanna language server.
@@ -717,10 +839,25 @@ dotnet test Serval.slnx --configuration Release --no-build --no-restore
 NuGet packages land in each package project's `bin/Release` directory. Use `-p:GeneratePackageOnBuild=false` when you
 only need assemblies. Additional [package](tests/Serval.Tests/Packaging/VerifyVitePackage.ps1) and
 [HMR](tests/Serval.Tests/Packaging/VerifyViteDevelopment.mjs) checks cover Vite integration.
+The [jobs package check](tests/Serval.Jobs.Tests/VerifyJobsPackage.ps1) compiles and runs a separate NuGet consumer,
+including generated registration, Caprine's generated duration and cron members, DI, and host startup and shutdown.
 
 To run only Socket.IO checks, use `dotnet test tests/Serval.SocketIO.Tests --configuration Release` after installing
 the two Socket.IO npm dependencies above. The test project starts a real local server and invokes Node.js 24 with
 the pinned official client. Missing Node.js or client dependencies fail the tests rather than skipping interoperability.
+
+The [jobs benchmarks](benchmarks/Serval.Jobs.Benchmarks) measure registry reads, manual execution, and periodic and cron
+scheduling overhead, including scope disposal. They report seven samples of time and allocation per operation and check
+that every requested run completes. A fake clock advances schedules without waiting for wall-clock intervals. Build
+first
+and run without concurrent builds or tests. For repeatable comparisons with tiered compilation disabled:
+
+```powershell
+dotnet build benchmarks/Serval.Jobs.Benchmarks -c Release -p:GeneratePackageOnBuild=false
+$env:DOTNET_TieredCompilation = '0'
+dotnet benchmarks/Serval.Jobs.Benchmarks/bin/Release/net11.0/Serval.Jobs.Benchmarks.dll
+Remove-Item Env:DOTNET_TieredCompilation
+```
 
 The [Socket.IO benchmarks](benchmarks/Serval.SocketIO.Benchmarks) measure packet processing time and allocations,
 plus acknowledgement throughput and latency over polling and WebSockets. They use the test project's pinned client.

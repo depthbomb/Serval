@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Description>Scoped, recurring background jobs with periodic and cron schedules for Serval.</Description>
+    <Title>Serval.Jobs</Title>
+    <Authors>Caprine Logic</Authors>
+    <Copyright>Copyright (c) 2026 Caprine Logic</Copyright>
+    <PackageProjectUrl>https://github.com/depthbomb/serval</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/depthbomb/serval</RepositoryUrl>
+    <Company>Caprine Logic</Company>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Caprine.CronTimer" Version="0.1.0"/>
+    <ProjectReference Include="../Serval/Serval.csproj"/>
+    <ProjectReference Include="../Serval.Jobs.Generators/Serval.Jobs.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all"/>
+    <None Include="../../README.md" Link="README.md" Pack="true" PackagePath=""/>
+  </ItemGroup>
+  <Target Name="IncludeJobsGenerator" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="../Serval.Jobs.Generators/Serval.Jobs.Generators.csproj" Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0">
+      <Output TaskParameter="TargetOutputs" ItemName="_JobsAnalyzerFile"/>
+    </MSBuild>
+    <ItemGroup>
+      <None Include="@(_JobsAnalyzerFile)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    </ItemGroup>
+  </Target>
+</Project>
