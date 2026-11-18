@@ -1,98 +1,59 @@
 # Serval.OAuth
 
-Adds OAuth 2.0 client operations and OpenID Connect browser sign-in to Serval.
+OAuth 2.0 clients and OpenID Connect sign-in for Serval. Use it to sign users in through an external provider and
+create a local session.
 
-Register a local session scheme and an OIDC provider:
+## Set up a provider
+
+During host setup, register cookie sessions and an OIDC provider:
 
 ```csharp
 builder.Services.AddServal().AddAuthentication(options => options.DefaultScheme = "Cookies")
     .AddCookie()
     .AddOpenIdConnect("identity", options =>
     {
-        options.ClientId = "splash";
-        options.ClientSecret = configuration["Identity:ClientSecret"];
+        options.ClientId = "my-app";
+        options.ClientSecret = builder.Configuration["Identity:ClientSecret"];
         options.ClientAuthentication = OAuthClientAuthentication.ClientSecretBasic;
-        options.RedirectUri = new Uri("https://splash.example/auth/callback");
+        options.RedirectUri = new Uri("https://app.example/auth/callback");
         options.OpenIdConnect!.Issuer = "https://identity.example/tenant";
         options.Scopes.Add("profile");
         options.Scopes.Add("email");
     });
 ```
 
-In the login action, call `await context.BeginOAuthSignInAsync("identity", "/")`. In the callback action, call
-`await context.CompleteOAuthSignInAsync("identity")` and redirect to the returned `ReturnUrl`. These are the same
-methods used by ordinary OAuth providers. Catch `OAuthProtocolException` and show a generic login failure.
+Await `context.BeginOAuthSignInAsync("identity", "/")` in your login action. In the callback action, await
+`context.CompleteOAuthSignInAsync("identity")` and redirect to the returned `ReturnUrl`.
+Catch `OAuthProtocolException` and show a generic sign-in failure.
 
-For account linking, enrollment, or MFA, use `CompleteOAuthCallbackAsync` instead. It consumes the callback and performs
-the same protocol validation, then returns before account mapping, principal assignment, or local sign-in:
+Serval handles discovery, PKCE, state, browser correlation, nonce checks, and ID-token validation.
+The `openid` scope is added automatically. The issuer must match the provider exactly, including any trailing slash.
+Discovery supplies the OAuth endpoints, so leave those endpoint properties unset.
 
-```csharp
-public static async ValueTask<OAuthCallbackResult> VerifyExternalIdentityAsync(RequestContext context)
-{
-    var callback = await context.CompleteOAuthCallbackAsync("identity");
-    var identity = callback.SignInContext.OpenIdConnect
-        ?? throw new InvalidOperationException("This endpoint requires OIDC.");
-    // Use the validated issuer and subject for account lookup or a pending MFA attempt.
-    // Keep pending state server-side. Issue the local session only after application checks finish.
-    return callback;
-}
-```
+The [OAuth sample](https://github.com/depthbomb/serval/tree/master/samples/Serval.Sample.OAuth) includes both actions and provider configuration.
+Set `OAuth__Issuer`, `OAuth__ClientId`, and any required client credentials to try OIDC.
 
-The result includes `SignInContext` (client, tokens, and validated OIDC identity), `ReturnUrl`, and `Properties` from
-the pending attempt. Account-linking code can preserve the already authenticated `context.User` while validating the
-external account. A sign-in controller can call `context.SignInAsync(localPrincipal, properties: callback.Properties)`
-after its account checks. For MFA, persist only the required pending identity in short-lived browser-bound state and
-create the session after MFA succeeds; do not retain the request context across requests.
+## Use your own account flow
 
-`CreatePrincipal` is optional when handling completion in application code. Ordinary OAuth returns provider tokens,
-which require provider-specific identity verification before local sign-in. The combined `CompleteOAuthSignInAsync`
-helper still requires `CreatePrincipal` for ordinary OAuth and uses the validated OIDC principal by default for OIDC.
-Both completion methods consume the same single-use state, so call exactly one for each callback.
+OIDC uses the validated ID-token principal by default. Set `CreatePrincipal` to look up or create a local account,
+using both issuer and subject to identify the external account. For ordinary OAuth sign-in through
+`CompleteOAuthSignInAsync`, supply `CreatePrincipal` and verify the identity with the provider.
 
-Discovery uses the configured issuer's `/.well-known/openid-configuration` endpoint, including its path. The issuer
-must match exactly, including any trailing slash. Set `MetadataAddress` for a different discovery location. Endpoints
-come from discovery; do not also configure OAuth endpoint properties. HTTPS is required, with the existing explicit
-loopback HTTP option available for development. Supplied backchannel clients must disable redirects. Discovery and
-JWKS requests share the OAuth response-size and timeout limits.
+For account linking, enrollment, or MFA, call `CompleteOAuthCallbackAsync` instead. It validates the callback and
+returns `SignInContext`, `ReturnUrl`, and `Properties` without assigning a principal or creating a local session.
+Finish your application checks before calling `context.SignInAsync`. Keep pending MFA state short-lived, server-side,
+and tied to the browser.
 
-Sign-in always uses the authorization-code flow, S256 PKCE, a random nonce, single-use state, and browser correlation.
-The `openid` scope is added automatically. Before creating a session, Serval validates the ID-token signature, issuer,
-subject, audience, authorized party, timestamps, and nonce. It also checks `at_hash` and `c_hash` when present.
-Additional
-audiences require an explicit `AdditionalAudiences` entry; the client ID must still be an audience, and multiple
-audiences
-require `azp` to identify this client. `MaxAge` sends `max_age` and enforces `auth_time`.
+Call only one completion method per callback: both consume the same single-use state.
 
-RS256 is the default signing algorithm. `SigningAlgorithms` can explicitly allow RS384/512, PS256/384/512, or
-ES256/384/512 when negotiated with the provider. Microsoft.IdentityModel.JsonWebTokens handles JWT signature
-verification. Discovery and keys are cached for twelve hours by default. A signature/key failure triggers one refresh
-and retry, with a thirty-second cooldown shared by requests. Refresh failures fail sign-in without accepting stale
-validation results. Unknown signing algorithms, unsigned tokens, HMAC tokens, encrypted tokens, and critical JOSE
-extensions are rejected.
+## Deployment notes
 
-Without a mapping callback, the session uses the validated ID-token principal, preserving provider claim names (`sub`,
-`name`, and `roles`). For local account lookup or creation, set `CreatePrincipal` and read
-`signIn.OpenIdConnect.Claims` or `signIn.OpenIdConnect.Principal`. This callback runs after validation. Identify
-external
-accounts using both issuer and subject. Set `OpenIdConnect.GetClaimsFromUserInfoEndpoint = true` to fetch UserInfo;
-its `sub` must match the ID token before it is exposed through `signIn.OpenIdConnect.UserInfo`. UserInfo is not
-automatically merged into the principal.
+- Use HTTPS. The explicit loopback HTTP option is for local development. Custom backchannel clients must disable redirects.
+- Keep tokens server-side. Low-level token exchange and refresh methods do not authenticate a user on their own.
+- The default session and pending-state stores are in memory. Replace `IAuthenticationSessionStore` and
+  `IOAuthStateStore` for persistence or multiple instances; custom state stores must preserve `OAuthState.Nonce`.
+- OIDC supports authorization-code sign-in with query callbacks. Local sign-out revokes the local session;
+  provider logout is not implemented.
 
-`OAuthTokenResponse.IdToken` contains the raw token. Low-level code exchange and refresh methods return tokens;
-they do not independently authenticate a user. ID-token validation is part of browser sign-in completion. Keep all
-tokens server-side. Custom `ReadTokenResponse` callbacks must populate `IdToken` for OIDC.
-
-The default cookie-session and pending-state stores are in memory. Replace `IAuthenticationSessionStore` and
-`IOAuthStateStore` for persistent or shared storage. Custom state stores must preserve `OAuthState.Nonce` when storing
-and consuming OIDC attempts. Existing OAuth registrations do not require a nonce.
-
-This implements OIDC code-flow sign-in with query callbacks. Implicit/hybrid flows, form-post callbacks, request
-objects, dynamic client registration, encrypted/signed UserInfo responses, and provider logout protocols are not
-implemented. Local sign-out only revokes the local session. The
-[OIDC Core](https://openid.net/specs/openid-connect-core-1_0.html) and
-[Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) specifications define the protocol requirements.
-
-The OAuth sample accepts `OAuth__Issuer` to enable this flow, alongside `OAuth__ClientId` and optional client
-credentials.
-
-See the [main README](https://github.com/depthbomb/serval/blob/master/README.md) for setup and examples.
+See [OpenIdConnectOptions](https://github.com/depthbomb/serval/blob/master/src/Serval.OAuth/OpenIdConnectOptions.cs) for signing algorithms,
+UserInfo, and other provider settings, or the [quick start](https://github.com/depthbomb/serval/blob/master/README.md#try-it-out) for Serval setup.

@@ -1,12 +1,8 @@
 # Serval
 
-An async web framework for .NET with controller routing, middleware, static files, and streaming. It fits into
-`Microsoft.Extensions.Hosting`; add a transport package to serve HTTP requests.
+The core Serval package provides controllers, routing, middleware, static files, and streaming for .NET.
+It uses `Microsoft.Extensions.Hosting` for configuration, dependency injection, and logging.
 
-Register request-scoped `RequestLifecycleHandler` classes with `AddRequestLifecycleHandler<T>()` for request
-initialization, final response headers, and completion outcomes. Use middleware to wrap downstream execution or
-short-circuit a request. The main README explains phase ordering, priorities, callbacks, and cleanup, with separate
-Middleware and Lifecycles samples.
-
-See the [main README](https://github.com/depthbomb/serval/blob/master/README.md) for setup, examples, and the other
-packages.
+Pair it with a transport package to serve HTTP requests. Start with the
+[quick start](https://github.com/depthbomb/serval/blob/master/README.md#try-it-out), or explore the
+[routing sample](https://github.com/depthbomb/serval/tree/master/samples/Serval.Sample.Routing).
