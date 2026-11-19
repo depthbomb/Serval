@@ -3,7 +3,8 @@ using System.Net;
 
 namespace Serval.Transport.Benchmarks;
 
-internal sealed record Workload(string Name, string Path, int Concurrency, byte[] ExpectedBody, bool Post = false);
+internal sealed record Workload(string Name, string Path, int Concurrency, byte[] ExpectedBody, bool Post = false,
+    IReadOnlyDictionary<string, string>? Headers = null);
 internal sealed record ClientResult(long Requests, long Errors, double Seconds, double RequestsPerSecond, double P50Milliseconds,
     double P95Milliseconds, double P99Milliseconds, double CpuMicrosecondsPerRequest, string? FirstError);
 
@@ -44,6 +45,14 @@ internal static class BenchmarkClient
                         VersionPolicy = HttpVersionPolicy.RequestVersionExact,
                         Content = workload.Post ? new ByteArrayContent(workload.ExpectedBody) : null
                     };
+                    if (workload.Headers is not null)
+                    {
+                        foreach (var (name, value) in workload.Headers)
+                        {
+                            request.Headers.Add(name, value);
+                        }
+                    }
+
                     using var response = await client.SendAsync(request);
                     var body = await response.Content.ReadAsByteArrayAsync();
                     if (response.StatusCode != HttpStatusCode.OK || response.Version != client.DefaultRequestVersion ||

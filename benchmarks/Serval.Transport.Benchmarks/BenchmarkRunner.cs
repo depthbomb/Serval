@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace Serval.Transport.Benchmarks;
 
-internal sealed record Trial(string Transport, string Workload, int Concurrency, int Repetition, ClientResult Client,
+internal sealed record Trial(string Variant, string Transport, string Workload, int Concurrency, int Repetition, ClientResult Client,
     double ServerAllocatedBytesPerRequest, double ServerCpuMicrosecondsPerRequest, long ServerWorkingSetBytes, int Gen0, int Gen1, int Gen2);
 
 internal static class BenchmarkRunner
@@ -21,13 +21,35 @@ internal static class BenchmarkRunner
         var repetitions = int.Parse(Option("--repetitions") ?? "5");
         var seconds = double.Parse(Option("--seconds") ?? "3", System.Globalization.CultureInfo.InvariantCulture);
         var warmup = double.Parse(Option("--warmup") ?? "2", System.Globalization.CultureInfo.InvariantCulture);
+        var assembly = Assembly.GetExecutingAssembly().Location;
+        var baseline = Option("--baseline");
+        if (baseline is not null && !File.Exists(baseline))
+        {
+            throw new FileNotFoundException("The baseline benchmark assembly does not exist.", baseline);
+        }
+
+        var variants = baseline is null ? new[] { ("current", assembly) } : new[] { ("baseline", Path.GetFullPath(baseline)), ("current", assembly) };
+        var cases = transports.SelectMany(transport => variants.Select(variant => (Transport: transport, Variant: variant.Item1, Assembly: variant.Item2))).ToArray();
         var workloads = new[]
         {
             new Workload("small-sequential", "/small", 1, BenchmarkServer.SmallBody),
             new Workload("small-concurrent", "/small", 64, BenchmarkServer.SmallBody),
+            new Workload("headers-concurrent", "/small", 64, BenchmarkServer.SmallBody,
+                Headers: Enumerable.Range(1, 12).ToDictionary(index => $"X-Client-{index}", index => $"client-value-{index}")),
             new Workload("echo-64KiB", "/echo", 16, BenchmarkServer.UploadBody, true),
             new Workload("download-256KiB", "/download", 8, BenchmarkServer.DownloadBody)
         };
+        if (Option("--workloads") is {} selectedWorkloads)
+        {
+            var selected = selectedWorkloads.Split(',');
+            if (selected.Any(name => !workloads.Any(workload => workload.Name == name)))
+            {
+                throw new ArgumentException("An unknown workload was selected.");
+            }
+
+            workloads = workloads.Where(workload => selected.Contains(workload.Name)).ToArray();
+        }
+
         var results = new List<Trial>();
         var metadata = new
         {
@@ -43,7 +65,9 @@ internal static class BenchmarkRunner
             WarmupSeconds = warmup,
             Repetitions = repetitions,
             Transports = transports,
-            Assembly = Assembly.GetExecutingAssembly().Location
+            Assembly = assembly,
+            BaselineAssembly = baseline,
+            Workloads = workloads.Select(workload => workload.Name).ToArray()
         };
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
         for (var repetition = 0; repetition < repetitions; repetition++)
@@ -51,13 +75,13 @@ internal static class BenchmarkRunner
             foreach (var workload in workloads)
             {
                 // Rotate transport order between repetitions to distribute thermal and scheduling drift.
-                for (var index = 0; index < transports.Length; index++)
+                for (var index = 0; index < cases.Length; index++)
                 {
-                    var transport = transports[(index + repetition) % transports.Length];
-                    var trial = await RunTrialAsync(transport, workload, repetition + 1, warmup, seconds);
+                    var testCase = cases[(index + repetition) % cases.Length];
+                    var trial = await RunTrialAsync(testCase.Transport, testCase.Variant, testCase.Assembly, workload, repetition + 1, warmup, seconds);
                     results.Add(trial);
                     await File.WriteAllTextAsync(output, JsonSerializer.Serialize(new { Metadata = metadata, Trials = results }, Program.Json));
-                    Console.WriteLine($"{repetition + 1}/{repetitions} {transport,-10} {workload.Name,-20} {trial.Client.RequestsPerSecond,10:F0} req/s  p95 {trial.Client.P95Milliseconds,8:F3} ms  {trial.Client.Errors} errors");
+                    Console.WriteLine($"{repetition + 1}/{repetitions} {testCase.Variant,-8} {testCase.Transport,-10} {workload.Name,-20} {trial.Client.RequestsPerSecond,10:F0} req/s  p95 {trial.Client.P95Milliseconds,8:F3} ms  {trial.Client.Errors} errors");
                     if (trial.Client.Errors != 0)
                     {
                         throw new InvalidOperationException(trial.Client.FirstError);
@@ -73,7 +97,7 @@ internal static class BenchmarkRunner
         }
     }
 
-    private static async Task<Trial> RunTrialAsync(string transport, Workload workload, int repetition, double warmup, double seconds)
+    private static async Task<Trial> RunTrialAsync(string transport, string variant, string assembly, Workload workload, int repetition, double warmup, double seconds)
     {
         var version = transport.EndsWith('3') ? HttpVersion.Version30 : transport.EndsWith('2') ? HttpVersion.Version20 : HttpVersion.Version11;
         using var reservation = new Socket(AddressFamily.InterNetwork, version.Major == 3 ? SocketType.Dgram : SocketType.Stream,
@@ -89,7 +113,7 @@ internal static class BenchmarkRunner
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        start.ArgumentList.Add(Assembly.GetExecutingAssembly().Location);
+        start.ArgumentList.Add(assembly);
         start.ArgumentList.Add("server");
         start.ArgumentList.Add(transport);
         start.ArgumentList.Add(port.ToString());
@@ -126,7 +150,7 @@ internal static class BenchmarkRunner
             var before = await MetricsAsync();
             var result = await BenchmarkClient.MeasureAsync(client, workload, seconds);
             var after = await MetricsAsync();
-            return new Trial(transport, workload.Name, workload.Concurrency, repetition, result,
+            return new Trial(variant, transport, workload.Name, workload.Concurrency, repetition, result,
                 (after.AllocatedBytes - before.AllocatedBytes) / (double)Math.Max(1, result.Requests),
                 (after.CpuMilliseconds - before.CpuMilliseconds) * 1000 / Math.Max(1, result.Requests),
                 after.WorkingSetBytes, after.Gen0 - before.Gen0, after.Gen1 - before.Gen1, after.Gen2 - before.Gen2);
