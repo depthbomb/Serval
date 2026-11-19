@@ -442,7 +442,8 @@ cleartext for both HttpListener and Kestrel. Compare implementations of the same
 Use `--workloads` to select comma-separated workloads: `small-sequential`, `small-concurrent`, `headers-concurrent`,
 `echo-64KiB`, and `download-256KiB`. The header workload adds twelve request headers to the small concurrent response.
 For a before-and-after comparison, copy the complete benchmark output directory before changing the implementation,
-then pass `--baseline <saved-directory>/Serval.Transport.Benchmarks.dll` to the rebuilt harness. It interleaves the saved
+then pass `--baseline <saved-directory>/Serval.Transport.Benchmarks.dll` to the rebuilt harness. It interleaves the
+saved
 and current server binaries, using the same client workloads, and labels each result with its variant.
 
 </details>

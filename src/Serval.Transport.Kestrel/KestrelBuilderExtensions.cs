@@ -30,7 +30,7 @@ public static class KestrelBuilderExtensions
         {
             ArgumentNullException.ThrowIfNull(application);
 
-            var services = application.ApplicationServices;
+            var services   = application.ApplicationServices;
             var middleware = new KestrelMiddleware(services.GetRequiredService<IRequestHandler>(), services.GetRequiredService<ServalOptions>(), services.GetRequiredService<IHostApplicationLifetime>());
 
             application.UseWebSockets(webSockets ?? new WebSocketOptions());

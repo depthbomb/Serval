@@ -42,7 +42,7 @@ internal sealed class KestrelMiddleware
             }
 
             var nativeRequest = context.Request;
-            var connection = context.Connection;
+            var connection    = context.Connection;
             // Request-level connection fields can be rewritten by upstream middleware.
             var endpoints     = context.Features.Get<IConnectionEndPointFeature>();
             var localEndPoint = endpoints?.LocalEndPoint as IPEndPoint ?? (connection.LocalIpAddress is {} local ? new IPEndPoint(local, connection.LocalPort) : null);
@@ -56,8 +56,8 @@ internal sealed class KestrelMiddleware
             }
 
             var encodedUrl = UriHelper.BuildAbsolute(nativeRequest.Scheme, host, nativeRequest.PathBase, nativeRequest.Path, nativeRequest.QueryString);
-            if (!Uri.TryCreate(encodedUrl, UriKind.Absolute, out var url)
-                || !PathString.FromUriComponent(url.AbsolutePath).Equals(nativeRequest.PathBase.Add(nativeRequest.Path), StringComparison.Ordinal))
+            if (!Uri.TryCreate(encodedUrl, UriKind.Absolute, out var url) ||
+                !PathString.FromUriComponent(url.AbsolutePath).Equals(nativeRequest.PathBase.Add(nativeRequest.Path), StringComparison.Ordinal))
             {
                 // A second decoding or normalization must not change the path checked by upstream middleware.
                 context.Response.StatusCode = StatusCodes.BadRequest;
