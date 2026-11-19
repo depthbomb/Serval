@@ -17,8 +17,8 @@ internal sealed class KestrelMiddleware
 {
     private int _activeRequests;
 
-    private readonly IRequestHandler _handler;
-    private readonly ServalOptions   _options;
+    private readonly IRequestHandler   _handler;
+    private readonly ServalOptions     _options;
     private readonly CancellationToken _stopping;
 
     public KestrelMiddleware(IRequestHandler handler, ServalOptions options, IHostApplicationLifetime lifetime)
@@ -66,8 +66,8 @@ internal sealed class KestrelMiddleware
             var connection = context.Connection;
             var request = new Request(context.Request.Method, url, version, headers,
                 new KestrelRequestBodyStream(context.Request.Body), _options.MaxRequestBodyBytes,
-                new RequestConnection(connection.RemoteIpAddress is { } remote ? new IPEndPoint(remote, connection.RemotePort) : null,
-                    connection.LocalIpAddress is { } local ? new IPEndPoint(local, connection.LocalPort) : null));
+                new RequestConnection(connection.RemoteIpAddress is {} remote ? new IPEndPoint(remote, connection.RemotePort) : null,
+                    connection.LocalIpAddress is {} local ? new IPEndPoint(local, connection.LocalPort) : null));
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, _stopping);
             await _handler.HandleAsync(request, new KestrelResponse(context), cancellation.Token);
         }

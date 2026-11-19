@@ -57,17 +57,20 @@ public static class Program
         using var certificate = DevelopmentCertificate.Create();
         host.WebHost.ConfigureKestrel(options =>
         {
-            options.Listen(IPAddress.Loopback, host.Configuration.GetValue("port", 8110),
-                listener => listener.Protocols = HttpProtocols.Http1);
+            options.Listen(IPAddress.Loopback, host.Configuration.GetValue("port", 8110), listener => listener.Protocols = HttpProtocols.Http1);
             options.Listen(IPAddress.Loopback, host.Configuration.GetValue("https-port", 8443), listener =>
             {
                 listener.Protocols = enableHttp3 ? HttpProtocols.Http1AndHttp2AndHttp3 : HttpProtocols.Http1AndHttp2;
                 listener.UseHttps(certificate);
             });
         });
+
         ConfigureServal(host);
+
         await using var application = host.Build();
+
         application.UseServal();
+
         await application.RunAsync();
     }
 

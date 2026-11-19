@@ -13,7 +13,8 @@ namespace Serval.Transport.HttpListener;
 
 internal sealed class HttpListenerResponse : Response
 {
-    private          bool                _upgraded;
+    private bool _upgraded;
+
     private readonly HttpListenerContext _context;
 
     public HttpListenerResponse(HttpListenerContext context)
@@ -36,9 +37,13 @@ internal sealed class HttpListenerResponse : Response
         }
 
         await MarkUpgradedAsync(ct);
+
         ApplyHeaders();
+
         var socket = await _context.AcceptWebSocketAsync(subProtocol);
+
         _upgraded = true;
+
         return socket.WebSocket;
     }
 
@@ -70,7 +75,9 @@ internal sealed class HttpListenerResponse : Response
     public override ValueTask AbortAsync(CancellationToken ct = default)
     {
         MarkAborted();
+
         _context.Response.Abort();
+
         return ValueTask.CompletedTask;
     }
 

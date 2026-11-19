@@ -52,7 +52,8 @@ This listens on <http://localhost:8080/>. Controllers support constructor inject
 `Task<IActionResult>` or `ValueTask<IActionResult>`. Inheriting `ControllerBase` is optional; it provides helpers
 for reading input and returning responses.
 
-For HTTP/2 and optional HTTP/3, use [Kestrel hosting](#hosting-with-kestrel). HttpListener remains the simpler alternative.
+For HTTP/2 and optional HTTP/3, use [Kestrel hosting](#hosting-with-kestrel). HttpListener remains the simpler
+alternative.
 
 NuGet packages include their source generators. When using project references, add the analyzers explicitly as shown
 in the [routing sample project](samples/Serval.Sample.Routing/Serval.Sample.Routing.csproj).
@@ -63,18 +64,18 @@ in the [routing sample project](samples/Serval.Sample.Routing/Serval.Sample.Rout
 
 Build packages locally or use your internal feed.
 
-| Package | Purpose |
-| --- | --- |
-| [Serval](src/Serval) | Controllers, routing, middleware, static files, and streaming. |
-| [Serval.Authentication](src/Serval.Authentication) | Cookie and bearer authentication, authorization, password hashing, and CSRF. |
-| [Serval.OAuth](src/Serval.OAuth) | OAuth 2.0 clients and OpenID Connect sign-in. |
-| [Serval.SignedUrls](src/Serval.SignedUrls) | Signed links with optional expiration. |
-| [Serval.Jobs](src/Serval.Jobs) | Recurring jobs with periodic or cron schedules. |
-| [Serval.SocketIO](src/Serval.SocketIO) | Socket.IO events, acknowledgements, namespaces, and rooms. |
-| [Serval.Savanna](src/Serval.Savanna) | Compiled HTML templates with typed models, layouts, and components. |
-| [Serval.Vite](src/Serval.Vite) | Generated asset references and Vite development server support. |
-| [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets; used by most samples. |
-| [Serval.Transport.Kestrel](src/Serval.Transport.Kestrel) | Kestrel HTTP/1.1, HTTP/2, HTTP/3, and WebSockets through the Serval pipeline. |
+| Package                                                            | Purpose                                                                       |
+|--------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| [Serval](src/Serval)                                               | Controllers, routing, middleware, static files, and streaming.                |
+| [Serval.Authentication](src/Serval.Authentication)                 | Cookie and bearer authentication, authorization, password hashing, and CSRF.  |
+| [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and OpenID Connect sign-in.                                 |
+| [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed links with optional expiration.                                        |
+| [Serval.Jobs](src/Serval.Jobs)                                     | Recurring jobs with periodic or cron schedules.                               |
+| [Serval.SocketIO](src/Serval.SocketIO)                             | Socket.IO events, acknowledgements, namespaces, and rooms.                    |
+| [Serval.Savanna](src/Serval.Savanna)                               | Compiled HTML templates with typed models, layouts, and components.           |
+| [Serval.Vite](src/Serval.Vite)                                     | Generated asset references and Vite development server support.               |
+| [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets; used by most samples.                                    |
+| [Serval.Transport.Kestrel](src/Serval.Transport.Kestrel)           | Kestrel HTTP/1.1, HTTP/2, HTTP/3, and WebSockets through the Serval pipeline. |
 
 ## Hosting with Kestrel
 
@@ -125,10 +126,10 @@ middleware attributes apply to matched controller actions.
 
 Use a `RequestLifecycleHandler` for work at a specific point in the request:
 
-| Hook | Use it to |
-| --- | --- |
-| `OnRequestReceivedAsync` | Initialize scoped state before middleware and routing. |
-| `OnResponseStartingAsync` | Set final headers before the response starts. |
+| Hook                      | Use it to                                               |
+|---------------------------|---------------------------------------------------------|
+| `OnRequestReceivedAsync`  | Initialize scoped state before middleware and routing.  |
+| `OnResponseStartingAsync` | Set final headers before the response starts.           |
 | `OnRequestCompletedAsync` | Record the final status, duration, exception, or abort. |
 
 Register handlers with `serval.AddRequestLifecycleHandler<T>(priority: 0)`. Each handler is scoped to the request,
@@ -337,7 +338,8 @@ needed; origin checks do not replace authentication.
 
 Set `EnableWebSockets = false` on transports without upgrade support, and keep Serval's `MaxRequestBodyBytes` at
 least as large as Socket.IO's `MaxPayloadBytes`. Queues and connections have configurable limits; slow consumers
-are disconnected. Delivery is ordered and at most once, with in-memory rooms and no replay or recovery after reconnecting.
+are disconnected. Delivery is ordered and at most once, with in-memory rooms and no replay or recovery after
+reconnecting.
 
 The [Socket.IO sample](samples/Serval.Sample.SocketIO) includes room chat, binary echo, and acknowledgements.
 
@@ -345,27 +347,27 @@ The [Socket.IO sample](samples/Serval.Sample.SocketIO) includes room chat, binar
 
 Run a sample with `dotnet run --project samples/<project-name>`.
 
-| Sample | Covers | Port |
-| --- | --- | --- |
-| [Routing](samples/Serval.Sample.Routing) | Routes, binding, and URL helpers. | 8101 |
-| [TodoApi](samples/Serval.Sample.TodoApi) | JSON APIs and input validation. | 8102 |
-| [Middleware](samples/Serval.Sample.Middleware) | Ordering, timing, and early responses. | 8103 |
-| [Files](samples/Serval.Sample.Files) | Static files, downloads, and uploads. | 8104 |
-| [Streaming](samples/Serval.Sample.Streaming) | SSE, WebSockets, and streamed JSON. | 8105 |
-| [CookieAuth](samples/Serval.Sample.CookieAuth) | Sessions, sign-in, sign-out, and CSRF. | 8106 |
-| [BearerAuth](samples/Serval.Sample.BearerAuth) | Bearer tokens and authorization policies. | 8107 |
-| [OAuth](samples/Serval.Sample.OAuth) | OAuth and OIDC sign-in with local sessions. | 8108 |
-| [Exceptions](samples/Serval.Sample.Exceptions) | Custom error handling. | 8109 |
-| [Transports](samples/Serval.Sample.Transports) | Kestrel with optional HTTP/3, or HttpListener. | 8110 |
-| [EntityFramework](samples/Serval.Sample.EntityFramework) | EF Core and request-scoped database access. | 8111 |
-| [BackgroundServices](samples/Serval.Sample.BackgroundServices) | Startup work and background services. | 8112 |
-| [Savanna](samples/Serval.Sample.Savanna) | Typed templates, layouts, and components. | 8113 |
-| [Vite](samples/Serval.Sample.Vite) | Asset references and frontend HMR. | 8114 |
-| [SignedUrls](samples/Serval.Sample.SignedUrls) | Signed links and expiration. | 8115 |
-| [Forms](samples/Serval.Sample.Forms) | Form fields, JSON values, and file uploads. | 8116 |
-| [Lifecycles](samples/Serval.Sample.Lifecycles) | Request hooks and response callbacks. | 8117 |
-| [SocketIO](samples/Serval.Sample.SocketIO) | Chat rooms, binary events, and acknowledgements. | 8119 |
-| [Jobs](samples/Serval.Sample.Jobs) | Periodic and cron jobs with runtime controls. | 8121 |
+| Sample                                                         | Covers                                           | Port |
+|----------------------------------------------------------------|--------------------------------------------------|------|
+| [Routing](samples/Serval.Sample.Routing)                       | Routes, binding, and URL helpers.                | 8101 |
+| [TodoApi](samples/Serval.Sample.TodoApi)                       | JSON APIs and input validation.                  | 8102 |
+| [Middleware](samples/Serval.Sample.Middleware)                 | Ordering, timing, and early responses.           | 8103 |
+| [Files](samples/Serval.Sample.Files)                           | Static files, downloads, and uploads.            | 8104 |
+| [Streaming](samples/Serval.Sample.Streaming)                   | SSE, WebSockets, and streamed JSON.              | 8105 |
+| [CookieAuth](samples/Serval.Sample.CookieAuth)                 | Sessions, sign-in, sign-out, and CSRF.           | 8106 |
+| [BearerAuth](samples/Serval.Sample.BearerAuth)                 | Bearer tokens and authorization policies.        | 8107 |
+| [OAuth](samples/Serval.Sample.OAuth)                           | OAuth and OIDC sign-in with local sessions.      | 8108 |
+| [Exceptions](samples/Serval.Sample.Exceptions)                 | Custom error handling.                           | 8109 |
+| [Transports](samples/Serval.Sample.Transports)                 | Kestrel with optional HTTP/3, or HttpListener.   | 8110 |
+| [EntityFramework](samples/Serval.Sample.EntityFramework)       | EF Core and request-scoped database access.      | 8111 |
+| [BackgroundServices](samples/Serval.Sample.BackgroundServices) | Startup work and background services.            | 8112 |
+| [Savanna](samples/Serval.Sample.Savanna)                       | Typed templates, layouts, and components.        | 8113 |
+| [Vite](samples/Serval.Sample.Vite)                             | Asset references and frontend HMR.               | 8114 |
+| [SignedUrls](samples/Serval.Sample.SignedUrls)                 | Signed links and expiration.                     | 8115 |
+| [Forms](samples/Serval.Sample.Forms)                           | Form fields, JSON values, and file uploads.      | 8116 |
+| [Lifecycles](samples/Serval.Sample.Lifecycles)                 | Request hooks and response callbacks.            | 8117 |
+| [SocketIO](samples/Serval.Sample.SocketIO)                     | Chat rooms, binary events, and acknowledgements. | 8119 |
+| [Jobs](samples/Serval.Sample.Jobs)                             | Periodic and cron jobs with runtime controls.    | 8121 |
 
 The Socket.IO and Vite samples need Node.js 24. Install their dependencies before running:
 

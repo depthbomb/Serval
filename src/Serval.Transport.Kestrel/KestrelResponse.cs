@@ -25,6 +25,7 @@ internal sealed class KestrelResponse : Response
     public override async ValueTask<WebSocket> AcceptWebSocketAsync(string? subProtocol = null, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
+
         if (HasStarted)
         {
             throw new InvalidOperationException("The response has already started.");
@@ -36,7 +37,9 @@ internal sealed class KestrelResponse : Response
         }
 
         await MarkUpgradedAsync(ct);
+
         ApplyHeaders();
+
         var socket = await _context.WebSockets.AcceptWebSocketAsync(subProtocol);
         _upgraded = true;
         return socket;
@@ -68,7 +71,9 @@ internal sealed class KestrelResponse : Response
     public override ValueTask AbortAsync(CancellationToken ct = default)
     {
         MarkAborted();
+
         _context.Abort();
+
         return ValueTask.CompletedTask;
     }
 
@@ -76,15 +81,18 @@ internal sealed class KestrelResponse : Response
     {
         foreach (var (name, values) in Headers)
         {
-            _context.Response.Headers[name] = values.Count == 1 ? new StringValues(values[0]) : new StringValues(values.ToArray());
+            _context.Response.Headers[name] = values.Count == 1 ? new StringValues(values[0]) : new StringValues([.. values]);
         }
     }
 
     protected override ValueTask OnStartAsync(CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+
         _context.Response.StatusCode = StatusCode;
+
         ApplyHeaders();
+
         return new ValueTask(_context.Response.StartAsync(ct));
     }
 

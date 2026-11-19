@@ -30,7 +30,8 @@ Serval handles discovery, PKCE, state, browser correlation, nonce checks, and ID
 The `openid` scope is added automatically. The issuer must match the provider exactly, including any trailing slash.
 Discovery supplies the OAuth endpoints, so leave those endpoint properties unset.
 
-The [OAuth sample](https://github.com/depthbomb/serval/tree/master/samples/Serval.Sample.OAuth) includes both actions and provider configuration.
+The [OAuth sample](https://github.com/depthbomb/serval/tree/master/samples/Serval.Sample.OAuth) includes both actions
+and provider configuration.
 Set `OAuth__Issuer`, `OAuth__ClientId`, and any required client credentials to try OIDC.
 
 ## Use your own account flow
@@ -48,12 +49,15 @@ Call only one completion method per callback: both consume the same single-use s
 
 ## Deployment notes
 
-- Use HTTPS. The explicit loopback HTTP option is for local development. Custom backchannel clients must disable redirects.
+- Use HTTPS. The explicit loopback HTTP option is for local development. Custom backchannel clients must disable
+  redirects.
 - Keep tokens server-side. Low-level token exchange and refresh methods do not authenticate a user on their own.
 - The default session and pending-state stores are in memory. Replace `IAuthenticationSessionStore` and
   `IOAuthStateStore` for persistence or multiple instances; custom state stores must preserve `OAuthState.Nonce`.
 - OIDC supports authorization-code sign-in with query callbacks. Local sign-out revokes the local session;
   provider logout is not implemented.
 
-See [OpenIdConnectOptions](https://github.com/depthbomb/serval/blob/master/src/Serval.OAuth/OpenIdConnectOptions.cs) for signing algorithms,
-UserInfo, and other provider settings, or the [quick start](https://github.com/depthbomb/serval/blob/master/README.md#try-it-out) for Serval setup.
+See [OpenIdConnectOptions](https://github.com/depthbomb/serval/blob/master/src/Serval.OAuth/OpenIdConnectOptions.cs) for
+signing algorithms,
+UserInfo, and other provider settings, or
+the [quick start](https://github.com/depthbomb/serval/blob/master/README.md#try-it-out) for Serval setup.

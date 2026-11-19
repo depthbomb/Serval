@@ -29,8 +29,8 @@ public static class KestrelBuilderExtensions
             ArgumentNullException.ThrowIfNull(application);
 
             var services = application.ApplicationServices;
-            var middleware = new KestrelMiddleware(services.GetRequiredService<IRequestHandler>(),
-                services.GetRequiredService<ServalOptions>(), services.GetRequiredService<IHostApplicationLifetime>());
+            var middleware = new KestrelMiddleware(services.GetRequiredService<IRequestHandler>(), services.GetRequiredService<ServalOptions>(), services.GetRequiredService<IHostApplicationLifetime>());
+
             application.UseWebSockets(webSockets ?? new WebSocketOptions());
             application.Run(middleware.InvokeAsync);
             return application;

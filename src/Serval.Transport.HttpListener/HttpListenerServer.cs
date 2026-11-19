@@ -15,7 +15,8 @@ namespace Serval.Transport.HttpListener;
 
 internal sealed class HttpListenerServer : BackgroundService, IAsyncDisposable
 {
-    private          long                             _requestId;
+    private long _requestId;
+
     private readonly IRequestHandler                  _handler;
     private readonly System.Net.HttpListener          _listener = new();
     private readonly HttpListenerOptions              _listenerOptions;
@@ -93,8 +94,7 @@ internal sealed class HttpListenerServer : BackgroundService, IAsyncDisposable
                 }
             }
 
-            var request = new Request(context.Request.HttpMethod, context.Request.Url!, context.Request.ProtocolVersion, headers, context.Request.InputStream, _options.MaxRequestBodyBytes,
-                new RequestConnection(context.Request.RemoteEndPoint, context.Request.LocalEndPoint));
+            var request = new Request(context.Request.HttpMethod, context.Request.Url!, context.Request.ProtocolVersion, headers, context.Request.InputStream, _options.MaxRequestBodyBytes, new RequestConnection(context.Request.RemoteEndPoint, context.Request.LocalEndPoint));
             await _handler.HandleAsync(request, new HttpListenerResponse(context), ct);
         }
         catch (Exception exception)
