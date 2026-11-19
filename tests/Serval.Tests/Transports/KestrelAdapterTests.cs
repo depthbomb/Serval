@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Serval.Hosting;
 using Serval.Tests.Support;
 using Serval.Transport.Kestrel;
@@ -24,6 +25,32 @@ namespace Serval.Tests.Transports;
 
 public sealed class KestrelAdapterTests
 {
+    [Fact]
+    public async Task RequestHeadersPreserveSeparateValuesAndFreezeTheirSnapshot()
+    {
+        var context = CreateContext();
+        for (var index = 0; index < 12; index++)
+        {
+            context.Request.Headers[$"X-Client-{index}"] = $"value-{index}";
+        }
+
+        var values = new[] { "one,two", "three" };
+        context.Request.Headers["X-Multiple"] = new StringValues(values);
+        context.Request.Headers["X-Empty"] = string.Empty;
+        await InvokeAsync(context, (request, _, _) =>
+        {
+            values[0] = "changed";
+            context.Request.Headers["X-Client-0"] = "changed";
+            Assert.Equal("value-0", request.Headers["x-client-0"]);
+            Assert.Equal("value-11", request.Headers["X-Client-11"]);
+            Assert.Equal(new[] { "one,two", "three" }, request.Headers.GetValues("x-multiple"));
+            Assert.Equal(string.Empty, Assert.Single(request.Headers.GetValues("X-Empty")));
+            Assert.Throws<InvalidOperationException>(() => request.Headers.Append("X-New", "value"));
+            Assert.Throws<InvalidOperationException>(() => request.Headers["X-Client-0"] = "changed");
+            return ValueTask.CompletedTask;
+        });
+    }
+
     [Fact]
     public async Task CompletionRejectsCanceledTokenAfterHeadersHaveStarted()
     {

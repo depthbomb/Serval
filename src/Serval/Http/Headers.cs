@@ -39,8 +39,19 @@ public sealed class Headers : IEnumerable<KeyValuePair<string, IReadOnlyList<str
     }
     private bool _readOnly;
 
-    private readonly        Dictionary<string, List<string>> _values         = new(StringComparer.OrdinalIgnoreCase);
+    private readonly        Dictionary<string, List<string>> _values;
     private static readonly SearchValues<char>               TokenCharacters = SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#$%&'*+-.^_`|~");
+
+    /// <summary>Creates an empty header collection.</summary>
+    public Headers() : this(0) {}
+
+    /// <summary>Creates an empty header collection with room for the expected number of field names.</summary>
+    /// <param name="capacity">The expected number of distinct header names.</param>
+    /// <exception cref="ArgumentOutOfRangeException">The capacity is negative.</exception>
+    public Headers(int capacity)
+    {
+        _values = new Dictionary<string, List<string>>(capacity, StringComparer.OrdinalIgnoreCase);
+    }
 
     /// <summary>Enumerates field names and their separate values.</summary>
     /// <returns>An enumerator over read-only value lists.</returns>

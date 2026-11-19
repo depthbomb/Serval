@@ -58,12 +58,19 @@ internal sealed class KestrelMiddleware
                 return;
             }
 
-            var headers = new Headers();
+            var headers = new Headers(context.Request.Headers.Count);
             foreach (var (name, values) in context.Request.Headers)
             {
-                foreach (var value in values)
+                if (values.Count == 1)
                 {
-                    headers.Append(name, value!);
+                    headers[name] = values[0] ?? string.Empty;
+                }
+                else
+                {
+                    foreach (var value in values)
+                    {
+                        headers.Append(name, value ?? string.Empty);
+                    }
                 }
             }
 
