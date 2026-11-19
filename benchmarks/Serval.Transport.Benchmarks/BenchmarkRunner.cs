@@ -29,7 +29,6 @@ internal static class BenchmarkRunner
         }
 
         var variants = baseline is null ? new[] { ("current", assembly) } : new[] { ("baseline", Path.GetFullPath(baseline)), ("current", assembly) };
-        var cases = transports.SelectMany(transport => variants.Select(variant => (Transport: transport, Variant: variant.Item1, Assembly: variant.Item2))).ToArray();
         var workloads = new[]
         {
             new Workload("small-sequential", "/small", 1, BenchmarkServer.SmallBody),
@@ -72,12 +71,15 @@ internal static class BenchmarkRunner
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
         for (var repetition = 0; repetition < repetitions; repetition++)
         {
+            var orderedVariants = repetition % 2 == 0 ? variants : variants.Reverse().ToArray();
+            var rotation = repetition % transports.Length;
+            var cases = transports.Skip(rotation).Concat(transports.Take(rotation))
+                .SelectMany(transport => orderedVariants.Select(variant => (Transport: transport, Variant: variant.Item1, Assembly: variant.Item2))).ToArray();
             foreach (var workload in workloads)
             {
-                // Rotate transport order between repetitions to distribute thermal and scheduling drift.
-                for (var index = 0; index < cases.Length; index++)
+                // Rotate protocols and reverse variants so neither implementation consistently runs first.
+                foreach (var testCase in cases)
                 {
-                    var testCase = cases[(index + repetition) % cases.Length];
                     var trial = await RunTrialAsync(testCase.Transport, testCase.Variant, testCase.Assembly, workload, repetition + 1, warmup, seconds);
                     results.Add(trial);
                     await File.WriteAllTextAsync(output, JsonSerializer.Serialize(new { Metadata = metadata, Trials = results }, Program.Json));
