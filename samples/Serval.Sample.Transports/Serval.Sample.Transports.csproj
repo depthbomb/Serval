@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/Serval.Transport.Kestrel/Serval.Transport.Kestrel.csproj"/>
     <None Update="Public/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"/>
     <ProjectReference Include="../../src/Serval/Serval.csproj"/>
     <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>

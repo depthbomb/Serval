@@ -72,8 +72,49 @@ Build packages locally or use your internal feed.
 | [Serval.Savanna](src/Serval.Savanna) | Compiled HTML templates with typed models, layouts, and components. |
 | [Serval.Vite](src/Serval.Vite) | Generated asset references and Vite development server support. |
 | [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets; used by most samples. |
+| [Serval.Transport.Kestrel](src/Serval.Transport.Kestrel) | Kestrel HTTP/1.1, HTTP/2, HTTP/3, and WebSockets through the Serval pipeline. |
 | [Serval.Transport.Http2](src/Serval.Transport.Http2) | Experimental HTTP/2 over TCP and TLS. |
 | [Serval.Transport.Http3](src/Serval.Transport.Http3) | Experimental HTTP/3 over QUIC. |
+
+## Hosting with Kestrel
+
+Reference `Serval` and `Serval.Transport.Kestrel`, then use an ASP.NET Core host:
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Serval.Generated;
+using Serval.Hosting;
+using Serval.Transport.Kestrel;
+
+public static class Program
+{
+    public static async Task Main(string[] args)
+    {
+        var builder = WebApplication.CreateSlimBuilder(args);
+        builder.Services.AddServal().AddGeneratedControllers();
+
+        await using var application = builder.Build();
+        application.UseServal();
+        await application.RunAsync();
+    }
+}
+```
+
+Configure addresses, certificates, protocols, and server limits through `builder.WebHost.ConfigureKestrel`.
+When using `CreateSlimBuilder`, also call `builder.WebHost.UseQuic()` to enable HTTP/3; these extensions use
+the `Microsoft.AspNetCore.Hosting` namespace.
+`UseServal()` enables WebSockets and sends all requests reaching it through Serval's routing, middleware, and request
+scopes. ASP.NET middleware may run before it. HTTP/2 WebSocket requests use CONNECT, so register a CONNECT endpoint
+when accepting those connections. Early Hints are unavailable through this transport.
+
+Both Kestrel's limits and Serval's limits apply; increase both body limits when accepting large uploads. Body parser
+rejections retain their HTTP error status. Request cancellation includes client disconnects and host shutdown.
+The Kestrel package requires the `Microsoft.AspNetCore.App` shared framework, supplied by the ASP.NET Core runtime
+or included in a self-contained deployment. The core Serval package has no ASP.NET Core framework reference.
+
+Run `dotnet run --project samples/Serval.Sample.Transports -- --kestrel` for HTTP on port 8110 and HTTPS with
+HTTP/1.1, HTTP/2, and HTTP/3 on port 8443. The generated certificate is temporary and untrusted. Use `--port` and
+`--https-port` to change those ports. HTTP/3 requires platform QUIC support.
 
 ## Lifecycle handlers and middleware
 
@@ -379,6 +420,21 @@ dotnet benchmarks/Serval.SocketIO.Benchmarks/bin/Release/net11.0/Serval.SocketIO
 # In a second terminal:
 node benchmarks/Serval.SocketIO.Benchmarks/load.mjs http://localhost:8120
 ```
+
+Compare server transports with a separate server process for each trial. The harness verifies response bytes and
+the exact HTTP version, rotates transport order, and reports throughput, latency, server allocations, and server CPU.
+Results are loopback measurements with a client on the same machine. Run without concurrent builds or tests:
+
+```powershell
+dotnet build benchmarks/Serval.Transport.Benchmarks -c Release -p:GeneratePackageOnBuild=false
+$env:DOTNET_TieredCompilation = '0'
+dotnet benchmarks/Serval.Transport.Benchmarks/bin/Release/net11.0/Serval.Transport.Benchmarks.dll --transports listener,kestrel1,http2,kestrel2,http3,kestrel3 --output "$env:TEMP/serval-transports.json"
+Remove-Item Env:DOTNET_TieredCompilation
+```
+
+The defaults are five repetitions, two seconds of warmup, and three seconds of measurement per workload and transport.
+Override these with `--repetitions`, `--warmup`, and `--seconds`. HTTP/2 uses TLS, HTTP/3 uses QUIC, and HTTP/1.1 is
+cleartext for both HttpListener and Kestrel. Compare implementations of the same protocol when assessing performance.
 
 </details>
 

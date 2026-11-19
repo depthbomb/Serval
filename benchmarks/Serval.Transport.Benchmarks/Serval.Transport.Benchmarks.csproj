@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Serval.Transport.Kestrel/Serval.Transport.Kestrel.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.Http2/Serval.Transport.Http2.csproj"/>
+    <ProjectReference Include="../../src/Serval.Transport.Http3/Serval.Transport.Http3.csproj"/>
+  </ItemGroup>
+</Project>

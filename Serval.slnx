@@ -10,6 +10,7 @@
     <Project Path="src/Serval.Vite/Serval.Vite.csproj"/>
   </Folder>
   <Folder Name="/Framework/Transports/">
+    <Project Path="src/Serval.Transport.Kestrel/Serval.Transport.Kestrel.csproj"/>
     <Project Path="src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
     <Project Path="src/Serval.Transport.Http2/Serval.Transport.Http2.csproj"/>
     <Project Path="src/Serval.Transport.Http3/Serval.Transport.Http3.csproj"/>
@@ -52,6 +53,7 @@
     <Project Path="tests/Serval.Savanna.LanguageServer.Tests/Serval.Savanna.LanguageServer.Tests.csproj"/>
   </Folder>
   <Folder Name="/Benchmarks/">
+    <Project Path="benchmarks/Serval.Transport.Benchmarks/Serval.Transport.Benchmarks.csproj"/>
     <Project Path="benchmarks/Serval.Jobs.Benchmarks/Serval.Jobs.Benchmarks.csproj"/>
     <Project Path="benchmarks/Serval.SocketIO.Benchmarks/Serval.SocketIO.Benchmarks.csproj"/>
   </Folder>

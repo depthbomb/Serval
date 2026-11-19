@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Kestrel HTTP/1.1, HTTP/2, HTTP/3, and WebSocket transport for Serval.</Description>
+    <Title>Serval.Transport.Kestrel</Title>
+    <Authors>Caprine Logic</Authors>
+    <Copyright>Copyright (c) 2026 Caprine Logic</Copyright>
+    <PackageProjectUrl>https://github.com/depthbomb/serval</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/depthbomb/serval</RepositoryUrl>
+    <Company>Caprine Logic</Company>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    <ProjectReference Include="../Serval/Serval.csproj"/>
+    <None Include="../../README.md" Pack="true" PackagePath="" Visible="false"/>
+  </ItemGroup>
+</Project>
