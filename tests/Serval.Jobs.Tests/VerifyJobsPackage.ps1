@@ -62,12 +62,11 @@ finally
 }
 Copy-Item -LiteralPath $packages[0].FullName -Destination $feed
 
-$coreVersion = & dotnet msbuild (Join-Path $repo 'src/Serval/Serval.csproj') -getProperty:PackageVersion -nodeReuse:false
+& dotnet pack (Join-Path $repo 'src/Serval/Serval.csproj') --configuration $Configuration --artifacts-path $artifacts --no-build --no-restore -p:GeneratePackageOnBuild=false -o $feed
 if ($LASTEXITCODE -ne 0)
 {
-    throw 'Could not read the core package version.'
+    throw 'Could not package the core dependency from the same build.'
 }
-Copy-Item -LiteralPath (Join-Path $repo "src/Serval/bin/$Configuration/Serval.$coreVersion.nupkg") -Destination $feed
 
 $escapedFeed = [Security.SecurityElement]::Escape($feed)
 @"

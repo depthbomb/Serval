@@ -1,23 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <TargetFramework/>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <PackageId>Serval.Savanna</PackageId>
+    <PackageTags>html;templates;views;source-generator</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Description>Compiled, strongly typed HTML views for Serval.</Description>
-    <Version>0.1.0</Version>
     <Title>Serval.Savanna</Title>
-    <Authors>Caprine Logic</Authors>
-    <Copyright>Copyright (c) 2026 Caprine Logic</Copyright>
-    <PackageProjectUrl>https://github.com/depthbomb/serval</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/depthbomb/serval</RepositoryUrl>
-    <Company>Caprine Logic</Company>
-    <AssemblyVersion>0.1.0</AssemblyVersion>
-    <FileVersion>0.1.0</FileVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Serval/Serval.csproj"/>
     <ProjectReference Include="../Serval.Savanna.Generators/Serval.Savanna.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all"/>
-    <None Include="../Serval.Savanna.Generators/bin/$(Configuration)/netstandard2.0/Serval.Savanna.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-    <None Include="../Serval.Savanna.Generators/bin/$(Configuration)/netstandard2.0/Serval.Savanna.Compiler.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
-    <None Update="build/Serval.Savanna.targets" Pack="true" PackagePath="build/Serval.Savanna.targets"/>
+    <None Remove="build/Serval.Savanna.targets"/>
+    <None Include="build/Serval.Savanna.targets" Pack="true" PackagePath="build/Serval.Savanna.targets"/>
   </ItemGroup>
+  <Target Name="IncludeSavannaGenerator" BeforeTargets="_GetPackageFiles">
+    <MSBuild Projects="../Serval.Savanna.Generators/Serval.Savanna.Generators.csproj" Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0">
+      <Output TaskParameter="TargetOutputs" ItemName="_SavannaAnalyzerFile"/>
+    </MSBuild>
+    <ItemGroup>
+      <None Include="@(_SavannaAnalyzerFile)" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
+    </ItemGroup>
+  </Target>
 </Project>

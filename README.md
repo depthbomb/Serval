@@ -8,7 +8,8 @@ as you need them. Serval is a pre-1.0 project; APIs and template syntax may chan
 
 ## Try it out
 
-Use the .NET SDK in [global.json](global.json). The project targets .NET 11 and C# 15.
+Use the .NET SDK in [global.json](global.json). Public packages target .NET 10 and .NET 11.
+Samples and development tools target .NET 11, and the source uses C# 15.
 
 ```powershell
 dotnet run --project samples/Serval.Sample.Routing
@@ -62,7 +63,8 @@ in the [routing sample project](samples/Serval.Sample.Routing/Serval.Sample.Rout
 
 ## Packages
 
-Build packages locally or use your internal feed.
+The ten public packages share the version in [Directory.Build.props](Directory.Build.props).
+Generators and the Savanna compiler are bundled where needed; they are not separate packages.
 
 | Package                                                            | Purpose                                                                       |
 |--------------------------------------------------------------------|-------------------------------------------------------------------------------|
@@ -76,6 +78,28 @@ Build packages locally or use your internal feed.
 | [Serval.Vite](src/Serval.Vite)                                     | Generated asset references and Vite development server support.               |
 | [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets; used by most samples.                                    |
 | [Serval.Transport.Kestrel](src/Serval.Transport.Kestrel)           | Kestrel HTTP/1.1, HTTP/2, HTTP/3, and WebSockets through the Serval pipeline. |
+
+### Publishing
+
+[publish.yml](.github/workflows/publish.yml) builds and validates all public packages before publishing a GitHub
+release tagged with the package version, such as `v0.1.0`. The tagged commit must belong to `master`.
+The workflow uploads both packages and symbols to NuGet and attaches them to the GitHub release.
+Running it manually against a version tag leaves publishing disabled by default.
+
+Publishing uses the `nuget` GitHub environment, restricted to `v*` tags, with its `NUGET_USER` variable set to
+the NuGet profile name. Create a [NuGet Trusted Publishing policy](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)
+for repository owner `depthbomb`, repository `Serval`, workflow file `publish.yml`, and environment `nuget`.
+Allow new packages and new versions for `Serval*`. Authentication uses GitHub OIDC and a temporary NuGet key.
+
+Run the same package checks locally with PowerShell 7:
+
+```powershell
+./tests/Packaging/VerifyPackages.ps1
+```
+
+This builds packages in a temporary directory, checks metadata, dependencies, symbols, Source Link, and bundled
+generators, then builds and runs a consumer using only those packages on .NET 10 and .NET 11.
+Pass `-PackageDirectory <directory>` to validate existing release artifacts.
 
 ## Hosting with Kestrel
 

@@ -8,5 +8,6 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <Deterministic>true</Deterministic>
     <Version>0.1.0</Version>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>
