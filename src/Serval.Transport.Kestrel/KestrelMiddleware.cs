@@ -40,7 +40,19 @@ internal sealed class KestrelMiddleware
                 return;
             }
 
-            if (!Uri.TryCreate(context.Request.GetEncodedUrl(), UriKind.Absolute, out var url))
+            var nativeRequest = context.Request;
+            var host = nativeRequest.Host;
+            if (!host.HasValue && nativeRequest.Protocol == "HTTP/1.0")
+            {
+                // Host is optional in HTTP/1.0. Use the accepting endpoint when the client supplies no authority.
+                var localConnection = context.Connection;
+                host = localConnection.LocalIpAddress is {} address
+                    ? new HostString(address.ToString(), localConnection.LocalPort)
+                    : new HostString("localhost");
+            }
+
+            var encodedUrl = UriHelper.BuildAbsolute(nativeRequest.Scheme, host, nativeRequest.PathBase, nativeRequest.Path, nativeRequest.QueryString);
+            if (!Uri.TryCreate(encodedUrl, UriKind.Absolute, out var url))
             {
                 context.Response.StatusCode = StatusCodes.BadRequest;
                 return;

@@ -5,6 +5,7 @@
 
 using System.Net;
 using System.Net.Quic;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,29 @@ namespace Serval.Tests.Transports;
 
 public sealed class KestrelTransportTests
 {
+    [Fact]
+    public async Task Http10WithoutHostUsesTheLocalEndpoint()
+    {
+        using var handler = new SocketsHttpHandler { UseProxy = false };
+        await using var host = await TransportTestHost.StartAsync(HttpVersion.Version10, false, handler, serval =>
+            serval.AddEndpoint("GET", "/legacy", context =>
+            {
+                Assert.Equal(HttpVersion.Version10, context.Request.ProtocolVersion);
+                Assert.True(IPAddress.IsLoopback(IPAddress.Parse(context.Request.Url.Host)));
+                Assert.Equal(context.Request.Connection.LocalPort, context.Request.Url.Port);
+                return context.Response.WriteTextAsync("legacy");
+            }), kestrel: true);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var client = new TcpClient();
+        await client.ConnectAsync(IPAddress.Loopback, host.Client.BaseAddress!.Port, timeout.Token);
+        await using var stream = client.GetStream();
+        await stream.WriteAsync("GET /legacy HTTP/1.0\r\n\r\n"u8.ToArray(), timeout.Token);
+        using var reader = new StreamReader(stream, Encoding.ASCII);
+        var response = await reader.ReadToEndAsync(timeout.Token);
+        Assert.Contains(" 200 ", response.Split("\r\n")[0]);
+        Assert.EndsWith("legacy", response);
+    }
+
     public static IEnumerable<object[]> Protocols()
     {
         yield return [1, false];
