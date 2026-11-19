@@ -65,7 +65,8 @@ internal sealed class TransportTestHost : IAsyncDisposable
                                                            TimeSpan? clientTimeout = null,
                                                            CancellationToken ct = default,
                                                            bool kestrel = false,
-                                                           Action<KestrelServerOptions>? configureKestrel = null)
+                                                           Action<KestrelServerOptions>? configureKestrel = null,
+                                                           Action<IApplicationBuilder>? configureApplication = null)
     {
         if (version.Major == 3 && !QuicListener.IsSupported)
         {
@@ -114,6 +115,7 @@ internal sealed class TransportTestHost : IAsyncDisposable
                     configureKestrel?.Invoke(options);
                 });
                 var application = webBuilder.Build();
+                configureApplication?.Invoke(application);
                 application.UseServal();
                 host = application;
             }

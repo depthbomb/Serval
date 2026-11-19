@@ -8,6 +8,7 @@ using System.Net.Quic;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Serval.Generated;
 using Serval.Hosting;
@@ -256,6 +257,34 @@ public sealed class KestrelTransportTests
         await completed.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await disposed.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await Assert.ThrowsAsync<HttpRequestException>(async () => { using var response = await pending; });
+    }
+
+    [Theory]
+    [MemberData(nameof(Protocols))]
+    public async Task ConnectionMetadataRetainsSocketEndpointsAfterUpstreamMiddleware(int major, bool tls)
+    {
+        using var handler = CreateHandler();
+        var remote = new TaskCompletionSource<IPEndPoint>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var host = await TransportTestHost.StartAsync(VersionFor(major), tls, handler, serval =>
+            serval.AddEndpoint("GET", "/connection", async context =>
+            {
+                var endpoint = await remote.Task;
+                Assert.Equal(endpoint.Address, context.Request.Connection.RemoteAddress);
+                Assert.Equal(endpoint.Port, context.Request.Connection.RemotePort);
+                Assert.True(IPAddress.IsLoopback(context.Request.Connection.LocalAddress!));
+                Assert.True(context.Request.Connection.LocalPort > 0);
+                await context.Response.WriteTextAsync("preserved");
+            }), kestrel: true, configureApplication: application => application.Use((context, next) =>
+            {
+                remote.TrySetResult(new IPEndPoint(context.Connection.RemoteIpAddress!, context.Connection.RemotePort));
+                // ASP.NET middleware can replace request-level connection information.
+                context.Connection.RemoteIpAddress = IPAddress.Parse("192.0.2.20");
+                context.Connection.RemotePort = 1234;
+                context.Connection.LocalIpAddress = IPAddress.Parse("192.0.2.30");
+                context.Connection.LocalPort = 0;
+                return next(context);
+            }));
+        Assert.Equal("preserved", await host.Client.GetStringAsync("/connection"));
     }
 
     [Theory]

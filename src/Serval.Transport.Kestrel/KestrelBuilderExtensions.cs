@@ -23,6 +23,8 @@ public static class KestrelBuilderExtensions
         ///     certificates, HTTP protocols, and server limits through Kestrel's standard hosting APIs. Serval's body,
         ///     header, concurrency, and request deadline limits also apply.
         ///     Application request services are scoped by Serval. Requests must observe cancellation during host shutdown.
+        ///     Configure trusted proxies with Serval's forwarded-header middleware, without also applying ASP.NET Core
+        ///     forwarded-header middleware. Connection metadata retains the socket endpoints.
         /// </remarks>
         public IApplicationBuilder UseServal(WebSocketOptions? webSockets = null)
         {
