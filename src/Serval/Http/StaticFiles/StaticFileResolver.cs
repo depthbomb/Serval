@@ -68,6 +68,15 @@ public sealed class StaticFileResolver
                 }
 
                 current = Path.Combine(current, segment);
+                if (OperatingSystem.IsWindows() && segment.Contains('~'))
+                {
+                    // Expand DOS aliases before applying name and extension policies to the physical file.
+                    current = Path.GetFullPath(current);
+                    if (!_serveDotFiles && Path.GetFileName(current).StartsWith('.'))
+                    {
+                        return null;
+                    }
+                }
 
                 var attributes = File.GetAttributes(current);
                 // Check every segment: a link in an intermediate directory could escape the public root.
