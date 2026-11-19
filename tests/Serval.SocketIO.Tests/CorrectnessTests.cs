@@ -19,7 +19,7 @@ public sealed class CorrectnessTests
         session.Enqueue(EnginePacket.Text(blockCompletion ? "6" : "42[\"test\"]"));
         var response = new CapturedResponse(block: true)
         {
-            BlockCompletion = blockCompletion
+            BlockCompletion = blockCompletion,
         };
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
         var       pending = session.PollAsync(response, timeout.Token).AsTask();
@@ -111,7 +111,7 @@ public sealed class CorrectnessTests
             using var cancel  = new CancellationTokenSource();
             var       first   = session.Sockets["/"].EmitWithAcknowledgementAsync("ask", [], ct: cancel.Token).AsTask();
             var       firstId = await NextEventIdAsync(session);
-            cancel.Cancel();
+            await cancel.CancelAsync();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
             await session.ReceiveAsync(EnginePacket.Text("41"), CancellationToken.None);
             await UntilAsync(() => !session.Sockets.ContainsKey("/"));
@@ -128,7 +128,7 @@ public sealed class CorrectnessTests
             }
             finally
             {
-                cancelSecond.Cancel();
+                await cancelSecond.CancelAsync();
                 try
                 {
                     await second;

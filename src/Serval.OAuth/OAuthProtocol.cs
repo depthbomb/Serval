@@ -48,12 +48,7 @@ internal static class OAuthProtocol
     internal static string Scope(IEnumerable<string> scopes)
     {
         var values = scopes.ToArray();
-        if (values.Any(value => string.IsNullOrEmpty(value) || value.Any(character => character is < '!' or > '~' or '"' or '\\')))
-        {
-            throw new ArgumentException("OAuth scope values must be nonempty ASCII tokens.", nameof(scopes));
-        }
-
-        return string.Join(' ', values.Distinct(StringComparer.Ordinal));
+        return values.Any(value => string.IsNullOrEmpty(value) || value.Any(character => character is < '!' or > '~' or '"' or '\\')) ? throw new ArgumentException("OAuth scope values must be nonempty ASCII tokens.", nameof(scopes)) : string.Join(' ', values.Distinct(StringComparer.Ordinal));
     }
 
     internal static void AddParameters(IDictionary<string, string> target, IEnumerable<KeyValuePair<string, string>> additional)
@@ -108,11 +103,6 @@ internal static class OAuthProtocol
             return null;
         }
 
-        if (value.ValueKind != JsonValueKind.String)
-        {
-            throw new OAuthProtocolException("invalid_response");
-        }
-
-        return value.GetString();
+        return value.ValueKind != JsonValueKind.String ? throw new OAuthProtocolException("invalid_response") : value.GetString();
     }
 }

@@ -32,7 +32,7 @@ public sealed class GeneratedRouteTests
     public void InvalidRouteDeclarationsFailCompilation(string route)
     {
         var (_, diagnostics) = Generate($"[Get({SymbolDisplay.FormatLiteral(route, true)})] public ValueTask<IActionResult> Action() => default;");
-        Assert.Contains(diagnostics, diagnostic => diagnostic.Id == "SERVAL003" && diagnostic.Location.IsInSource);
+        Assert.Contains(diagnostics, diagnostic => diagnostic is { Id: "SERVAL003", Location.IsInSource: true });
     }
 
     [Theory]
@@ -127,7 +127,7 @@ public sealed class GeneratedRouteTests
         Assert.Equal("/test/items/12/?q=a%20b", urls.Item(12, new Dictionary<string, object?>
         {
             ["q"]    = "a b",
-            ["skip"] = null
+            ["skip"] = null,
         }));
         Assert.Equal("/test/optional/1/", urls.Optional());
         Assert.Equal("/test/optional/3/", urls.Optional(3));

@@ -28,7 +28,7 @@ public sealed class TransportTests
         UseProxy = false,
         SslOptions =
         {
-            RemoteCertificateValidationCallback = (_, _, _, _) => true
+            RemoteCertificateValidationCallback = (_, _, _, _) => true,
         },
     };
 
@@ -43,7 +43,7 @@ public sealed class TransportTests
                 var options = new CookieOptions
                 {
                     Secure  = false,
-                    Expires = DateTimeOffset.UtcNow.AddDays(1)
+                    Expires = DateTimeOffset.UtcNow.AddDays(1),
                 };
                 context.Response.Cookies.Set("first", "one", options);
                 context.Response.Cookies.Set("second", "two", options);

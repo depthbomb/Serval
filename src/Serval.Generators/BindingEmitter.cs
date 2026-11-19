@@ -56,69 +56,73 @@ internal static class BindingEmitter
 
             plan.Arguments.Add(argument);
 
-            if (source == "Body")
+            switch (source)
             {
-                if (plan.ReadsBody || parameter.HasExplicitDefaultValue)
+                case "Body":
                 {
-                    error = "An action can have only one body parameter, and the body is required rather than defaulted.";
-                    return false;
-                }
+                    if (plan.ReadsBody || parameter.HasExplicitDefaultValue)
+                    {
+                        error = "An action can have only one body parameter, and the body is required rather than defaulted.";
+                        return false;
+                    }
 
-                plan.ReadsBody = true;
-                plan.Statements.Add($"var {argument} = await context.Request.ReadJsonAsync<{typeName}>(context.RequestAborted);");
-                if (attributes[0].NamedArguments.Any(pair => pair.Key == "Validate" && pair.Value.Value is true))
-                {
-                    plan.Statements.Add($"await global::Serval.Validation.InputValidation.ValidateAsync(context, {argument});");
-                }
-                continue;
-            }
-
-            if (source == "Services")
-            {
-                var serviceType = type.TypeKind == TypeKind.Dynamic ? "global::System.Object" : TypeName(type.WithNullableAnnotation(NullableAnnotation.NotAnnotated));
-                var service     = $"context.Services.GetService(typeof({serviceType}))";
-                plan.Statements.Add(optional
-                    ? $"{typeName} {argument} = {service} is {{ }} __service{parameter.Ordinal} ? ({typeName})__service{parameter.Ordinal} : {fallback};"
-                    : $"var {argument} = global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<{typeName}>(context.Services);");
-                continue;
-            }
-
-            if (source == "Form")
-            {
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    error = $"Parameter '{parameter.Name}' has an empty binding name.";
-                    return false;
-                }
-
-                if (plan is { ReadsBody: true, ReadsForm: false })
-                {
-                    error = "FromForm and FromBody cannot be combined on the same action.";
-                    return false;
-                }
-
-                if (!plan.ReadsForm)
-                {
-                    plan.Statements.Add("await context.Request.ReadFormAsync(context.RequestAborted);");
-                    plan.ReadsForm = true;
                     plan.ReadsBody = true;
-                }
+                    plan.Statements.Add($"var {argument} = await context.Request.ReadJsonAsync<{typeName}>(context.RequestAborted);");
+                    if (attributes[0].NamedArguments.Any(pair => pair is { Key: "Validate", Value.Value: true }))
+                    {
+                        plan.Statements.Add($"await global::Serval.Validation.InputValidation.ValidateAsync(context, {argument});");
+                    }
 
-                var formName = ControllerGenerator.Literal(name);
-                if (type.WithNullableAnnotation(NullableAnnotation.NotAnnotated).ToDisplayString() == "Serval.Http.UploadedFile")
-                {
-                    var file = $"(await context.Request.ReadFormAsync(context.RequestAborted)).GetFile({formName})";
-                    plan.Statements.Add($"{typeName} {argument} = {file}" + (optional ? $" ?? {fallback};" : " ?? throw new global::Serval.Http.HttpErrorException(global::Serval.Http.Constants.StatusCodes.BadRequest, \"An uploaded file is required.\");"));
                     continue;
                 }
 
-                if (type is IArrayTypeSymbol { Rank: 1 } files && files.ElementType.ToDisplayString() == "Serval.Http.UploadedFile")
+                case "Services":
                 {
-                    var uploaded = "__files" + parameter.Ordinal;
-                    plan.Statements.Add($"var {uploaded} = (await context.Request.ReadFormAsync(context.RequestAborted)).GetFiles({formName});");
-                    var fileArray = $"global::System.Linq.Enumerable.ToArray({uploaded})";
-                    plan.Statements.Add($"{typeName} {argument} = " + (optional ? $"{uploaded}.Count == 0 ? {fallback} : {fileArray};" : fileArray + ";"));
+                    var serviceType = type.TypeKind == TypeKind.Dynamic ? "global::System.Object" : TypeName(type.WithNullableAnnotation(NullableAnnotation.NotAnnotated));
+                    var service     = $"context.Services.GetService(typeof({serviceType}))";
+                    plan.Statements.Add(optional ? $"{typeName} {argument} = {service} is {{ }} __service{parameter.Ordinal} ? ({typeName})__service{parameter.Ordinal} : {fallback};" : $"var {argument} = global::Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<{typeName}>(context.Services);");
                     continue;
+                }
+
+                case "Form":
+                {
+                    if (string.IsNullOrWhiteSpace(name))
+                    {
+                        error = $"Parameter '{parameter.Name}' has an empty binding name.";
+                        return false;
+                    }
+
+                    if (plan is { ReadsBody: true, ReadsForm: false })
+                    {
+                        error = "FromForm and FromBody cannot be combined on the same action.";
+                        return false;
+                    }
+
+                    if (!plan.ReadsForm)
+                    {
+                        plan.Statements.Add("await context.Request.ReadFormAsync(context.RequestAborted);");
+                        plan.ReadsForm = true;
+                        plan.ReadsBody = true;
+                    }
+
+                    var formName = ControllerGenerator.Literal(name);
+                    if (type.WithNullableAnnotation(NullableAnnotation.NotAnnotated).ToDisplayString() == "Serval.Http.UploadedFile")
+                    {
+                        var file = $"(await context.Request.ReadFormAsync(context.RequestAborted)).GetFile({formName})";
+                        plan.Statements.Add($"{typeName} {argument} = {file}" + (optional ? $" ?? {fallback};" : " ?? throw new global::Serval.Http.HttpErrorException(global::Serval.Http.Constants.StatusCodes.BadRequest, \"An uploaded file is required.\");"));
+                        continue;
+                    }
+
+                    if (type is IArrayTypeSymbol { Rank: 1 } files && files.ElementType.ToDisplayString() == "Serval.Http.UploadedFile")
+                    {
+                        var uploaded = "__files" + parameter.Ordinal;
+                        plan.Statements.Add($"var {uploaded} = (await context.Request.ReadFormAsync(context.RequestAborted)).GetFiles({formName});");
+                        var fileArray = $"global::System.Linq.Enumerable.ToArray({uploaded})";
+                        plan.Statements.Add($"{typeName} {argument} = " + (optional ? $"{uploaded}.Count == 0 ? {fallback} : {fileArray};" : fileArray + ";"));
+                        continue;
+                    }
+
+                    break;
                 }
             }
 

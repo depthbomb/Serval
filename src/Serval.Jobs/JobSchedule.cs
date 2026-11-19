@@ -33,14 +33,7 @@ public sealed class JobSchedule
     /// <summary>Uses PeriodicTimer with an interval from one millisecond through 4,294,967,294 milliseconds.</summary>
     /// <remarks>The first execution waits one interval. Missed ticks coalesce according to PeriodicTimer semantics.</remarks>
     public static JobSchedule Every(TimeSpan period)
-    {
-        if (period.TotalMilliseconds is < 1 or > 4_294_967_294)
-        {
-            throw new ArgumentOutOfRangeException(nameof(period), "The interval must be supported by PeriodicTimer.");
-        }
-
-        return new JobSchedule(period);
-    }
+        => period.TotalMilliseconds is < 1 or > 4_294_967_294 ? throw new ArgumentOutOfRangeException(nameof(period), "The interval must be supported by PeriodicTimer.") : new JobSchedule(period);
 
     /// <summary>Parses a cron expression for CronTimer. The default time zone is UTC.</summary>
     public static JobSchedule Cron(string                expression,

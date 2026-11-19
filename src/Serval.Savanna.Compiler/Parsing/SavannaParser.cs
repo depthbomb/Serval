@@ -42,51 +42,48 @@ public static class SavannaParser
         var     modelSeen   = false;
         var     contentSeen = false;
 
-        void Error(string message, TextSpan span)
-        {
-            diagnostics.Add(new SavannaDiagnostic("SAVANNA001", message, path, span));
-        }
-
         foreach (var token in tokens)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (token.Kind == SavannaTokenKind.Text)
+            switch (token.Kind)
             {
-                // A switch needs its first label before it can render anything. Jumps leave no place for trailing indentation.
-                if (string.IsNullOrWhiteSpace(token.Value) &&
-                    (scopes.Count > 0 && scopes.Peek().Kind == "switch" || body.LastOrDefault() is { Kind: SavannaNodeKind.Break or SavannaNodeKind.Continue, Value.Length: 0 }))
+                case SavannaTokenKind.Text:
                 {
+                    // A switch needs its first label before it can render anything. Jumps leave no place for trailing indentation.
+                    if (string.IsNullOrWhiteSpace(token.Value) && (scopes.Count > 0 && scopes.Peek().Kind == "switch" || body.LastOrDefault() is { Kind: SavannaNodeKind.Break or SavannaNodeKind.Continue, Value.Length: 0 }))
+                    {
+                        continue;
+                    }
+
+                    if (scopes.Count > 0 && scopes.Peek().Kind == "switch")
+                    {
+                        Error("Switch content must follow a case or default label.", token.Span);
+                        continue;
+                    }
+
+                    body.Add(new SavannaNode(SavannaNodeKind.Text, token.Value, token.Span));
+                    contentSeen |= !string.IsNullOrWhiteSpace(token.Value);
                     continue;
                 }
 
-                if (scopes.Count > 0 && scopes.Peek().Kind == "switch")
+                case SavannaTokenKind.Expression:
                 {
-                    Error("Switch content must follow a case or default label.", token.Span);
+                    if (scopes.Count > 0 && scopes.Peek().Kind == "switch")
+                    {
+                        Error("Switch content must follow a case or default label.", token.Span);
+                        continue;
+                    }
+
+                    if (token.Value.Length == 0)
+                    {
+                        Error("An interpolation needs a C# expression.", token.Span);
+                    }
+
+                    body.Add(new SavannaNode(SavannaNodeKind.Expression, token.Value, token.Span));
+                    contentSeen = true;
                     continue;
                 }
-
-                body.Add(new SavannaNode(SavannaNodeKind.Text, token.Value, token.Span));
-                contentSeen |= !string.IsNullOrWhiteSpace(token.Value);
-                continue;
-            }
-
-            if (token.Kind == SavannaTokenKind.Expression)
-            {
-                if (scopes.Count > 0 && scopes.Peek().Kind == "switch")
-                {
-                    Error("Switch content must follow a case or default label.", token.Span);
-                    continue;
-                }
-
-                if (token.Value.Length == 0)
-                {
-                    Error("An interpolation needs a C# expression.", token.Span);
-                }
-
-                body.Add(new SavannaNode(SavannaNodeKind.Expression, token.Value, token.Span));
-                contentSeen = true;
-                continue;
             }
 
             // Tag tokens already have a command and exact attribute spans. Only legacy directives need splitting.
@@ -134,7 +131,7 @@ public static class SavannaParser
                         var call = new SavannaNode(command == "component" ? SavannaNodeKind.Component : SavannaNodeKind.Include, target, valueSpan,
                             argument?.Value ?? "Model", argument?.Span ?? valueSpan)
                         {
-                            Paired = !tag.SelfClosing && command != "extends"
+                            Paired = !tag.SelfClosing && command != "extends",
                         };
                         if (command == "extends")
                         {
@@ -192,7 +189,7 @@ public static class SavannaParser
                         body.Add(new SavannaNode(command == "slot" ? SavannaNodeKind.Slot : SavannaNodeKind.Whitespace, value, valueSpan)
                         {
                             Paired   = !tag.SelfClosing,
-                            Required = tag.Get("required") is not null
+                            Required = tag.Get("required") is not null,
                         });
                         if (!tag.SelfClosing)
                         {
@@ -614,6 +611,11 @@ public static class SavannaParser
 
         document.Diagnostics = [.. diagnostics];
         return document;
+
+        void Error(string message, TextSpan span)
+        {
+            diagnostics.Add(new SavannaDiagnostic("SAVANNA001", message, path, span));
+        }
     }
 
     internal static bool TryPath(string text, out string path)

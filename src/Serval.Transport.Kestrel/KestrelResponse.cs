@@ -40,8 +40,8 @@ internal sealed class KestrelResponse : Response
 
         ApplyHeaders();
 
-        using var cancellation = AbortOnCancellation(ct);
-        var socket = await _context.WebSockets.AcceptWebSocketAsync(subProtocol);
+        await using var cancellation = AbortOnCancellation(ct);
+        var             socket       = await _context.WebSockets.AcceptWebSocketAsync(subProtocol);
         if (ct.IsCancellationRequested)
         {
             socket.Dispose();
@@ -75,7 +75,7 @@ internal sealed class KestrelResponse : Response
             if (!completion.IsCompleted)
             {
                 // The native completion API has no token. Abort pending I/O, then await it before releasing the context.
-                using var cancellation = AbortOnCancellation(ct);
+                await using var cancellation = AbortOnCancellation(ct);
                 await completion;
                 ct.ThrowIfCancellationRequested();
             }

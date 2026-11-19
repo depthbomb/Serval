@@ -19,7 +19,7 @@ public sealed class ForwardedHeadersTests
         await using var request  = Request(peer, "203.0.113.1", "https", "app.test:8443", "/portal");
         var             original = request.Url;
         var             response = new MemoryResponse();
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, CancellationToken.None);
         Assert.Equal(404, response.StatusCode);
         Assert.Same(original, request.Url);
         Assert.Equal(peer, request.Connection.RemoteAddress!.ToString());
@@ -38,7 +38,7 @@ public sealed class ForwardedHeadersTests
             options.ForwardLimit = limit;
         });
         await using var request = Request("10.0.0.1", "203.0.113.1, 10.0.0.2", "https, http", "app.test, edge.test");
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, new MemoryResponse(), default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, new MemoryResponse(), CancellationToken.None);
         Assert.Equal(address, request.ClientAddress!.ToString());
         Assert.Equal(host, request.Host);
     }
@@ -49,7 +49,7 @@ public sealed class ForwardedHeadersTests
         await using var app      = Application(options => options.ForwardLimit = 5);
         await using var request  = Request("10.0.0.1", "bad, 203.0.113.1", "bad, https", "bad@host, app.test");
         var             response = new MemoryResponse();
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, CancellationToken.None);
         Assert.Equal(404, response.StatusCode);
         Assert.Equal("203.0.113.1", request.ClientAddress!.ToString());
         Assert.Equal("app.test", request.Host);
@@ -69,7 +69,7 @@ public sealed class ForwardedHeadersTests
         await using var app      = Application();
         await using var request  = Request("10.0.0.1", address, scheme, host, prefix);
         var             response = new MemoryResponse();
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, CancellationToken.None);
         Assert.Equal(status, response.StatusCode);
         if (status == 400)
         {
@@ -90,7 +90,7 @@ public sealed class ForwardedHeadersTests
         configured!.AllowedHosts.Clear();
         await using var request  = Request("10.0.0.1", "203.0.113.1", "https", "other.test");
         var             response = new MemoryResponse();
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request, response, CancellationToken.None);
         Assert.Equal(400, response.StatusCode);
     }
 

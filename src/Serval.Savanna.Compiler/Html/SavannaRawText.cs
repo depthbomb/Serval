@@ -19,29 +19,34 @@ internal sealed class SavannaRawText
 
     public bool IsClosingTag(string text, int index, string name)
     {
-        if (name == "plaintext")
+        switch (name)
         {
-            return false;
-        }
-
-        if (name == "script")
-        {
-            if (Matches(text, index, "-->"))
+            case "plaintext":
             {
-                Reset();
-            }
-            else if (Matches(text, index, "<!--"))
-            {
-                _escaped = true;
-            }
-            else if (_escaped && IsTag(text, index, "<script"))
-            {
-                _doubleEscaped = true;
-            }
-            else if (_doubleEscaped && IsTag(text, index, "</script"))
-            {
-                _doubleEscaped = false;
                 return false;
+            }
+
+            case "script":
+            {
+                if (Matches(text, index, "-->"))
+                {
+                    Reset();
+                }
+                else if (Matches(text, index, "<!--"))
+                {
+                    _escaped = true;
+                }
+                else if (_escaped && IsTag(text, index, "<script"))
+                {
+                    _doubleEscaped = true;
+                }
+                else if (_doubleEscaped && IsTag(text, index, "</script"))
+                {
+                    _doubleEscaped = false;
+                    return false;
+                }
+
+                break;
             }
         }
 

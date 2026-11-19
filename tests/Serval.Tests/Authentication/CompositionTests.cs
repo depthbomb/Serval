@@ -3,7 +3,6 @@ using Serval.Authentication;
 using Serval.Authentication.Authorization;
 using Serval.Authentication.Cookies;
 using Serval.Authentication.Passwords;
-using Serval.Hosting;
 using Serval.Tests.Support;
 
 namespace Serval.Tests.Authentication;

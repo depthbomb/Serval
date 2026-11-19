@@ -5,7 +5,6 @@
 
 using System.Collections.Frozen;
 using System.Globalization;
-using Serval.Http;
 using Serval.Http.Constants;
 
 namespace Serval.Routing;

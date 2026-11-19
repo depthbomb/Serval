@@ -115,6 +115,8 @@ public sealed class ControllerRegistry
     private static RequestDelegate BuildPipeline<TController>(ControllerAction<TController>    action,
                                                               IEnumerable<MiddlewareAttribute> middleware) where TController : class
     {
+        return BuildPipeline(Pipeline, middleware);
+
         async ValueTask Pipeline(RequestContext context)
         {
             var controller     = context.Services.GetRequiredService<TController>();
@@ -131,8 +133,6 @@ public sealed class ControllerRegistry
                 controllerBase?.DetachContext();
             }
         }
-
-        return BuildPipeline(Pipeline, middleware);
     }
 
     private static RequestDelegate BuildPipeline(RequestDelegate pipeline, IEnumerable<MiddlewareAttribute> middleware)

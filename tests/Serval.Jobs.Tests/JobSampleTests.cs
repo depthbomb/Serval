@@ -27,11 +27,9 @@ public sealed class JobSampleTests
         await host.StartAsync();
         try
         {
-            using var client = new HttpClient
-            {
-                BaseAddress = new Uri($"http://localhost:{port}"),
-                Timeout     = TimeSpan.FromSeconds(10)
-            };
+            using var client = new HttpClient();
+            client.BaseAddress = new Uri($"http://localhost:{port}");
+            client.Timeout     = TimeSpan.FromSeconds(10);
             Assert.Contains("Recurring jobs", await client.GetStringAsync("/"));
             using var initial = JsonDocument.Parse(await client.GetStringAsync("/jobs"));
             Assert.Equal(2, initial.RootElement.GetArrayLength());
@@ -46,21 +44,21 @@ public sealed class JobSampleTests
                 await Task.Delay(1, cts.Token);
             }
 
-            using var conflict = await client.PostAsync("/jobs/pulse/run", null);
+            using var conflict = await client.PostAsync("/jobs/pulse/run", null, CancellationToken.None);
             Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
             using var completed = await first;
             Assert.Equal(HttpStatusCode.NoContent, completed.StatusCode);
-            using var second = await client.PostAsync("/jobs/pulse/run", null);
+            using var second = await client.PostAsync("/jobs/pulse/run", null, CancellationToken.None);
             Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
             Assert.Equal(2, registry.GetJob("pulse").RunCount);
 
-            using var resumed = await client.PostAsync("/jobs/calendar/resume", null);
+            using var resumed = await client.PostAsync("/jobs/calendar/resume", null, CancellationToken.None);
             Assert.Equal(HttpStatusCode.NoContent, resumed.StatusCode);
             Assert.False(registry.GetJob("calendar").IsPaused);
-            using var paused = await client.PostAsync("/jobs/calendar/pause", null);
+            using var paused = await client.PostAsync("/jobs/calendar/pause", null, CancellationToken.None);
             Assert.Equal(HttpStatusCode.NoContent, paused.StatusCode);
             Assert.True(registry.GetJob("calendar").IsPaused);
-            using var missing = await client.PostAsync("/jobs/missing/run", null);
+            using var missing = await client.PostAsync("/jobs/missing/run", null, CancellationToken.None);
             Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         }
         finally

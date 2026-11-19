@@ -41,23 +41,23 @@ public static class Program
             "event", new Message
             {
                 Index = 42,
-                Text  = new string('x', 128)
-            }
+                Text  = new string('x', 128),
+            },
         ];
         object[] binary =
         [
             "event", new BinaryMessage
             {
-                Data = new byte[4096]
-            }
+                Data = new byte[4096],
+            },
         ];
         using var document = JsonDocument.Parse("[{\"index\":42,\"text\":\"hello\"}]");
-        var       results  = new[] { Measure("encode-json", () => _consumed += PacketCodec.Encode(2, "/chat", 5, json, options)[0].Data.Length), Measure("encode-binary-4KiB", () => _consumed += PacketCodec.Encode(2, "/chat", 5, binary, options)[1].Data.Length), Measure("decode-typed-json", () => _consumed += new SocketIOArguments(document.RootElement, [], options.Json).Get<Message>(0)!.Index), };
+        var       results  = new[] { Measure("encode-json", () => _consumed += PacketCodec.Encode(2, "/chat", 5, json, options)[0].Data.Length), Measure("encode-binary-4KiB", () => _consumed += PacketCodec.Encode(2, "/chat", 5, binary, options)[1].Data.Length), Measure("decode-typed-json", () => _consumed += new SocketIOArguments(document.RootElement, [], options.Json).Get<Message>(0)!.Index) };
         Console.WriteLine(JsonSerializer.Serialize(new
         {
             runtime    = RuntimeInformation.FrameworkDescription,
             processors = Environment.ProcessorCount,
-            results
+            results,
         }));
         GC.KeepAlive(_consumed);
     }
@@ -94,7 +94,7 @@ public static class Program
             name,
             nanoseconds = elapsed[3],
             bytes       = allocations[3],
-            samples     = elapsed
+            samples     = elapsed,
         };
     }
 }
@@ -103,13 +103,19 @@ public sealed class EchoHandler : SocketIOHandler
 {
     public override async ValueTask OnEventAsync(SocketIOEvent message, CancellationToken ct)
     {
-        if (message.Name == "json")
+        switch (message.Name)
         {
-            await message.AcknowledgeAsync(message.Arguments.Get<Message>(0));
-        }
-        else if (message.Name == "binary")
-        {
-            await message.AcknowledgeAsync(message.Arguments.Get<BinaryMessage>(0));
+            case "json":
+            {
+                await message.AcknowledgeAsync(message.Arguments.Get<Message>(0));
+                break;
+            }
+
+            case "binary":
+            {
+                await message.AcknowledgeAsync(message.Arguments.Get<BinaryMessage>(0));
+                break;
+            }
         }
     }
 }

@@ -97,10 +97,8 @@ public sealed class OAuthClientTests
     [Fact]
     public async Task ProviderParametersRequestHooksAndResponseParsingAreReplaceable()
     {
-        using var handler = new OAuthTestBackchannel
-        {
-            Respond = _ => OAuthTestBackchannel.Json("{\"custom_token\":\"custom\"}")
-        };
+        using var handler = new OAuthTestBackchannel();
+        handler.Respond = _ => OAuthTestBackchannel.Json("{\"custom_token\":\"custom\"}");
         using var http    = new HttpClient(handler);
         var       options = Options(http);
         options.AuthorizationParameters.Add("audience", "https://api.test/");
@@ -117,13 +115,13 @@ public sealed class OAuthClientTests
             return new OAuthTokenResponse
             {
                 AccessToken = root.GetProperty("custom_token").GetString()!,
-                TokenType   = "Bearer"
+                TokenType   = "Bearer",
             };
         };
         using var client = new OAuthClient(options);
         var authorization = client.CreateAuthorizationRequest(new Uri("https://app.test/callback"), parameters: new Dictionary<string, string>
         {
-            ["prompt"] = "login"
+            ["prompt"] = "login",
         });
         Assert.Equal("https://api.test/", Query(authorization.AuthorizationUri)["audience"].Single());
         Assert.Equal("login", Query(authorization.AuthorizationUri)["prompt"].Single());
@@ -191,10 +189,8 @@ public sealed class OAuthClientTests
     [InlineData("{\"access_token\":null,\"token_type\":\"Bearer\"}")]
     public async Task InvalidTokenResponsesFailClosed(string json)
     {
-        using var handler = new OAuthTestBackchannel
-        {
-            Respond = _ => OAuthTestBackchannel.Json(json)
-        };
+        using var handler = new OAuthTestBackchannel();
+        handler.Respond = _ => OAuthTestBackchannel.Json(json);
         using var http   = new HttpClient(handler);
         using var client = new OAuthClient(Options(http));
         await Assert.ThrowsAsync<OAuthProtocolException>(async () => await client.ClientCredentialsAsync());
@@ -203,10 +199,8 @@ public sealed class OAuthClientTests
     [Fact]
     public async Task ErrorsDoNotExposeRawProviderDescriptionsOrTokens()
     {
-        using var handler = new OAuthTestBackchannel
-        {
-            Respond = _ => OAuthTestBackchannel.Json("{\"error\":\"invalid_grant\",\"error_description\":\"secret details\"}", HttpStatusCode.BadRequest)
-        };
+        using var handler = new OAuthTestBackchannel();
+        handler.Respond = _ => OAuthTestBackchannel.Json("{\"error\":\"invalid_grant\",\"error_description\":\"secret details\"}", HttpStatusCode.BadRequest);
         using var http   = new HttpClient(handler);
         using var client = new OAuthClient(Options(http));
         var       error  = await Assert.ThrowsAsync<OAuthProtocolException>(async () => await client.RefreshAsync("secret token"));
@@ -218,10 +212,8 @@ public sealed class OAuthClientTests
     [Fact]
     public async Task RedirectsAndOversizedResponsesAreRejected()
     {
-        using var handler = new OAuthTestBackchannel
-        {
-            Respond = _ => new HttpResponseMessage(HttpStatusCode.Redirect)
-        };
+        using var handler = new OAuthTestBackchannel();
+        handler.Respond = _ => new HttpResponseMessage(HttpStatusCode.Redirect);
         using var http    = new HttpClient(handler);
         var       options = Options(http);
         options.MaximumResponseBytes = 64;
@@ -246,7 +238,7 @@ public sealed class OAuthClientTests
             return new OAuthTokenResponse
             {
                 AccessToken = root.GetProperty("access_token").GetString()!,
-                TokenType   = "Bearer"
+                TokenType   = "Bearer",
             };
         };
         using var client  = new OAuthClient(options);
@@ -283,13 +275,13 @@ public sealed class OAuthClientTests
         };
         using var client  = new OAuthClient(options);
         var       pending = client.ClientCredentialsAsync(cancellationToken: cancellation.Token).AsTask();
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
         if (!useTimeout)
         {
             await cancellation.CancelAsync();
         }
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None));
     }
 
     [Fact]
@@ -311,7 +303,7 @@ public sealed class OAuthClientTests
             return new OAuthTokenResponse
             {
                 AccessToken = "late",
-                TokenType   = "Bearer"
+                TokenType   = "Bearer",
             };
         };
         using var client = new OAuthClient(options);
@@ -323,7 +315,7 @@ public sealed class OAuthClientTests
         Assert.True(prepared);
         Assert.Single(handler.Requests);
         client.Dispose();
-        using var response = await http.GetAsync("https://provider.test/profile");
+        using var response = await http.GetAsync("https://provider.test/profile", CancellationToken.None);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -353,7 +345,7 @@ public sealed class OAuthClientTests
         Scopes =
         {
             "profile",
-            "email"
+            "email",
         },
         Backchannel = http,
     };

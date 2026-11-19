@@ -75,7 +75,7 @@ public sealed class SavannaWorkspace : IDisposable
         _open[path] = current with
         {
             Text = text,
-            Version = version
+            Version = version,
         };
         return true;
     }
@@ -198,7 +198,7 @@ public sealed class SavannaWorkspace : IDisposable
             {
                 RecurseSubdirectories = true,
                 AttributesToSkip      = FileAttributes.ReparsePoint,
-                IgnoreInaccessible    = true
+                IgnoreInaccessible    = true,
             };
             paths.UnionWith(Directory.EnumerateFiles(root, "*.svn", options));
         }
@@ -296,14 +296,12 @@ public sealed class SavannaWorkspace : IDisposable
         for (var directory = Path.GetDirectoryName(path); directory is not null; directory = Path.GetDirectoryName(directory))
         {
             var candidates = Directory.GetFiles(directory, "*.csproj");
-            if (candidates.Length == 1)
+            switch (candidates.Length)
             {
-                return candidates[0];
-            }
-
-            if (candidates.Length > 1)
-            {
-                return null;
+                case 1:
+                    return candidates[0];
+                case > 1:
+                    return null;
             }
         }
 

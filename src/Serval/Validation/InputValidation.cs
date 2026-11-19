@@ -90,9 +90,7 @@ public static class InputValidation
     /// <summary>Runs all registered validators in registration order and throws when any reports errors.</summary>
     /// <remarks>No validators means no extra validation. Parsing and nullability checks remain the caller's responsibility.</remarks>
     public static async ValueTask ValidateAsync<T>(RequestContext context, T input)
-    {
-        (await EvaluateAsync(context, input)).ThrowIfInvalid();
-    }
+        => (await EvaluateAsync(context, input)).ThrowIfInvalid();
 }
 
 /// <summary>An immutable set of field errors, independent of HTTP response policy.</summary>
@@ -108,7 +106,7 @@ public sealed class InputValidationResult
     public InputValidationResult(ValidationErrors errors)
     {
         ArgumentNullException.ThrowIfNull(errors);
-        Errors = errors.Snapshot().ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)Array.AsReadOnly(pair.Value), StringComparer.Ordinal).AsReadOnly();
+        Errors = errors.Snapshot().ToDictionary(pair => pair.Key, IReadOnlyList<string> (pair) => Array.AsReadOnly(pair.Value), StringComparer.Ordinal).AsReadOnly();
     }
 
     /// <summary>Uses the framework's exception-based rejection policy when errors exist.</summary>

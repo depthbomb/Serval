@@ -230,7 +230,7 @@ public sealed class TransportTests
         await socket.SendAsync("2probe"u8.ToArray().AsMemory(), WebSocketMessageType.Text, true, timeout.Token);
         Assert.Equal("3probe", await ReceiveTextAsync(socket, timeout.Token));
         socket.Abort();
-        using var echo = await client.PostAsync(PollUrl(server.Url, sid), new StringContent("421[\"echo\",\"still polling\"]"));
+        using var echo = await client.PostAsync(PollUrl(server.Url, sid), new StringContent("421[\"echo\",\"still polling\"]"), CancellationToken.None);
         Assert.Equal("431[\"still polling\"]", await PollApplicationAsync(client, server.Url, sid));
     }
 
@@ -247,7 +247,7 @@ public sealed class TransportTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         await server.Host.StopAsync(timeout.Token);
         Assert.Equal(0, server.Server.ConnectionCount);
-        Assert.All(server.Scopes.Scopes.Values, disposed => Assert.True(disposed));
+        Assert.All(server.Scopes.Scopes.Values, Assert.True);
         Assert.Single(server.Scopes.Disconnected);
     }
 

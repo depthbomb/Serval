@@ -161,7 +161,7 @@ internal sealed class OpenIdConnectProvider : IDisposable
                 UserInformationEndpoint = userInfo,
                 RevocationEndpoint      = revocation,
                 Algorithms              = algorithms,
-                Keys                    = signingKeys.ToArray(),
+                Keys                    = [.. signingKeys],
                 RequiresCallbackIssuer  = requiresIssuer,
                 ExpiresUtc              = _time.GetUtcNow() + _options.RefreshInterval,
             };
@@ -202,12 +202,7 @@ internal sealed class OpenIdConnectProvider : IDisposable
     {
         if (!root.TryGetProperty(name, out var array))
         {
-            if (required)
-            {
-                throw new OAuthProtocolException("invalid_discovery");
-            }
-
-            return [];
+            return required ? throw new OAuthProtocolException("invalid_discovery") : [];
         }
 
         if (array.ValueKind != JsonValueKind.Array || array.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(item.GetString())))
@@ -215,6 +210,6 @@ internal sealed class OpenIdConnectProvider : IDisposable
             throw new OAuthProtocolException("invalid_response");
         }
 
-        return array.EnumerateArray().Select(item => item.GetString()!).ToArray();
+        return [.. array.EnumerateArray().Select(item => item.GetString()!)];
     }
 }

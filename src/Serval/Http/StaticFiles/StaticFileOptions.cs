@@ -72,7 +72,7 @@ public sealed class StaticFileOptions
 
         _ = new Headers
         {
-            [HeaderNames.CacheControl] = CacheControl
+            [HeaderNames.CacheControl] = CacheControl,
         };
     }
 }

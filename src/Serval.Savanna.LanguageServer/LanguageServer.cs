@@ -122,7 +122,7 @@ public sealed class LanguageServer
                             {
                                 jsonrpc = "2.0",
                                 id,
-                                result
+                                result,
                             }, CancellationToken.None);
                         }
                     }
@@ -162,101 +162,103 @@ public sealed class LanguageServer
 
     private async Task<object?> HandleAsync(string method, JsonElement parameters, CancellationToken cancellationToken)
     {
-        if (method == "initialize")
+        switch (method)
         {
-            if (_initialized)
+            case "initialize":
             {
-                throw new RpcException(-32600, "The server is already initialized.");
+                if (_initialized)
+                {
+                    throw new RpcException(-32600, "The server is already initialized.");
+                }
+
+                _initialized     = true;
+                _definitionLinks = parameters.GetValueOrDefault("capabilities").GetValueOrDefault("textDocument").GetValueOrDefault("definition").GetValueOrDefault("linkSupport").ValueKind == JsonValueKind.True;
+                var refresh = parameters.GetValueOrDefault("capabilities").GetValueOrDefault("workspace").GetValueOrDefault("diagnostics").GetValueOrDefault("refreshSupport");
+                _diagnosticRefresh     = refresh.ValueKind                                                                                                                                                         == JsonValueKind.True;
+                _fileWatchRegistration = parameters.GetValueOrDefault("capabilities").GetValueOrDefault("workspace").GetValueOrDefault("didChangeWatchedFiles").GetValueOrDefault("dynamicRegistration").ValueKind == JsonValueKind.True;
+                return new
+                {
+                    capabilities = new
+                    {
+                        positionEncoding = "utf-16",
+                        textDocumentSync = new
+                        {
+                            openClose = true,
+                            change    = 2,
+                            save      = true,
+                        },
+                        completionProvider = new
+                        {
+                            triggerCharacters = new[] { ".", " ", "\"", "'", "/", "{", "#", "<" },
+                        },
+                        hoverProvider              = true,
+                        definitionProvider         = true,
+                        documentFormattingProvider = true,
+                        semanticTokensProvider = new
+                        {
+                            legend = new
+                            {
+                                tokenTypes     = SemanticTokens.Types,
+                                tokenModifiers = Array.Empty<string>(),
+                            },
+                            full = true,
+                        },
+                        diagnosticProvider = new
+                        {
+                            identifier            = "Serval.Savanna",
+                            interFileDependencies = true,
+                            workspaceDiagnostics  = false,
+                        },
+                    },
+                    serverInfo = new
+                    {
+                        name    = "Serval.Savanna",
+                        version = "0.2.1",
+                    },
+                };
             }
 
-            _initialized = true;
-            _definitionLinks = parameters.GetValueOrDefault("capabilities").GetValueOrDefault("textDocument")
-                                         .GetValueOrDefault("definition").GetValueOrDefault("linkSupport").ValueKind == JsonValueKind.True;
-            var refresh = parameters.GetValueOrDefault("capabilities").GetValueOrDefault("workspace").GetValueOrDefault("diagnostics").GetValueOrDefault("refreshSupport");
-            _diagnosticRefresh     = refresh.ValueKind                                                                                                                                                         == JsonValueKind.True;
-            _fileWatchRegistration = parameters.GetValueOrDefault("capabilities").GetValueOrDefault("workspace").GetValueOrDefault("didChangeWatchedFiles").GetValueOrDefault("dynamicRegistration").ValueKind == JsonValueKind.True;
-            return new
+            case "initialized":
             {
-                capabilities = new
+                if (_fileWatchRegistration)
                 {
-                    positionEncoding = "utf-16",
-                    textDocumentSync = new
+                    await _protocol.WriteAsync(new
                     {
-                        openClose = true,
-                        change    = 2,
-                        save      = true
-                    },
-                    completionProvider = new
-                    {
-                        triggerCharacters = new[] { ".", " ", "\"", "'", "/", "{", "#", "<" }
-                    },
-                    hoverProvider              = true,
-                    definitionProvider         = true,
-                    documentFormattingProvider = true,
-                    semanticTokensProvider = new
-                    {
-                        legend = new
+                        jsonrpc = "2.0",
+                        id      = "savanna-watch",
+                        method  = "client/registerCapability",
+                        @params = new
                         {
-                            tokenTypes     = SemanticTokens.Types,
-                            tokenModifiers = Array.Empty<string>()
-                        },
-                        full = true
-                    },
-                    diagnosticProvider = new
-                    {
-                        identifier            = "Serval.Savanna",
-                        interFileDependencies = true,
-                        workspaceDiagnostics  = false
-                    },
-                },
-                serverInfo = new
-                {
-                    name    = "Serval.Savanna",
-                    version = "0.2.1"
-                },
-            };
-        }
-
-        if (method == "initialized")
-        {
-            if (_fileWatchRegistration)
-            {
-                await _protocol.WriteAsync(new
-                {
-                    jsonrpc = "2.0",
-                    id      = "savanna-watch",
-                    method  = "client/registerCapability",
-                    @params = new
-                    {
-                        registrations = new[]
-                        {
-                            new
+                            registrations = new[]
                             {
-                                id     = "savanna-project-files",
-                                method = "workspace/didChangeWatchedFiles",
-                                registerOptions = new
+                                new
                                 {
-                                    watchers = new[]
+                                    id     = "savanna-project-files",
+                                    method = "workspace/didChangeWatchedFiles",
+                                    registerOptions = new
                                     {
-                                        new
+                                        watchers = new[]
                                         {
-                                            globPattern = "**/*.{savanna,cs,csproj,props,targets,json,editorconfig}",
-                                            kind        = 7
-                                        }
-                                    }
+                                            new
+                                            {
+                                                globPattern = "**/*.{savanna,cs,csproj,props,targets,json,editorconfig}",
+                                                kind        = 7,
+                                            },
+                                        },
+                                    },
                                 },
                             },
                         },
-                    },
-                }, CancellationToken.None);
+                    }, CancellationToken.None);
+                }
+
+                return null;
             }
 
-            return null;
-        }
-
-        if (method is "exit" or "$/setTrace")
-        {
-            return null;
+            case "exit" or "$/setTrace":
+            {
+                return null;
+            }
         }
 
         if (!_initialized)
@@ -269,40 +271,41 @@ public sealed class LanguageServer
             throw new RpcException(-32600, "The language server has shut down.");
         }
 
-        if (method == "shutdown")
+        switch (method)
         {
-            _shutdown = true;
-            return null;
-        }
+            case "shutdown":
+            {
+                _shutdown = true;
+                return null;
+            }
 
-        if (method == "workspace/didChangeWatchedFiles")
-        {
-            var changed = parameters.GetProperty("changes").EnumerateArray().Select(change => DocumentUri.ToPath(change.GetRequiredString("uri")))
-                                    .Where(path =>
-                                    {
-                                        var normalized = path.Replace('\\', '/');
-                                        return !normalized.Contains("/obj/", StringComparison.OrdinalIgnoreCase) && !normalized.Contains("/bin/", StringComparison.OrdinalIgnoreCase)
-                                               || normalized.EndsWith("/project.assets.json", StringComparison.OrdinalIgnoreCase);
-                                    }).ToArray();
-            _workspace.InvalidateTemplates(changed);
-            if (changed.Any(path => !path.EndsWith(".svn", StringComparison.OrdinalIgnoreCase)))
+            case "workspace/didChangeWatchedFiles":
+            {
+                var changed = parameters.GetProperty("changes").EnumerateArray().Select(change => DocumentUri.ToPath(change.GetRequiredString("uri"))).Where(path =>
+                {
+                    var normalized = path.Replace('\\', '/');
+                    return !normalized.Contains("/obj/", StringComparison.OrdinalIgnoreCase) && !normalized.Contains("/bin/", StringComparison.OrdinalIgnoreCase) || normalized.EndsWith("/project.assets.json", StringComparison.OrdinalIgnoreCase);
+                }).ToArray();
+                _workspace.InvalidateTemplates(changed);
+                if (changed.Any(path => !path.EndsWith(".svn", StringComparison.OrdinalIgnoreCase)))
+                {
+                    _workspace.InvalidateProjects();
+                }
+
+                if (changed.Length > 0)
+                {
+                    await RefreshAsync();
+                }
+
+                return null;
+            }
+
+            case "workspace/didChangeConfiguration":
             {
                 _workspace.InvalidateProjects();
-            }
-
-            if (changed.Length > 0)
-            {
                 await RefreshAsync();
+                return null;
             }
-
-            return null;
-        }
-
-        if (method == "workspace/didChangeConfiguration")
-        {
-            _workspace.InvalidateProjects();
-            await RefreshAsync();
-            return null;
         }
 
         if (!method.StartsWith("textDocument/", StringComparison.Ordinal))
@@ -339,61 +342,67 @@ public sealed class LanguageServer
         }
 
         var csharp = _workspace.GetCSharpFeatures(snapshot);
-        if (method == "textDocument/semanticTokens/full")
+        switch (method)
         {
-            return SemanticTokens.Encode(snapshot.Document, csharp is null ? [] : await csharp.ClassifyAsync(cancellationToken));
-        }
-
-        if (method == "textDocument/diagnostic")
-        {
-            var compilation = SavannaCompiler.Compile(snapshot.Templates, "Serval.Savanna.Editor", cancellationToken);
-            var diagnostics = compilation.Diagnostics.Where(diagnostic => diagnostic.Path == snapshot.Document.Path).Select(diagnostic => (object)new
+            case "textDocument/semanticTokens/full":
             {
-                range    = Position.Range(snapshot.Document.Text, diagnostic.Span),
-                severity = 1,
-                code     = diagnostic.Code,
-                source   = "Savanna",
-                message  = diagnostic.Message,
-            }).ToList();
-            if (csharp is not null)
-            {
-                diagnostics.AddRange(await csharp.DiagnosticsAsync(cancellationToken));
+                return SemanticTokens.Encode(snapshot.Document, csharp is null ? [] : await csharp.ClassifyAsync(cancellationToken));
             }
 
-            if (snapshot.ProjectError is not null)
+            case "textDocument/diagnostic":
             {
-                diagnostics.Add(new
+                var compilation = SavannaCompiler.Compile(snapshot.Templates, "Serval.Savanna.Editor", cancellationToken);
+                var diagnostics = compilation.Diagnostics.Where(diagnostic => diagnostic.Path == snapshot.Document.Path).Select(object (diagnostic) => new
                 {
-                    range    = Position.Range(snapshot.Document.Text, default),
-                    severity = 2,
-                    code     = "SAVANNAIDE001",
+                    range    = Position.Range(snapshot.Document.Text, diagnostic.Span),
+                    severity = 1,
+                    code     = diagnostic.Code,
                     source   = "Savanna",
-                    message  = snapshot.ProjectError
-                });
-            }
+                    message  = diagnostic.Message,
+                }).ToList();
+                if (csharp is not null)
+                {
+                    diagnostics.AddRange(await csharp.DiagnosticsAsync(cancellationToken));
+                }
 
-            return new
-            {
-                kind  = "full",
-                items = diagnostics
-            };
+                if (snapshot.ProjectError is not null)
+                {
+                    diagnostics.Add(new
+                    {
+                        range    = Position.Range(snapshot.Document.Text, default),
+                        severity = 2,
+                        code     = "SAVANNAIDE001",
+                        source   = "Savanna",
+                        message  = snapshot.ProjectError,
+                    });
+                }
+
+                return new
+                {
+                    kind  = "full",
+                    items = diagnostics,
+                };
+            }
         }
 
         var offset = Position.Read(parameters.GetProperty("position")).Offset(snapshot.Document.Text);
-        if (method == "textDocument/completion")
+        switch (method)
         {
-            var items = TemplateFeatures.Complete(snapshot, offset) ?? (csharp is null ? [] : await csharp.CompleteAsync(offset, cancellationToken));
-            return new
+            case "textDocument/completion":
             {
-                isIncomplete = items.Length >= 300,
-                items
-            };
-        }
+                var items = TemplateFeatures.Complete(snapshot, offset) ?? (csharp is null ? [] : await csharp.CompleteAsync(offset, cancellationToken));
+                return new
+                {
+                    isIncomplete = items.Length >= 300,
+                    items,
+                };
+            }
 
-        if (method == "textDocument/definition")
-        {
-            var target = TemplateFeatures.Definition(snapshot, offset) ?? (csharp is null ? null : await csharp.DefinitionAsync(offset, cancellationToken));
-            return DefinitionResponse.Create(target, snapshot.Document, offset, _definitionLinks);
+            case "textDocument/definition":
+            {
+                var target = TemplateFeatures.Definition(snapshot, offset) ?? (csharp is null ? null : await csharp.DefinitionAsync(offset, cancellationToken));
+                return DefinitionResponse.Create(target, snapshot.Document, offset, _definitionLinks);
+            }
         }
 
         return method switch
@@ -410,8 +419,8 @@ public sealed class LanguageServer
         error = new
         {
             code,
-            message
-        }
+            message,
+        },
     });
 
     private Task RefreshAsync() => _diagnosticRefresh
@@ -419,7 +428,7 @@ public sealed class LanguageServer
         {
             jsonrpc = "2.0",
             id      = "savanna-refresh-" + ++_refreshId,
-            method  = "workspace/diagnostic/refresh"
+            method  = "workspace/diagnostic/refresh",
         })
         : Task.CompletedTask;
 

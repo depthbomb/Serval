@@ -31,7 +31,7 @@ public sealed partial class Request
 
         FormOptions.Validate();
 
-        await using var input = OpenBodyStreamCore(linked.Token, true);
+        await using var input = OpenBodyStreamCore(true, linked.Token);
         await FormDataParser.StreamMultipartAsync(input, type, FormOptions, readSection, linked.Token);
     }
 

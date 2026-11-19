@@ -116,7 +116,7 @@ internal static class MetadataDeclaration
         return new
         {
             uri   = new Uri(path).AbsoluteUri,
-            range = Position.Range(SourceText.From(content), selection)
+            range = Position.Range(SourceText.From(content), selection),
         };
     }
 }

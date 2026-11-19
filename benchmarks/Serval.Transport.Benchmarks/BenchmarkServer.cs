@@ -18,15 +18,15 @@ internal sealed record ServerMetrics(long AllocatedBytes, double CpuMilliseconds
 
 internal static class BenchmarkServer
 {
-    internal static readonly byte[] SmallBody = "Hello from Serval!"u8.ToArray();
-    internal static readonly byte[] UploadBody = CreateBody(64 * 1024);
+    internal static readonly byte[] SmallBody    = [.. "Hello from Serval!"u8];
+    internal static readonly byte[] UploadBody   = CreateBody(64  * 1024);
     internal static readonly byte[] DownloadBody = CreateBody(256 * 1024);
 
     public static async Task RunAsync(string transport, int port)
     {
-        using var certificate = CreateCertificate();
-        var webBuilder = transport.StartsWith("kestrel", StringComparison.Ordinal) ? WebApplication.CreateSlimBuilder() : null;
-        IHostApplicationBuilder builder = webBuilder is null ? Host.CreateApplicationBuilder() : webBuilder;
+        using var               certificate = CreateCertificate();
+        var                     webBuilder  = transport.StartsWith("kestrel", StringComparison.Ordinal) ? WebApplication.CreateSlimBuilder() : null;
+        IHostApplicationBuilder builder     = webBuilder is null ? Host.CreateApplicationBuilder() : webBuilder;
         builder.Logging.ClearProviders();
         var serval = builder.Services.AddServal();
         serval.AddEndpoint("GET", "/small", context =>
@@ -61,7 +61,7 @@ internal static class BenchmarkServer
                     {
                         "kestrel1" => HttpProtocols.Http1,
                         "kestrel2" => HttpProtocols.Http2,
-                        _ => HttpProtocols.Http3
+                        _          => HttpProtocols.Http3,
                     };
                     if (transport != "kestrel1")
                     {
@@ -80,7 +80,7 @@ internal static class BenchmarkServer
                 throw new ArgumentException($"Unknown transport: {transport}");
         }
 
-        using IHost host = webBuilder is null ? ((HostApplicationBuilder)builder).Build() : webBuilder.Build();
+        using var host = webBuilder?.Build() ?? ((HostApplicationBuilder)builder).Build();
         if (host is WebApplication application)
         {
             application.UseServal();
@@ -88,7 +88,7 @@ internal static class BenchmarkServer
 
         await host.StartAsync();
         Console.WriteLine("READY");
-        while (await Console.In.ReadLineAsync() is { } command && command != "stop")
+        while (await Console.In.ReadLineAsync() is {} command && command != "stop")
         {
             if (command == "metrics")
             {
@@ -116,15 +116,18 @@ internal static class BenchmarkServer
 
     private static X509Certificate2 CreateCertificate()
     {
-        using var key = RSA.Create(2048);
-        var request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        var names = new SubjectAlternativeNameBuilder();
+        using var key     = RSA.Create(2048);
+        var       request = new CertificateRequest("CN=localhost", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var       names   = new SubjectAlternativeNameBuilder();
         names.AddDnsName("localhost");
         names.AddIpAddress(IPAddress.Loopback);
         request.CertificateExtensions.Add(names.Build());
         request.CertificateExtensions.Add(new X509BasicConstraintsExtension(false, false, 0, true));
         request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, true));
-        request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection { new("1.3.6.1.5.5.7.3.1") }, true));
+        request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(new OidCollection
+        {
+            new Oid("1.3.6.1.5.5.7.3.1"),
+        }, true));
         using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
         return X509CertificateLoader.LoadPkcs12(certificate.Export(X509ContentType.Pfx), null, X509KeyStorageFlags.Exportable);
     }

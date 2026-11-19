@@ -19,7 +19,7 @@ public sealed class QueryTransportTests
         UseProxy = false,
         SslOptions =
         {
-            RemoteCertificateValidationCallback = (_, _, _, _) => true
+            RemoteCertificateValidationCallback = (_, _, _, _) => true,
         },
     };
 
@@ -49,7 +49,7 @@ public sealed class QueryTransportTests
             Assert.Equal("\"application/json\"", Assert.Single(response.Headers.GetValues(HeaderNames.AcceptQuery)));
         }
 
-        foreach (var (body, contentType, status) in new[] { ("{}", null, HttpStatusCode.BadRequest), ("{}", "invalid", HttpStatusCode.BadRequest), ("{", MimeTypes.Json, HttpStatusCode.BadRequest), ("{}", MimeTypes.PlainText, HttpStatusCode.UnsupportedMediaType), })
+        foreach (var (body, contentType, status) in new[] { ("{}", null, HttpStatusCode.BadRequest), ("{}", "invalid", HttpStatusCode.BadRequest), ("{", MimeTypes.Json, HttpStatusCode.BadRequest), ("{}", MimeTypes.PlainText, HttpStatusCode.UnsupportedMediaType) })
         {
             using var response = await SendQueryAsync(client, "/query/search", body, contentType, timeout.Token);
             Assert.Equal(version, response.Version);

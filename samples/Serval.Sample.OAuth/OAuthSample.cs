@@ -29,7 +29,7 @@ public static class OAuthSample
                                      options.CookieName = "Serval.Sample.OAuth.Session";
                                      options.Cookie = new CookieOptions
                                      {
-                                         Secure = false
+                                         Secure = false,
                                      };
                                  }
                              });

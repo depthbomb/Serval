@@ -66,11 +66,11 @@ public sealed class ControllerBaseTests
             configureBuilder: builder => builder.AddController<ManualController>("GET", "/manual-base/{id:int}", null, (instance, _) => instance.InvokeAsync()));
         using var ct    = new CancellationTokenSource();
         var       first = app.SendAsync("/manual-base/1", cancellationToken: ct.Token);
-        await controller.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await controller.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
         var context = controller.Context;
         try
         {
-            var rejected = await app.SendAsync("/manual-base/2");
+            var rejected = await app.SendAsync("/manual-base/2", cancellationToken: CancellationToken.None);
             Assert.Equal(500, rejected.StatusCode);
             Assert.Same(context, controller.Context);
             if (cancel)
@@ -83,7 +83,7 @@ public sealed class ControllerBaseTests
             controller.Release.TrySetResult();
         }
 
-        var completed = await first.WaitAsync(TimeSpan.FromSeconds(5));
+        var completed = await first.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
         Assert.Throws<InvalidOperationException>(() => controller.Context);
         if (cancel)
         {
@@ -94,7 +94,7 @@ public sealed class ControllerBaseTests
             Assert.Equal("1", completed.Text);
         }
 
-        Assert.Equal("3", (await app.SendAsync("/manual-base/3")).Text);
+        Assert.Equal("3", (await app.SendAsync("/manual-base/3", cancellationToken: CancellationToken.None)).Text);
         Assert.Throws<InvalidOperationException>(() => controller.Context);
     }
 
@@ -150,8 +150,8 @@ public sealed class BaseHelperController : ControllerBase
             user = User.Identity!.Name,
             url = Urls.Path("controller-base.info", new Dictionary<string, object?>
             {
-                ["id"] = id
-            })
+                ["id"] = id,
+            }),
         });
     }
 

@@ -37,7 +37,7 @@ public static class Program
         return host.Build();
     }
 
-    private static void ConfigureProvider(OAuthOptions options, IConfiguration configuration, int port)
+    private static void ConfigureProvider(OAuthOptions options, ConfigurationManager configuration, int port)
     {
         options.ClientId = Required(configuration, "ClientId");
 
@@ -46,7 +46,7 @@ public static class Program
         {
             options.OpenIdConnect = new OpenIdConnectOptions
             {
-                Issuer = issuer
+                Issuer = issuer,
             };
         }
         else
@@ -61,7 +61,7 @@ public static class Program
         options.CorrelationCookiePrefix = "Serval.Sample.OAuth.State.";
         options.CorrelationCookie = new CookieOptions
         {
-            Secure = false
+            Secure = false,
         };
         options.ExpectedIssuer = configuration["OAuth:ExpectedIssuer"];
         options.ClientSecret   = configuration["OAuth:ClientSecret"];
@@ -99,7 +99,7 @@ public static class Program
         };
     }
 
-    private static string Required(IConfiguration configuration, string name)
+    private static string Required(ConfigurationManager configuration, string name)
     {
         var value = configuration["OAuth:" + name];
         return string.IsNullOrWhiteSpace(value) ? throw new InvalidOperationException($"Set OAuth__{name} before starting the OAuth sample.") : value;

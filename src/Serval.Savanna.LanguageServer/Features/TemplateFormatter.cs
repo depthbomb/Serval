@@ -50,7 +50,7 @@ public static class TemplateFormatter
                 edits.Add(new
                 {
                     range   = Position.Range(document.Text, tag.Span),
-                    newText = formatted
+                    newText = formatted,
                 });
             }
         }

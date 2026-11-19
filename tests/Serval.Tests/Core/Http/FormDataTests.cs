@@ -114,7 +114,7 @@ public sealed class FormDataTests
         Directory.CreateDirectory(directory);
         using var multipart = new MultipartFormDataContent("example");
         multipart.Add(new StringContent("description"), "caption");
-        var bytes = Enumerable.Repeat((byte)0xff, padding).Concat("\0\r\n--exampleXYZ\r\n--example--NO\r\nend"u8.ToArray()).ToArray();
+        var bytes = Enumerable.Repeat((byte)0xff, padding).Concat([.. "\0\r\n--exampleXYZ\r\n--example--NO\r\nend"u8]).ToArray();
         multipart.Add(new ByteArrayContent(bytes), "files", "../../unsafe.bin");
         multipart.Add(new ByteArrayContent([]), "files", "empty.bin");
         var request = Request(await multipart.ReadAsByteArrayAsync(), multipart.Headers.ContentType!.ToString());
@@ -209,7 +209,7 @@ public sealed class FormDataTests
         await using var request = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11,
             new Headers
             {
-                [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded
+                [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded,
             }, input, 100);
         using var output = new MemoryStream();
         await request.CopyBodyToAsync(output);
@@ -229,9 +229,9 @@ public sealed class FormDataTests
     {
         await using var request      = Request("name=valid", MimeTypes.FormUrlEncoded);
         using var       cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
+        await cancellation.CancelAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => request.ReadPostAsync(cancellation.Token).AsTask());
-        Assert.Equal("valid", await request.PostValueAsync<string>("name"));
+        Assert.Equal("valid", await request.PostValueAsync<string>("name", ct: CancellationToken.None));
     }
 
     [Fact]
@@ -243,7 +243,7 @@ public sealed class FormDataTests
         var request = new Request("POST", new Uri("http://localhost/"), HttpVersion.Version11,
             new Headers
             {
-                [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded
+                [HeaderNames.ContentType] = MimeTypes.FormUrlEncoded,
             }, input, 100000);
         request.FormOptions.MemoryThreshold = 1;
         request.FormOptions.TempDirectory   = directory;
@@ -323,7 +323,7 @@ public sealed class FormDataTests
     private static Request Request(byte[] body, string? type, long limit = 1000000)
         => new("POST", new Uri("http://localhost/"), HttpVersion.Version11, new Headers
         {
-            [HeaderNames.ContentType] = type
+            [HeaderNames.ContentType] = type,
         }, new MemoryStream(body), limit);
 
     private sealed class WaitingBodyStream : Stream

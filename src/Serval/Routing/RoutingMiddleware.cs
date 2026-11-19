@@ -59,7 +59,7 @@ public sealed class RoutingMiddleware : IMiddleware
         {
             Headers =
             {
-                [HeaderNames.Allow] = allow
+                [HeaderNames.Allow] = allow,
             },
         };
     }

@@ -111,7 +111,7 @@ public sealed class RequestScopeTests
             return ValueTask.FromResult<IActionResult>(new TextResult("unreachable"));
         });
         using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
+        await cancellation.CancelAsync();
 
         await app.HandleAsync(cancellation.Token);
 
@@ -171,7 +171,7 @@ public sealed class RequestScopeTests
         return services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateScopes  = true,
-            ValidateOnBuild = true
+            ValidateOnBuild = true,
         });
     }
 
@@ -199,7 +199,7 @@ public sealed class RequestScopeTests
             Scope     = new FailingDisposalScope(_services.CreateScope(), Cleanup);
             Errors = new RecordingExceptionHandler
             {
-                Failure = handlerFailure
+                Failure = handlerFailure,
             };
             _handler = Handler(_services, new TestScopeFactory(() => Scope), Errors, Logger);
         }

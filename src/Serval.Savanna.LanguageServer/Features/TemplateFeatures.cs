@@ -67,7 +67,7 @@ public static class TemplateFeatures
                 return
                 [
                     .. SavannaTagRules.Attributes.Keys.Where(name => name.StartsWith(partial, StringComparison.Ordinal))
-                                      .Select(name => Item(name, name, "Savanna " + name + " tag", 14, new TextSpan(start, partial.Length)))
+                                      .Select(name => Item(name, name, "Savanna " + name + " tag", 14, new TextSpan(start, partial.Length))),
                 ];
             }
 
@@ -83,7 +83,7 @@ public static class TemplateFeatures
                         .. snapshot.Templates.Where(view => !view.IsImports && view.Name != document.Name && view.Name.StartsWith(partial, StringComparison.Ordinal))
                                    .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, range))
                                    .Concat(document.Imports.Where(pair => pair.Key.StartsWith(partial, StringComparison.Ordinal))
-                                                   .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, range)))
+                                                   .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, range))),
                     ];
                 }
 
@@ -93,7 +93,7 @@ public static class TemplateFeatures
                     [
                         .. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
                                               .Where(block => block.Name.StartsWith(partial, StringComparison.Ordinal))
-                                              .Select(block => Item(block.Name, block.Name, "Inherited block", 6, range))
+                                              .Select(block => Item(block.Name, block.Name, "Inherited block", 6, range)),
                     ];
                 }
 
@@ -110,7 +110,7 @@ public static class TemplateFeatures
             return
             [
                 .. SavannaTagRules.Attributes.GetValueOrDefault(tag.Name, []).Where(name => !tag.Attributes.ContainsKey(name) && name.StartsWith(prefixText, StringComparison.Ordinal))
-                                  .Select(name => Item(name, name is "required" or "await" ? name : name + "=\"\"", "Savanna " + tag.Name + " attribute", 10, new TextSpan(wordStart, prefixText.Length)))
+                                  .Select(name => Item(name, name is "required" or "await" ? name : name + "=\"\"", "Savanna " + tag.Name + " attribute", 10, new TextSpan(wordStart, prefixText.Length))),
             ];
         }
 
@@ -126,7 +126,7 @@ public static class TemplateFeatures
             return
             [
                 .. Directives.Where(pair => pair.Key.StartsWith(prefix, StringComparison.Ordinal))
-                             .Select(pair => Item(pair.Key, pair.Key, pair.Value, 14, new TextSpan(token.Span.Start, prefix.Length)))
+                             .Select(pair => Item(pair.Key, pair.Key, pair.Value, 14, new TextSpan(token.Span.Start, prefix.Length))),
             ];
         }
 
@@ -146,7 +146,7 @@ public static class TemplateFeatures
                 return
                 [
                     .. snapshot.Templates.Where(view => view.Name != document.Name && (command != "extends" || view.IsLayout) && view.Name.StartsWith(partial, StringComparison.Ordinal))
-                               .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, new TextSpan(argumentStart + 1, partial.Length)))
+                               .Select(view => Item(view.Name, view.Name, "Model: " + view.Model, 17, new TextSpan(argumentStart + 1, partial.Length))),
                 ];
             }
 
@@ -155,7 +155,7 @@ public static class TemplateFeatures
                 return
                 [
                     .. document.Imports.Where(pair => pair.Key.StartsWith(argument, StringComparison.Ordinal))
-                               .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, new TextSpan(argumentStart, argument.Length)))
+                               .Select(pair => Item(pair.Key, pair.Key, pair.Value, 18, new TextSpan(argumentStart, argument.Length))),
                 ];
             }
         }
@@ -166,7 +166,7 @@ public static class TemplateFeatures
             [
                 .. Ancestors(snapshot).SelectMany(parent => parent.Blocks).DistinctBy(block => block.Name)
                                       .Where(block => block.Name.StartsWith(argument, StringComparison.Ordinal))
-                                      .Select(block => Item(block.Name, block.Name, block.Required ? "Required inherited block" : "Inherited block", 6, new TextSpan(argumentStart, argument.Length)))
+                                      .Select(block => Item(block.Name, block.Name, block.Required ? "Required inherited block" : "Inherited block", 6, new TextSpan(argumentStart, argument.Length))),
             ];
         }
 
@@ -182,7 +182,7 @@ public static class TemplateFeatures
                 textEdit = new
                 {
                     range   = Position.Range(document.Text, span),
-                    newText = insert
+                    newText = insert,
                 },
             };
         }
@@ -204,9 +204,9 @@ public static class TemplateFeatures
                     contents = new
                     {
                         kind  = "plaintext",
-                        value = tagDescription
+                        value = tagDescription,
                     },
-                    range = Position.Range(snapshot.Document.Text, new TextSpan(start, tag.Name.Length))
+                    range = Position.Range(snapshot.Document.Text, new TextSpan(start, tag.Name.Length)),
                 };
             }
 
@@ -226,9 +226,9 @@ public static class TemplateFeatures
                 contents = new
                 {
                     kind  = "plaintext",
-                    value = description
+                    value = description,
                 },
-                range = Position.Range(snapshot.Document.Text, new TextSpan(token.Span.Start, command.Length))
+                range = Position.Range(snapshot.Document.Text, new TextSpan(token.Span.Start, command.Length)),
             };
         }
 
@@ -313,14 +313,14 @@ public static class TemplateFeatures
     private static object Location(SavannaDocument document, TextSpan span) => new
     {
         uri   = new Uri(document.Path).AbsoluteUri,
-        range = Position.Range(document.Text, span)
+        range = Position.Range(document.Text, span),
     };
 
     private static IEnumerable<SavannaDocument> Ancestors(TemplateSnapshot snapshot)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal)
         {
-            snapshot.Document.Name
+            snapshot.Document.Name,
         };
         var current = snapshot.Document;
         while (current.Parent is not null)

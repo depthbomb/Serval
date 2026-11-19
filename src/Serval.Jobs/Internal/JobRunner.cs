@@ -101,15 +101,10 @@ internal sealed class JobRunner
         {
             if (!_started || _stopped)
             {
-                if (scheduled)
-                {
-                    return Task.FromResult(false);
-                }
-
-                throw new InvalidOperationException("Jobs can only be triggered while the host is running.");
+                return scheduled ? Task.FromResult(false) : throw new InvalidOperationException("Jobs can only be triggered while the host is running.");
             }
 
-            if (_running || (scheduled && _paused))
+            if (_running || scheduled && _paused)
             {
                 return Task.FromResult(false);
             }
@@ -122,7 +117,8 @@ internal sealed class JobRunner
             if (!scheduled)
             {
                 // Manual calls must not run user code under the lock or on a controller's calling thread.
-                _execution = Task.Run(() => ExecuteAsync(ct));
+                // Always enter ExecuteAsync so cancellation still runs its state cleanup.
+                _execution = Task.Run(() => ExecuteAsync(ct), CancellationToken.None);
                 return _execution;
             }
         }

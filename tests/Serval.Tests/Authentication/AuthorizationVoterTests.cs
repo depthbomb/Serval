@@ -248,7 +248,7 @@ public sealed class AuthorizationVoterTests
         protected override async ValueTask<AuthorizationVote> VoteAsync(RequestContext context, ClaimsPrincipal principal, Document resource, Permission permission)
         {
             await Task.Yield();
-            cancellation.Cancel();
+            await cancellation.CancelAsync();
             return AuthorizationVote.Grant();
         }
     }

@@ -40,7 +40,7 @@ public sealed class RoutesController : ControllerBase
     public ValueTask<IActionResult> ProductAsync([FromRoute] int id)
         => JsonAsync(new
         {
-            id
+            id,
         });
 
     [Get("/products/featured")]
@@ -53,7 +53,7 @@ public sealed class RoutesController : ControllerBase
     public ValueTask<IActionResult> ArchiveAsync([FromRoute] int year)
         => JsonAsync(new
         {
-            year
+            year,
         });
 
     [Get("/hello/{name?}", Name = "hello.show")]
@@ -64,7 +64,7 @@ public sealed class RoutesController : ControllerBase
     public ValueTask<IActionResult> TreeAsync([FromRoute] string path)
         => JsonAsync(new
         {
-            path
+            path,
         });
 
     [Get("/search")]

@@ -48,7 +48,7 @@ internal static class ViteEntryBuilder
         // Each entry gets its own visited set: another page's entry can still be this page's dependency.
         var visited = new HashSet<string>(StringComparer.Ordinal)
         {
-            key
+            key,
         };
         var stack = new Stack<(string Key, bool Expanded)>();
         PushImports(stack, chunk);

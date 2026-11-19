@@ -34,7 +34,7 @@ public static class ConditionalRequests
     private static bool Matches(ReadOnlySpan<char> values, string tag)
     {
         values = values.Trim();
-        if (values.SequenceEqual("*"))
+        if (values is "*")
         {
             return true;
         }

@@ -81,7 +81,7 @@ public sealed class FormsController : ControllerBase
                 file.FileName,
                 file.ContentType,
                 file.Length,
-                sha256 = Convert.ToHexString(digest)
+                sha256 = Convert.ToHexString(digest),
             });
         }
 
@@ -91,7 +91,7 @@ public sealed class FormsController : ControllerBase
             limit,
             username,
             ids = post.GetValues<int>("ids"),
-            files
+            files,
         });
     }
 
@@ -100,7 +100,7 @@ public sealed class FormsController : ControllerBase
         => JsonAsync(new
         {
             username,
-            ids
+            ids,
         });
 
     [Post("/stream")]
@@ -116,13 +116,13 @@ public sealed class FormsController : ControllerBase
                 {
                     section.Name,
                     section.FileName,
-                    sha256 = Convert.ToHexString(digest)
+                    sha256 = Convert.ToHexString(digest),
                 });
             }
         }, RequestAborted);
         return Json(new
         {
-            files
+            files,
         });
     }
 }

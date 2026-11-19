@@ -167,12 +167,7 @@ public sealed class AuthenticationService : IAuthenticationService
     private string Resolve(string? requested, string? operationDefault)
     {
         var scheme = requested ?? operationDefault ?? _options.DefaultScheme ?? throw new InvalidOperationException("Specify an authentication scheme or configure a default.");
-        if (!_options.Schemes.Contains(scheme))
-        {
-            throw new InvalidOperationException($"Authentication scheme '{scheme}' is not registered.");
-        }
-
-        return scheme;
+        return !_options.Schemes.Contains(scheme) ? throw new InvalidOperationException($"Authentication scheme '{scheme}' is not registered.") : scheme;
     }
 
     private static IAuthenticationHandler Handler(RequestContext context, string scheme)

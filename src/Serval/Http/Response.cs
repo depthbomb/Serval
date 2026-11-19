@@ -38,7 +38,7 @@ public abstract partial class Response
         get;
         set
         {
-            if (HasStarted || _ended)
+            if (HasStarted || HasEnded)
             {
                 throw new InvalidOperationException("The response status is no longer writable.");
             }

@@ -48,7 +48,7 @@ public sealed class StaticFileResolver
             return null;
         }
 
-        var current = _root!;
+        var current = _root;
         try
         {
             for (var index = 0; index < segments.Length; index++)

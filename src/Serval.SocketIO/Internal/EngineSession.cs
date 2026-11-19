@@ -242,21 +242,20 @@ internal sealed partial class EngineSession
     private void Dispatch(SocketPacket packet, byte[][] attachments, int size)
     {
         // Acknowledgements bypass application handlers, which may themselves be awaiting a client reply.
-        if (packet.Type is 3 or 6)
+        switch (packet.Type)
         {
-            if (!Sockets.TryGetValue(packet.Namespace, out var socket) || !socket.IsConnected)
-            {
-                // A reply can arrive after its namespace was disconnected.
+            case 3 or 6:
+                if (!Sockets.TryGetValue(packet.Namespace, out var socket) || !socket.IsConnected)
+                {
+                    // A reply can arrive after its namespace was disconnected.
+                    return;
+                }
+
+                socket.Acknowledge(packet.Id!.Value, new SocketIOArguments(packet.Data, attachments, Options.Json));
                 return;
-            }
-
-            socket.Acknowledge(packet.Id!.Value, new SocketIOArguments(packet.Data, attachments, Options.Json));
-            return;
-        }
-
-        if (packet.Type == 1 && Sockets.TryGetValue(packet.Namespace, out var disconnected))
-        {
-            disconnected.Deactivate();
+            case 1 when Sockets.TryGetValue(packet.Namespace, out var disconnected):
+                disconnected.Deactivate();
+                break;
         }
 
         QueueIncoming(new IncomingPacket(packet, attachments, size));
@@ -334,69 +333,68 @@ internal sealed partial class EngineSession
     private async ValueTask HandleAsync(IncomingPacket incoming)
     {
         var packet = incoming.Packet;
-        if (packet.Type == 7)
+        switch (packet.Type)
         {
-            if (Sockets.TryGetValue(packet.Namespace, out var target) && ReferenceEquals(target, incoming.Target))
+            case 7:
             {
-                await DisconnectAsync(target, "server namespace disconnect", true);
-            }
-
-            return;
-        }
-
-        if (packet.Type == 0)
-        {
-            if (Sockets.ContainsKey(packet.Namespace))
-            {
-                throw new InvalidDataException("The namespace is already connected.");
-            }
-
-            if (Sockets.Count >= Options.MaxNamespacesPerConnection || !_server.Registry.Handlers.TryGetValue(packet.Namespace, out var type))
-            {
-                Enqueue(PacketCodec.Encode(4, packet.Namespace, null, new
+                if (Sockets.TryGetValue(packet.Namespace, out var target) && ReferenceEquals(target, incoming.Target))
                 {
-                    message = "Invalid namespace",
-                }, Options));
+                    await DisconnectAsync(target, "server namespace disconnect", true);
+                }
+
                 return;
             }
 
-            var socket   = new SocketIOConnection(this, packet.Namespace, type, _user);
-            var accepted = false;
-            try
+            case 0:
             {
-                await InvokeAsync(socket, async (handler, ct) => accepted = await handler.OnConnectingAsync(socket, packet.Data, ct));
-                if (!accepted)
+                if (Sockets.ContainsKey(packet.Namespace))
+                {
+                    throw new InvalidDataException("The namespace is already connected.");
+                }
+
+                if (Sockets.Count >= Options.MaxNamespacesPerConnection || !_server.Registry.Handlers.TryGetValue(packet.Namespace, out var type))
                 {
                     Enqueue(PacketCodec.Encode(4, packet.Namespace, null, new
                     {
-                        message = "Not authorized",
+                        message = "Invalid namespace",
                     }, Options));
                     return;
                 }
 
-                Closed.ThrowIfCancellationRequested();
-
-                socket.Activate();
-
-                Sockets.TryAdd(packet.Namespace, socket);
-
-                _connectedNamespaces.Add(packet.Namespace);
-
-                Enqueue(PacketCodec.Encode(0, packet.Namespace, null, new
+                var socket   = new SocketIOConnection(this, packet.Namespace, type, _user);
+                var accepted = false;
+                try
                 {
-                    sid = socket.Id,
-                }, Options));
-                await InvokeAsync(socket, (handler, ct) => handler.OnConnectedAsync(socket, ct));
-            }
-            finally
-            {
-                if (!Sockets.ContainsKey(packet.Namespace))
-                {
-                    socket.Deactivate();
+                    await InvokeAsync(socket, async (handler, ct) => accepted = await handler.OnConnectingAsync(socket, packet.Data, ct));
+                    if (!accepted)
+                    {
+                        Enqueue(PacketCodec.Encode(4, packet.Namespace, null, new
+                        {
+                            message = "Not authorized",
+                        }, Options));
+                        return;
+                    }
+
+                    Closed.ThrowIfCancellationRequested();
+                    socket.Activate();
+                    Sockets.TryAdd(packet.Namespace, socket);
+                    _connectedNamespaces.Add(packet.Namespace);
+                    Enqueue(PacketCodec.Encode(0, packet.Namespace, null, new
+                    {
+                        sid = socket.Id,
+                    }, Options));
+                    await InvokeAsync(socket, (handler, ct) => handler.OnConnectedAsync(socket, ct));
                 }
-            }
+                finally
+                {
+                    if (!Sockets.ContainsKey(packet.Namespace))
+                    {
+                        socket.Deactivate();
+                    }
+                }
 
-            return;
+                return;
+            }
         }
 
         if (!Sockets.TryGetValue(packet.Namespace, out var connected))

@@ -23,7 +23,7 @@ public static class DocumentUri
             {
                 path = "//" + uri.Host + path;
             }
-            else if (path.Length >= 3 && path[0] == '/' && char.IsAsciiLetter(path[1]) && path[2] == ':')
+            else if (path is ['/', var drive, ':', ..] && char.IsAsciiLetter(drive))
             {
                 path = path[1..];
             }
@@ -35,11 +35,6 @@ public static class DocumentUri
             throw new ArgumentException("Remote file URI hosts are not supported on this platform.", nameof(value));
         }
 
-        if (!Path.IsPathFullyQualified(path))
-        {
-            throw new ArgumentException("A document URI must identify an absolute path.", nameof(value));
-        }
-
-        return Path.GetFullPath(path);
+        return !Path.IsPathFullyQualified(path) ? throw new ArgumentException("A document URI must identify an absolute path.", nameof(value)) : Path.GetFullPath(path);
     }
 }

@@ -98,12 +98,7 @@ internal static class PacketCodec
             3 or 6 => id is not null                                      && data.ValueKind        == JsonValueKind.Array,
             _      => false,
         };
-        if (!valid)
-        {
-            throw new InvalidDataException("Invalid Socket.IO payload.");
-        }
-
-        return new SocketPacket(type, ns, id, data, attachments);
+        return !valid ? throw new InvalidDataException("Invalid Socket.IO payload.") : new SocketPacket(type, ns, id, data, attachments);
     }
 
     internal static EnginePacket[] Encode(int type, string ns, long? id, object? data, SocketIOOptions options)
@@ -151,12 +146,7 @@ internal static class PacketCodec
                 size               += packet.Data.Length;
             }
 
-            if (size > options.MaxPayloadBytes)
-            {
-                throw new InvalidOperationException("The outgoing Socket.IO packet exceeds MaxPayloadBytes.");
-            }
-
-            return packets;
+            return size > options.MaxPayloadBytes ? throw new InvalidOperationException("The outgoing Socket.IO packet exceeds MaxPayloadBytes.") : packets;
         }
         finally
         {
@@ -185,20 +175,24 @@ internal static class PacketCodec
 
                 return;
             }
+
             case JsonValueKind.Object:
             {
                 foreach (var property in data.EnumerateObject())
                 {
                     ValidatePlaceholders(property.Value, count);
                 }
+
                 break;
             }
+
             case JsonValueKind.Array:
             {
                 foreach (var element in data.EnumerateArray())
                 {
                     ValidatePlaceholders(element, count);
                 }
+
                 break;
             }
         }

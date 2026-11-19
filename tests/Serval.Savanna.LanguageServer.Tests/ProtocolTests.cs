@@ -45,7 +45,7 @@ public sealed class ProtocolTests
         {
             await writer.WriteAsync(new
             {
-                value
+                value,
             });
         }
 
@@ -96,16 +96,16 @@ public sealed class ProtocolTests
                     start = new
                     {
                         line      = 0,
-                        character = 3
+                        character = 3,
                     },
                     end = new
                     {
                         line      = 0,
-                        character = 8
-                    }
+                        character = 8,
+                    },
                 },
-                text = "name"
-            }
+                text = "name",
+            },
         });
         Assert.True(workspace.Change(path, changes, 2));
         Assert.False(workspace.Change(path, changes, 1));
@@ -134,8 +134,8 @@ public sealed class ProtocolTests
         {
             new
             {
-                text = ""
-            }
+                text = "",
+            },
         });
         Assert.True(workspace.Change(path, deletion, 2));
         Assert.Equal("", Assert.Single(workspace.OpenDocuments).Text.ToString());
@@ -155,16 +155,16 @@ public sealed class ProtocolTests
         await writer.WriteAsync(new
         {
             id     = 1,
-            method = "initialize"
+            method = "initialize",
         });
         await writer.WriteAsync(new
         {
             id     = 2,
-            method = "shutdown"
+            method = "shutdown",
         });
         await writer.WriteAsync(new
         {
-            method = "exit"
+            method = "exit",
         });
         input.Position = 0;
 
@@ -193,7 +193,7 @@ public sealed class ProtocolTests
         await writer.WriteAsync(new
         {
             id     = 1,
-            method = "initialize"
+            method = "initialize",
         });
         var       uri        = property == "uri" ? value : JsonSerializer.Serialize(new Uri(Path.Combine(Path.GetTempPath(), "Index.svn")).AbsoluteUri);
         var       text       = property == "text" ? value : "\"valid\"";
@@ -202,16 +202,16 @@ public sealed class ProtocolTests
         {
             id      = 2,
             method  = "textDocument/didOpen",
-            @params = parameters.RootElement
+            @params = parameters.RootElement,
         });
         await writer.WriteAsync(new
         {
             id     = 3,
-            method = "shutdown"
+            method = "shutdown",
         });
         await writer.WriteAsync(new
         {
-            method = "exit"
+            method = "exit",
         });
         input.Position = 0;
 

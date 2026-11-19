@@ -49,7 +49,7 @@ public sealed partial class SavannaCompilerTests
                                        public static class Entry {
                                            public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(0);
                                        }
-                                       """, Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []));
+                                       """, Options.WithPreprocessorSymbols(debug ? DebugSymbols : []));
         Assert.Contains("<p>shared</p>", output);
         Assert.Contains(debug ? "<span>debug</span>" : "<span>release</span>", output);
         Assert.Contains(debug ? "<b>nested debug</b>" : "<b>nested release</b>", output);
@@ -156,7 +156,7 @@ public sealed partial class SavannaCompilerTests
                            </#switch>
                            """,
         });
-        var options = Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []);
+        var options = Options.WithPreprocessorSymbols(debug ? DebugSymbols : []);
         const string code = """
                             public static class Entry {
                                 public static async System.Threading.Tasks.Task<string> Run() => await TestViews.Views.Page.RenderToStringAsync(1);
@@ -180,7 +180,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "<#model type='int'>" + markup
+            ["Page.svn"] = "<#model type='int'>" + markup,
         });
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "SAVANNA003");
         Assert.Empty(result.Sources);
@@ -318,7 +318,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "<#model type='int'>" + markup
+            ["Page.svn"] = "<#model type='int'>" + markup,
         });
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "SAVANNA001");
     }
@@ -330,7 +330,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "<#model type='int'><#switch value='Model'>" + cases + "</#switch>"
+            ["Page.svn"] = "<#model type='int'><#switch value='Model'>" + cases + "</#switch>",
         });
         Assert.Contains(CreateCompilation(result, "").GetDiagnostics(), diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
     }

@@ -50,7 +50,7 @@ public sealed class JavaScriptClientTests
             if (!process.HasExited)
             {
                 process.Kill(entireProcessTree: true);
-                await process.WaitForExitAsync();
+                await process.WaitForExitAsync(CancellationToken.None);
             }
         }
 
@@ -59,7 +59,7 @@ public sealed class JavaScriptClientTests
         Assert.Equal(0, process.ExitCode);
         await server.Host.StopAsync(timeout.Token);
         Assert.Equal(0, server.Server.ConnectionCount);
-        Assert.All(server.Scopes.Scopes.Values, disposed => Assert.True(disposed));
+        Assert.All(server.Scopes.Scopes.Values, Assert.True);
         Assert.NotEmpty(server.Scopes.Disconnected);
     }
 }

@@ -24,7 +24,7 @@ public sealed class OAuthSignInTests
         await using var begin   = app.Request("https://app.test/login");
         await begin.Context.BeginOAuthSignInAsync("provider", "/search?q=hello%20world", new AuthenticationProperties
         {
-            IsPersistent = true
+            IsPersistent = true,
         });
         var authorization = new Uri(begin.Response.Headers[HeaderNames.Location]!);
         var query         = OAuthClientTests.Query(authorization);
@@ -205,7 +205,7 @@ public sealed class OAuthSignInTests
         var time = new TestTimeProvider();
         var store = new MemoryOAuthStateStore(time, new MemoryOAuthStateStoreOptions
         {
-            Capacity = 1
+            Capacity = 1,
         });
         var state = new OAuthState
         {

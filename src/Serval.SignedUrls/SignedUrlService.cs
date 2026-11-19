@@ -225,12 +225,7 @@ public sealed class SignedUrlService : ISignedUrlService
         SignPayload(encoded, signature);
 
         var signed = uri.PathAndQuery + (uri.Query.Length == 0 ? "?" : "&") + _parameterName + "=" + encoded + "." + SignedUrlEncoding.Encode(signature);
-        if (signed.Length > _maxUrlLength)
-        {
-            throw new ArgumentException("The signed URL exceeds the configured maximum length.", nameof(path));
-        }
-
-        return signed;
+        return signed.Length > _maxUrlLength ? throw new ArgumentException("The signed URL exceeds the configured maximum length.", nameof(path)) : signed;
     }
 
     private void SignPayload(ReadOnlySpan<char> encoded, Span<byte> signature)

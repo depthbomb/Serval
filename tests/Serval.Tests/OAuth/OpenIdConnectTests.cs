@@ -1,6 +1,5 @@
 using System.Net;
 using System.Security.Cryptography;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Serval.Authentication;
 using Serval.Hosting;
@@ -82,7 +81,7 @@ public sealed class OpenIdConnectTests
     {
         using var provider = new OidcTestProvider
         {
-            Algorithm = algorithm
+            Algorithm = algorithm,
         };
         if (algorithm.StartsWith("ES", StringComparison.Ordinal))
         {
@@ -218,23 +217,23 @@ public sealed class OpenIdConnectTests
         };
         provider.ChangeHeader = header =>
         {
-            if (failure == "none")
+            switch (failure)
             {
-                header["alg"] = "none";
-            }
-            if (failure == "hmac")
-            {
-                header["alg"] = "HS256";
-            }
-            if (failure == "critical-header")
-            {
-                header["crit"] = new[] { "unknown" };
+                case "none":
+                    header["alg"] = "none";
+                    break;
+                case "hmac":
+                    header["alg"] = "HS256";
+                    break;
+                case "critical-header":
+                    header["crit"] = new[] { "unknown" };
+                    break;
             }
         };
         provider.ChangeToken = token => failure switch
         {
             "bad-signature"   => token[..(token.LastIndexOf('.') + 1)] + OidcTestProvider.Encode(new byte[256]),
-            "duplicate-claim" => token.Split('.')[0]                   + "." + OidcTestProvider.Encode(Encoding.UTF8.GetBytes("{\"sub\":\"one\",\"sub\":\"two\"}")) + ".sig",
+            "duplicate-claim" => token.Split('.')[0]                   + "." + OidcTestProvider.Encode([.."{\"sub\":\"one\",\"sub\":\"two\"}"u8]) + ".sig",
             "malformed"       => "not-a-jwt",
             "encrypted"       => "a.b.c.d.e",
             "oversized"       => new string('a', 65537),
@@ -356,12 +355,12 @@ public sealed class OpenIdConnectTests
             {
                 Headers =
                 {
-                    Location = new Uri("https://attacker.test")
-                }
+                    Location = new Uri("https://attacker.test"),
+                },
             }
             : new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(new string('x', 2048))
+                Content = new StringContent(new string('x', 2048)),
             };
         using var       http    = new HttpClient(provider);
         await using var app     = Application(http, options => options.MaximumResponseBytes = 1024);
@@ -397,8 +396,8 @@ public sealed class OpenIdConnectTests
             claims["aud"]       = new[] { "client", "api" };
             claims["azp"]       = "client";
             claims["auth_time"] = provider.Now.ToUnixTimeSeconds();
-            claims["at_hash"]   = OidcTestProvider.Encode(SHA256.HashData(Encoding.ASCII.GetBytes("access-secret"))[..16]);
-            claims["c_hash"]    = OidcTestProvider.Encode(SHA256.HashData(Encoding.ASCII.GetBytes("code"))[..16]);
+            claims["at_hash"]   = OidcTestProvider.Encode(SHA256.HashData("access-secret"u8)[..16]);
+            claims["c_hash"]    = OidcTestProvider.Encode(SHA256.HashData("code"u8)[..16]);
         };
         using var http = new HttpClient(provider);
         await using var app = Application(http, options =>
@@ -425,7 +424,7 @@ public sealed class OpenIdConnectTests
         await using var request  = app.Request("https://app.test/login");
         await Assert.ThrowsAsync<ArgumentException>(async () => await request.Context.BeginOAuthSignInAsync("provider", parameters: new Dictionary<string, string>
         {
-            [name] = "override"
+            [name] = "override",
         }));
     }
 
@@ -462,10 +461,10 @@ public sealed class OpenIdConnectTests
         await using var app     = Application(http, options => options.BackchannelTimeout = callerCancellation ? TimeSpan.FromSeconds(10) : TimeSpan.FromMilliseconds(100));
         await using var request = app.Request("https://app.test/login", cancellationToken: cts.Token);
         var             begin   = request.Context.BeginOAuthSignInAsync("provider").AsTask();
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
         if (callerCancellation)
         {
-            cts.Cancel();
+            await cts.CancelAsync();
         }
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => begin);
         Assert.Empty(request.Response.Headers.GetValues(HeaderNames.SetCookie));
@@ -487,7 +486,7 @@ public sealed class OpenIdConnectTests
                 return OidcTestProvider.Json(new
                 {
                     access_token = "secret",
-                    token_type   = "Bearer"
+                    token_type   = "Bearer",
                 });
             }
             if (request.RequestUri!.AbsolutePath != "/keys" || failure == "missing-id-token")
@@ -498,7 +497,7 @@ public sealed class OpenIdConnectTests
             {
                 "empty-keys" => OidcTestProvider.Json(new
                 {
-                    keys = Array.Empty<object>()
+                    keys = Array.Empty<object>(),
                 }),
                 "symmetric-key" => OidcTestProvider.Json(new
                 {
@@ -507,9 +506,9 @@ public sealed class OpenIdConnectTests
                         new
                         {
                             kty = "oct",
-                            k   = "c2VjcmV0"
-                        }
-                    }
+                            k   = "c2VjcmV0",
+                        },
+                    },
                 }),
                 "encryption-key" => OidcTestProvider.Json(new
                 {
@@ -518,9 +517,9 @@ public sealed class OpenIdConnectTests
                         new
                         {
                             kty = "RSA",
-                            use = "enc"
-                        }
-                    }
+                            use = "enc",
+                        },
+                    },
                 }),
                 _ => OidcTestProvider.Json(new
                 {
@@ -531,9 +530,9 @@ public sealed class OpenIdConnectTests
                             kty = "RSA",
                             kid = "first",
                             n   = "!invalid!",
-                            e   = "AQAB"
-                        }
-                    }
+                            e   = "AQAB",
+                        },
+                    },
                 }),
             };
         };

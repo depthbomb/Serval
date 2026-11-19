@@ -75,14 +75,7 @@ public sealed class SavannaView<TModel>
 
         using var stream = new MemoryStream();
         using var writer = new SavannaWriter((bytes, token) =>
-        {
-            if (bytes.Length > maxBytes - stream.Length)
-            {
-                throw new InvalidOperationException("The rendered view exceeds the configured size limit.");
-            }
-
-            return stream.WriteAsync(bytes, token);
-        });
+            bytes.Length > maxBytes - stream.Length ? throw new InvalidOperationException("The rendered view exceeds the configured size limit.") : stream.WriteAsync(bytes, token));
 
         await RenderAsync(writer, model, context);
         await writer.FlushAsync(context.CancellationToken);

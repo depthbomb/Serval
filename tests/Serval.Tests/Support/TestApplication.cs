@@ -29,7 +29,7 @@ internal sealed class TestApplication : IAsyncDisposable
         Services = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateScopes  = true,
-            ValidateOnBuild = true
+            ValidateOnBuild = true,
         });
     }
 
@@ -39,7 +39,7 @@ internal sealed class TestApplication : IAsyncDisposable
     {
         var headers = new Headers
         {
-            [HeaderNames.ContentType] = contentType
+            [HeaderNames.ContentType] = contentType,
         };
         configureHeaders?.Invoke(headers);
         var response = new MemoryResponse();

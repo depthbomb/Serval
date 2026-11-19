@@ -72,7 +72,7 @@ public sealed class JobRuntimeTests
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         var rejected = await Task.WhenAll(Enumerable.Range(0, 32).Select(_ => Task.Run(() => fixture.Registry.RunAsync("test"))));
-        Assert.All(rejected, value => Assert.False(value));
+        Assert.All(rejected, Assert.False);
         fixture.Clock.Advance(TimeSpan.FromSeconds(4));
         await Task.Delay(40);
         Assert.Equal(1, fixture.Registry.GetJob("test").RunCount);
@@ -145,7 +145,7 @@ public sealed class JobRuntimeTests
         await fixture.StartAsync();
         using var cts = new CancellationTokenSource();
         var       run = fixture.Registry.RunAsync("test", cts.Token);
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
         await cts.CancelAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
         Assert.Equal(0, fixture.Registry.GetJob("test").FailureCount);
@@ -210,7 +210,7 @@ public sealed class JobRuntimeTests
         var second = fixture.Registry.RunAsync("other");
         await bothEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         release.SetResult();
-        Assert.All(await Task.WhenAll(first, second), value => Assert.True(value));
+        Assert.All(await Task.WhenAll(first, second), Assert.True);
     }
 
     [Fact]
@@ -329,7 +329,7 @@ public sealed class JobRuntimeTests
             await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.Host.StopAsync(cts.Token));
-            await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Registry.RunAsync("test"));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Registry.RunAsync("test", ct: CancellationToken.None));
             Assert.True(fixture.Registry.GetJob("test").IsRunning);
         }
         finally
@@ -383,7 +383,7 @@ public sealed class JobRuntimeTests
             builder.Services.AddScoped<ProbeDependency>();
             var jobs = new List<JobRegistration>
             {
-                JobRegistration.Create<ProbeJob>(schedule, "test")
+                JobRegistration.Create<ProbeJob>(schedule, "test"),
             };
             extra?.Invoke(jobs);
             JobRegistration.Register(builder.Services, [.. jobs]);
@@ -414,7 +414,10 @@ public sealed class JobRuntimeTests
         public           Guid       Id { get; } = Guid.NewGuid();
         private readonly ProbeState _state;
 
-        public ProbeDependency(ProbeState state) => _state = state;
+        public ProbeDependency(ProbeState state)
+        {
+            _state = state;
+        }
 
         public async ValueTask DisposeAsync()
         {

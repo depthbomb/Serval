@@ -61,7 +61,7 @@ public sealed class DocumentsController : ControllerBase
         {
             document,
             permission = permission.ToString(),
-            message    = "Permission granted. No document was changed."
+            message    = "Permission granted. No document was changed.",
         });
     }
 }

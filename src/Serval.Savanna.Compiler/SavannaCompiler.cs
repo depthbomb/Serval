@@ -162,34 +162,6 @@ public static class SavannaCompiler
         var active  = new HashSet<string>(StringComparer.Ordinal);
         var visited = new HashSet<string>(StringComparer.Ordinal);
 
-        bool Visit(SavannaDocument document)
-        {
-            // Check the active path before the visited set: a back-edge is already visited but is still a cycle.
-            if (active.Contains(document.Name) || active.Count >= 128)
-            {
-                Error(document, document.Parent?.Span ?? default, "Cyclic or excessively deep template dependency: " + document.Name, diagnostics);
-                return false;
-            }
-
-            if (!visited.Add(document.Name))
-            {
-                return true;
-            }
-
-            active.Add(document.Name);
-            foreach (var target in dependencies[document.Name])
-            {
-                if (!Visit(target))
-                {
-                    active.Remove(document.Name);
-                    return false;
-                }
-            }
-
-            active.Remove(document.Name);
-            return true;
-        }
-
         foreach (var document in views.Values)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -206,7 +178,7 @@ public static class SavannaCompiler
             cancellationToken.ThrowIfCancellationRequested();
             var chain = new List<SavannaDocument>
             {
-                document
+                document,
             };
             while (chain[chain.Count - 1].Parent is {} parent)
             {
@@ -247,6 +219,34 @@ public static class SavannaCompiler
         }
 
         return new SavannaCompilation(diagnostics.Count == 0 ? sources : Array.Empty<SavannaGeneratedSource>(), diagnostics);
+
+        bool Visit(SavannaDocument document)
+        {
+            // Check the active path before the visited set: a back-edge is already visited but is still a cycle.
+            if (active.Contains(document.Name) || active.Count >= 128)
+            {
+                Error(document, document.Parent?.Span ?? default, "Cyclic or excessively deep template dependency: " + document.Name, diagnostics);
+                return false;
+            }
+
+            if (!visited.Add(document.Name))
+            {
+                return true;
+            }
+
+            active.Add(document.Name);
+            foreach (var target in dependencies[document.Name])
+            {
+                if (!Visit(target))
+                {
+                    active.Remove(document.Name);
+                    return false;
+                }
+            }
+
+            active.Remove(document.Name);
+            return true;
+        }
     }
 
     internal static SavannaDocument? Resolve(SavannaDocument document, SavannaNode node, IReadOnlyDictionary<string, SavannaDocument> views, List<SavannaDiagnostic> diagnostics)
@@ -271,7 +271,7 @@ public static class SavannaCompiler
 
     internal static string Identifier(string value)
     {
-        var name = new string(value.Select(character => SyntaxFacts.IsIdentifierPartCharacter(character) ? character : '_').ToArray());
+        var name = new string([.. value.Select(character => SyntaxFacts.IsIdentifierPartCharacter(character) ? character : '_')]);
         if (name.Length == 0 || !SyntaxFacts.IsIdentifierStartCharacter(name[0]))
         {
             name = "_" + name;

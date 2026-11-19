@@ -32,6 +32,6 @@ public sealed class TransportController : ControllerBase
         => JsonAsync(new
         {
             protocol = context.Request.ProtocolVersion.ToString(),
-            scheme   = context.Request.Url.Scheme
+            scheme   = context.Request.Url.Scheme,
         });
 }

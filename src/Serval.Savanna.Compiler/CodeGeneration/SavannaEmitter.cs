@@ -281,9 +281,8 @@ internal sealed class SavannaEmitter
                         }
 
                         attributeName = attributeField + ", ";
-                        writeMethod = html.Interpolation == SavannaInterpolationContext.Url ? "WriteUrlAttributeAsync"
-                            : BooleanAttributes.Contains(html.AttributeName)                ? "WriteBooleanAttributeAsync" : "WriteAttributeAsync";
-                        removeQuote = true;
+                        writeMethod   = html.Interpolation == SavannaInterpolationContext.Url ? "WriteUrlAttributeAsync" : BooleanAttributes.Contains(html.AttributeName) ? "WriteBooleanAttributeAsync" : "WriteAttributeAsync";
+                        removeQuote   = true;
                     }
 
                     Mapped(document, node.Span, "            await " + writer + "." + writeMethod + "(" + attributeName + "(", node.Value, "), Context);");
@@ -297,8 +296,7 @@ internal sealed class SavannaEmitter
                     {
                         var id = _temporary++;
                         calls.Push((node, id, writer));
-                        _code.AppendLine("            {").Append("            var __slots").Append(id)
-                             .AppendLine(" = new global::System.Collections.Generic.Dictionary<string, global::Serval.Savanna.SavannaRenderFragment>(global::System.StringComparer.Ordinal);");
+                        _code.AppendLine("            {").Append("            var __slots").Append(id).AppendLine(" = new global::System.Collections.Generic.Dictionary<string, global::Serval.Savanna.SavannaRenderFragment>(global::System.StringComparer.Ordinal);");
                     }
                     else
                     {
@@ -329,9 +327,7 @@ internal sealed class SavannaEmitter
                         }
 
                         var id = _temporary++;
-                        _code.Append("            __slots").Append(calls.Peek().Id).Append(".Add(").Append(SymbolDisplay.FormatLiteral(node.Value, true))
-                             .Append(", async (__slotWriter").Append(id).Append(", __slotContext").Append(id).AppendLine(") => {")
-                             .AppendLine("            await global::System.Threading.Tasks.ValueTask.CompletedTask;");
+                        _code.Append("            __slots").Append(calls.Peek().Id).Append(".Add(").Append(SymbolDisplay.FormatLiteral(node.Value, true)).Append(", async (__slotWriter").Append(id).Append(", __slotContext").Append(id).AppendLine(") => {").AppendLine("            await global::System.Threading.Tasks.ValueTask.CompletedTask;");
                         writer = "__slotWriter" + id;
                     }
                     else
@@ -347,8 +343,7 @@ internal sealed class SavannaEmitter
                             _code.Append("            using (").Append(writer).AppendLine(".PreserveWhitespace())");
                         }
 
-                        _code.Append("            await Context.Slots.RenderAsync(").Append(slotName).Append(", ").Append(writer)
-                             .Append(", Context, ").Append(node.Required ? "true" : "false").AppendLine(");");
+                        _code.Append("            await Context.Slots.RenderAsync(").Append(slotName).Append(", ").Append(writer).Append(", Context, ").Append(node.Required ? "true" : "false").AppendLine(");");
                         if (node.Paired)
                         {
                             _code.AppendLine("            } else {");
@@ -397,8 +392,7 @@ internal sealed class SavannaEmitter
                     break;
                 case SavannaNodeKind.If:
                 case SavannaNodeKind.Unless:
-                    Mapped(document, node.Span, node.Kind == SavannaNodeKind.Unless ? "            if (!(" : "            if (", node.Value,
-                        node.Kind                         == SavannaNodeKind.Unless ? "))" : ")");
+                    Mapped(document, node.Span, node.Kind == SavannaNodeKind.Unless ? "            if (!(" : "            if (", node.Value, node.Kind == SavannaNodeKind.Unless ? "))" : ")");
                     _code.AppendLine("            {");
                     break;
                 case SavannaNodeKind.Switch:
@@ -472,8 +466,7 @@ internal sealed class SavannaEmitter
                         Mapped(document, node.Span, "            " + keyword + (parentheses ? " " : " ("), node.Value, parentheses ? "" : ")");
                     }
 
-                    _code.AppendLine("            {").Append("                __any").Append(loopId).AppendLine(" = true;")
-                         .AppendLine("                Context.CancellationToken.ThrowIfCancellationRequested();");
+                    _code.AppendLine("            {").Append("                __any").Append(loopId).AppendLine(" = true;").AppendLine("                Context.CancellationToken.ThrowIfCancellationRequested();");
                     break;
                 case SavannaNodeKind.Empty:
                     _code.AppendLine("            }").Append("            if (!__any").Append(loops.Peek()).AppendLine(") {");
@@ -491,26 +484,6 @@ internal sealed class SavannaEmitter
             if (preserveCall)
             {
                 _code.AppendLine("            }");
-            }
-        }
-
-        void RenderCall(SavannaNode callNode, string context)
-        {
-            if (callNode.Kind == SavannaNodeKind.Include)
-            {
-                var target = SavannaCompiler.Resolve(document, callNode, _views, _diagnostics);
-                if (target is not null)
-                {
-                    Mapped(document, callNode.ArgumentSpan, "            await global::" + _namespace + ".Views." + SavannaCompiler.IdentifierPath(target.Name)
-                                                            + ".RenderPartialAsync("     + writer     + ", (", callNode.Argument, "), " + context + ");");
-                }
-            }
-            else
-            {
-                var comment = "__componentComment" + _temporary++;
-                comments.Add((comment, callNode.Value, buildCondition));
-                _code.Append("            await ").Append(writer).Append(".WriteLiteralAsync(").Append(comment).AppendLine(", Context.CancellationToken);");
-                Mapped(document, callNode.ArgumentSpan, "            await " + context + ".RenderComponentAsync(" + writer + ", Context.GetComponent<" + callNode.Value + ">(), (", callNode.Argument, "));");
             }
         }
 
@@ -549,6 +522,28 @@ internal sealed class SavannaEmitter
             _code.Append("        private static readonly global::Serval.Savanna.SavannaAttributeName ").Append(attribute.Value)
                  .Append(" = new(").Append(SymbolDisplay.FormatLiteral(attribute.Key, true)).AppendLine(");");
         }
+
+        return;
+
+        void RenderCall(SavannaNode callNode, string context)
+        {
+            if (callNode.Kind == SavannaNodeKind.Include)
+            {
+                var target = SavannaCompiler.Resolve(document, callNode, _views, _diagnostics);
+                if (target is not null)
+                {
+                    Mapped(document, callNode.ArgumentSpan, "            await global::" + _namespace + ".Views." + SavannaCompiler.IdentifierPath(target.Name)
+                                                            + ".RenderPartialAsync("     + writer     + ", (", callNode.Argument, "), " + context + ");");
+                }
+            }
+            else
+            {
+                var comment = "__componentComment" + _temporary++;
+                comments.Add((comment, callNode.Value, buildCondition));
+                _code.Append("            await ").Append(writer).Append(".WriteLiteralAsync(").Append(comment).AppendLine(", Context.CancellationToken);");
+                Mapped(document, callNode.ArgumentSpan, "            await " + context + ".RenderComponentAsync(" + writer + ", Context.GetComponent<" + callNode.Value + ">(), (", callNode.Argument, "));");
+            }
+        }
     }
 
     private void CommentField(string name, (string Brief, string Detailed) comment)
@@ -581,23 +576,31 @@ internal sealed class SavannaEmitter
         {
             var node = nodes[index];
             flow.Visit(document, node, html, _diagnostics);
-            if (node.Kind == SavannaNodeKind.Text)
+            switch (node.Kind)
             {
-                html.Read(ReadText(nodes, ref index));
-            }
-            else if (node.Kind is SavannaNodeKind.Block or SavannaNodeKind.Parent)
-            {
-                var name     = node.Kind == SavannaNodeKind.Block ? node.Value : blockName!;
-                var selected = FindBlock(node.Kind == SavannaNodeKind.Block ? 0 : documentIndex + 1, name);
-                if (selected >= 0)
+                case SavannaNodeKind.Text:
                 {
-                    var owner = _chain[selected];
-                    ValidateRenderedBody(owner, selected, owner.Blocks.First(block => block.Name == name).Body, name, html, flow);
+                    html.Read(ReadText(nodes, ref index));
+                    break;
                 }
-            }
-            else if (html.IsRcData && node.Kind is SavannaNodeKind.Html or SavannaNodeKind.Include or SavannaNodeKind.Component or SavannaNodeKind.Json or SavannaNodeKind.Slot)
-            {
-                _diagnostics.Add(new SavannaDiagnostic("SAVANNA003", "Rendered fragments and JSON cannot be placed inside title or textarea. Use an encoded expression.", document.Path, node.Span));
+
+                case SavannaNodeKind.Block or SavannaNodeKind.Parent:
+                {
+                    var name     = node.Kind == SavannaNodeKind.Block ? node.Value : blockName!;
+                    var selected = FindBlock(node.Kind == SavannaNodeKind.Block ? 0 : documentIndex + 1, name);
+                    if (selected >= 0)
+                    {
+                        var owner = _chain[selected];
+                        ValidateRenderedBody(owner, selected, owner.Blocks.First(block => block.Name == name).Body, name, html, flow);
+                    }
+
+                    break;
+                }
+                case SavannaNodeKind.Html or SavannaNodeKind.Include or SavannaNodeKind.Component or SavannaNodeKind.Json or SavannaNodeKind.Slot when html.IsRcData:
+                {
+                    _diagnostics.Add(new SavannaDiagnostic("SAVANNA003", "Rendered fragments and JSON cannot be placed inside title or textarea. Use an encoded expression.", document.Path, node.Span));
+                    break;
+                }
             }
         }
     }
@@ -620,9 +623,9 @@ internal sealed class SavannaEmitter
 
     private static string BlockMethod(int index, string name) => "__Block" + index + "_" + name.TrimStart('@') + "Async";
 
-    private static bool IsFullAttribute(SavannaHtmlContext html, SavannaNode next) => html.IsEmptyQuotedValue
-                                                                                      && html.Interpolation is SavannaInterpolationContext.Attribute or SavannaInterpolationContext.Url
-                                                                                      && next.Kind == SavannaNodeKind.Text && next.Value.Length > 0 && next.Value[0] == html.Quote;
+    private static bool IsFullAttribute(SavannaHtmlContext html, SavannaNode next)
+        => html is { IsEmptyQuotedValue: true, Interpolation               : SavannaInterpolationContext.Attribute or SavannaInterpolationContext.Url }
+           && next is { Kind           : SavannaNodeKind.Text, Value.Length: > 0 } && next.Value[0] == html.Quote;
 
     private static string ReadText(IReadOnlyList<SavannaNode> nodes, ref int index)
     {

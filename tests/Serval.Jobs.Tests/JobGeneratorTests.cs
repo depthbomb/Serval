@@ -20,7 +20,7 @@ public sealed class JobGeneratorTests
     [
         .. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
                                                                        .Concat([typeof(IJob).Assembly.Location, typeof(ServalBuilder).Assembly.Location, typeof(CronExpression).Assembly.Location, typeof(IServiceCollection).Assembly.Location])
-                                                                       .Distinct(StringComparer.OrdinalIgnoreCase).Select(path => MetadataReference.CreateFromFile(path))
+                                                                       .Distinct(StringComparer.OrdinalIgnoreCase).Select(path => MetadataReference.CreateFromFile(path)),
     ];
 
     [Fact]

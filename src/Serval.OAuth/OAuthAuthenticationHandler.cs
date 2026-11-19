@@ -124,7 +124,7 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
         context.Response.Cookies.Set(_options.CorrelationCookiePrefix + authorization.State, correlation, _options.CorrelationCookie with
         {
             MaxAge = _options.StateLifetime,
-            Expires = expiry
+            Expires = expiry,
         });
 
         SetPrivateResponse(context);
@@ -236,7 +236,7 @@ public sealed class OAuthAuthenticationHandler : AuthenticationHandler
 
         var signInContext = new OAuthSignInContext(context, scheme, _client, tokens)
         {
-            OpenIdConnect = identity
+            OpenIdConnect = identity,
         };
         context.RequestAborted.ThrowIfCancellationRequested();
         return new OAuthCallbackResult(signInContext, state.ReturnUrl, state.Properties);

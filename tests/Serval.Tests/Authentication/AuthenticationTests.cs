@@ -29,7 +29,7 @@ public sealed class AuthenticationTests
         await using var login = app.Request();
         await login.Context.SignInAsync(SecurityTestApplication.User("alice", "admin"), properties: new AuthenticationProperties
         {
-            IsPersistent = true
+            IsPersistent = true,
         });
         var header = Assert.Single(login.Response.Headers.GetValues(HeaderNames.SetCookie));
         Assert.Contains("Secure", header);
@@ -118,7 +118,7 @@ public sealed class AuthenticationTests
         await using var login   = app.Request();
         await login.Context.SignInAsync(SecurityTestApplication.User(), properties: new AuthenticationProperties
         {
-            IsPersistent = true
+            IsPersistent = true,
         });
         var cookie = SecurityTestApplication.Cookie(login.Response);
         app.Clock.Now += TimeSpan.FromMinutes(6);
@@ -207,7 +207,7 @@ public sealed class AuthenticationTests
         var fields = new List<(string Name, string Value)>
         {
             ("_csrf", token),
-            ("value", "still readable")
+            ("value", "still readable"),
         };
         if (scenario == "duplicate")
         {
@@ -232,7 +232,7 @@ public sealed class AuthenticationTests
         var             invoked = false;
         await new RequireCsrfAttribute
         {
-            FormFieldName = scenario == "disabled" ? null : "_csrf"
+            FormFieldName = scenario == "disabled" ? null : "_csrf",
         }.InvokeAsync(context, async current =>
         {
             invoked = true;
@@ -254,7 +254,7 @@ public sealed class AuthenticationTests
             }).AddCookie();
             builder.AddController<object>("GET", "/private", null, (_, context) => ValueTask.FromResult<IActionResult>(new TextResult(context.User.Identity!.Name!)), new AuthorizeAttribute
             {
-                Policy = "admin"
+                Policy = "admin",
             });
         });
         foreach (var role in new[] { null, "member", "admin" })
@@ -268,9 +268,9 @@ public sealed class AuthenticationTests
             }
 
             await using var request = app.Request("https://app.test/private", cookie);
-            await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request.Context.Request, request.Response, default);
-            Assert.Equal(role is null ? 401 : role == "admin" ? 200 : 403, request.Response.StatusCode);
-            Assert.Equal(role                      == "admin" ? "alice" : "", request.Response.Text);
+            await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(request.Context.Request, request.Response, CancellationToken.None);
+            Assert.Equal(role switch { null => 401, "admin" => 200, _ => 403 }, request.Response.StatusCode);
+            Assert.Equal(role == "admin" ? "alice" : "", request.Response.Text);
             await request.Context.AuthenticateAsync();
             Assert.Equal(role == "admin", await request.Context.AuthorizeAsync("admin"));
         }
@@ -334,11 +334,11 @@ public sealed class AuthenticationTests
         var time = new TestTimeProvider();
         var store = new MemoryAuthenticationSessionStore(time, new MemoryAuthenticationSessionStoreOptions
         {
-            Capacity = 1
+            Capacity = 1,
         });
         var ticket = new AuthenticationTicket(SecurityTestApplication.User(), "Cookies", new AuthenticationProperties
         {
-            ExpiresUtc = time.Now.AddMinutes(1)
+            ExpiresUtc = time.Now.AddMinutes(1),
         });
         await store.StoreAsync("a", ticket);
         await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.StoreAsync("b", ticket));
@@ -351,8 +351,8 @@ public sealed class AuthenticationTests
         {
             Properties = ticket.Properties with
             {
-                ExpiresUtc = time.Now.AddMinutes(1)
-            }
+                ExpiresUtc = time.Now.AddMinutes(1),
+            },
         });
     }
 
@@ -366,7 +366,7 @@ public sealed class AuthenticationTests
         Assert.Throws<InvalidOperationException>(() => builder.AddAuthentication());
         Assert.Throws<ArgumentException>(() => authentication.AddCookie("bad", options => options.Cookie = new CookieOptions
         {
-            Secure = false
+            Secure = false,
         }));
     }
 
@@ -401,7 +401,7 @@ public sealed class AuthenticationTests
         await using var login = app.Request();
         await login.Context.SignInAsync(SecurityTestApplication.User(), properties: new AuthenticationProperties
         {
-            AllowRefresh = false
+            AllowRefresh = false,
         });
         Assert.DoesNotContain("Expires=", login.Response.Headers.GetValues(HeaderNames.SetCookie).Single());
         app.Clock.Now += TimeSpan.FromHours(5);
@@ -428,10 +428,10 @@ public sealed class AuthenticationTests
         var             cookie   = SecurityTestApplication.Cookie(login.Response);
         var             token    = await login.Context.GetCsrfTokenAsync();
         await using var rejected = app.Request("https://app.test/auth/logout", cookie, "POST");
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(rejected.Context.Request, rejected.Response, default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(rejected.Context.Request, rejected.Response, CancellationToken.None);
         Assert.Equal(403, rejected.Response.StatusCode);
         await using var accepted = app.Request("https://app.test/auth/logout", cookie, "POST", headers => headers["X-CSRF-Token"] = token);
-        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(accepted.Context.Request, accepted.Response, default);
+        await app.Services.GetRequiredService<IRequestHandler>().HandleAsync(accepted.Context.Request, accepted.Response, CancellationToken.None);
         Assert.Equal(204, accepted.Response.StatusCode);
         await using var replay = app.Request(cookie: cookie);
         Assert.False((await replay.Context.AuthenticateAsync()).Succeeded);

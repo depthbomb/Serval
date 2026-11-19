@@ -59,7 +59,7 @@ internal sealed class RequestBodyStorage : IAsyncDisposable
                 throw;
             }
 
-            memory.Dispose();
+            await memory.DisposeAsync();
             _stream = file;
         }
 

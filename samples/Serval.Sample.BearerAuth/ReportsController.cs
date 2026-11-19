@@ -42,7 +42,7 @@ public sealed class ReportsController : ControllerBase
         return JsonAsync(new
         {
             user    = context.User.Identity?.Name,
-            reports = AvailableReports
+            reports = AvailableReports,
         });
     }
 
@@ -54,7 +54,7 @@ public sealed class ReportsController : ControllerBase
         return JsonAsync(new
         {
             author  = context.User.Identity?.Name,
-            message = "The write policy passed. No report was saved."
+            message = "The write policy passed. No report was saved.",
         });
     }
 
@@ -66,7 +66,7 @@ public sealed class ReportsController : ControllerBase
         return JsonAsync(new
         {
             owner  = context.RouteValues["owner"],
-            report = "Private summary"
+            report = "Private summary",
         });
     }
 }

@@ -68,60 +68,72 @@ internal static class SavannaSlotsAnalysis
                     Error(node, "A paired include or component may contain only named slot definitions.");
                 }
 
-                if (node.Kind is SavannaNodeKind.Include or SavannaNodeKind.Component)
+                switch (node.Kind)
                 {
-                    var call = new Call(node);
-                    calls.Add(call);
-                    if (node.Paired)
+                    case SavannaNodeKind.Include or SavannaNodeKind.Component:
                     {
-                        stack.Push(call);
-                    }
-                }
-                else if (node.Kind is SavannaNodeKind.EndInclude or SavannaNodeKind.EndComponent)
-                {
-                    if (stack.Count > 0)
-                    {
-                        stack.Pop();
-                    }
-                }
-                else if (node.Kind == SavannaNodeKind.Slot)
-                {
-                    if (owner is { InSlot: false })
-                    {
-                        if (!node.Paired || node.Required)
-                        {
-                            Error(node, "A supplied slot needs a body and cannot be marked required.");
-                        }
-
-                        if (!owner.Supplied.Add(node.Value))
-                        {
-                            Error(node, "A slot is supplied more than once: " + node.Value);
-                        }
-
-                        owner.InSlot = node.Paired;
+                        var call = new Call(node);
+                        calls.Add(call);
                         if (node.Paired)
                         {
-                            slotOwners.Push(owner);
-                        }
-                    }
-                    else
-                    {
-                        if (node is { Required: true, Paired: true })
-                        {
-                            Error(node, "A required slot cannot have fallback content. Use a self-closing tag.");
+                            stack.Push(call);
                         }
 
-                        declarations.Add(node);
-                        if (node.Paired)
-                        {
-                            slotOwners.Push(null);
-                        }
+                        break;
                     }
-                }
-                else if (node.Kind == SavannaNodeKind.EndSlot && slotOwners.Count > 0)
-                {
-                    var slotOwner = slotOwners.Pop();
-                    slotOwner?.InSlot = false;
+
+                    case SavannaNodeKind.EndInclude or SavannaNodeKind.EndComponent:
+                    {
+                        if (stack.Count > 0)
+                        {
+                            stack.Pop();
+                        }
+
+                        break;
+                    }
+
+                    case SavannaNodeKind.Slot:
+                    {
+                        if (owner is { InSlot: false })
+                        {
+                            if (!node.Paired || node.Required)
+                            {
+                                Error(node, "A supplied slot needs a body and cannot be marked required.");
+                            }
+
+                            if (!owner.Supplied.Add(node.Value))
+                            {
+                                Error(node, "A slot is supplied more than once: " + node.Value);
+                            }
+
+                            owner.InSlot = node.Paired;
+                            if (node.Paired)
+                            {
+                                slotOwners.Push(owner);
+                            }
+                        }
+                        else
+                        {
+                            if (node is { Required: true, Paired: true })
+                            {
+                                Error(node, "A required slot cannot have fallback content. Use a self-closing tag.");
+                            }
+
+                            declarations.Add(node);
+                            if (node.Paired)
+                            {
+                                slotOwners.Push(null);
+                            }
+                        }
+
+                        break;
+                    }
+                    case SavannaNodeKind.EndSlot when slotOwners.Count > 0:
+                    {
+                        var slotOwner = slotOwners.Pop();
+                        slotOwner?.InSlot = false;
+                        break;
+                    }
                 }
             }
         }

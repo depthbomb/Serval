@@ -31,13 +31,13 @@ public readonly record struct Position(int Line, int Character)
             start = new
             {
                 line      = start.Line,
-                character = start.Character
+                character = start.Character,
             },
             end = new
             {
                 line      = end.Line,
-                character = end.Character
-            }
+                character = end.Character,
+            },
         };
     }
 }

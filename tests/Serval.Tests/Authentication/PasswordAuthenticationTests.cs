@@ -56,7 +56,7 @@ public sealed class PasswordAuthenticationTests
     {
         var store = new AccountStore
         {
-            Account = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User())
+            Account = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User()),
         };
         var authenticator = new PasswordAuthenticator(store, Hasher(20000));
         Assert.True((await authenticator.AuthenticateAsync("alice", "password")).Succeeded);
@@ -64,7 +64,7 @@ public sealed class PasswordAuthenticationTests
         Assert.False((await authenticator.AuthenticateAsync("alice", "wrong")).Succeeded);
         store.Account = store.Account! with
         {
-            Enabled = false
+            Enabled = false,
         };
         Assert.False((await authenticator.AuthenticateAsync("alice", "password")).Succeeded);
         store.Account = null;
@@ -77,7 +77,7 @@ public sealed class PasswordAuthenticationTests
         var store = new AccountStore
         {
             Account     = new PasswordAccount("1", Hasher().Hash("password"), SecurityTestApplication.User()),
-            AllowUpdate = false
+            AllowUpdate = false,
         };
         Assert.False((await new PasswordAuthenticator(store, Hasher(20000)).AuthenticateAsync("alice", "password")).Succeeded);
     }
@@ -99,7 +99,7 @@ public sealed class PasswordAuthenticationTests
 
     private static Pbkdf2PasswordHasher Hasher(int iterations = 10000) => new(new Pbkdf2PasswordHasherOptions
     {
-        Iterations = iterations
+        Iterations = iterations,
     });
 
     private sealed class AccountStore : IPasswordAccountStore
@@ -119,7 +119,7 @@ public sealed class PasswordAuthenticationTests
 
             Account = Account with
             {
-                PasswordHash = newHash
+                PasswordHash = newHash,
             };
             Updates++;
             return ValueTask.FromResult(true);

@@ -50,7 +50,7 @@ public sealed class EndpointPolicyTests
         Assert.Equal(typeof(object), selected.ControllerType);
         Assert.Equal("/api/v2/items/34", app.Services.GetRequiredService<IUrlGenerator>().Path("api.items", new Dictionary<string, object?>
         {
-            ["id"] = 34
+            ["id"] = 34,
         }));
     }
 
@@ -80,6 +80,8 @@ public sealed class EndpointPolicyTests
         })).StatusCode);
         Assert.Equal("12345", (await app.SendAsync("/large", "POST", "12345")).Text);
 
+        return;
+
         static async ValueTask<IActionResult> Read(object _, RequestContext context)
         {
             return new TextResult(await context.Request.ReadTextAsync());
@@ -107,6 +109,8 @@ public sealed class EndpointPolicyTests
         captured!.Forms.MaxFields = 100;
         Assert.Equal(413, (await app.SendAsync("/one", "POST", "a=1&b=2", "application/x-www-form-urlencoded")).StatusCode);
         Assert.Equal(200, (await app.SendAsync("/many", "POST", "a=1&b=2", "application/x-www-form-urlencoded")).StatusCode);
+
+        return;
 
         static async ValueTask<IActionResult> Read(object _, RequestContext context)
         {

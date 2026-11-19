@@ -76,7 +76,7 @@ public sealed class SignInController : ControllerBase
         context.Response.Headers[HeaderNames.CacheControl] = "no-store";
         return JsonAsync(new
         {
-            name = context.User.Identity?.Name
+            name = context.User.Identity?.Name,
         });
     }
 
@@ -85,7 +85,7 @@ public sealed class SignInController : ControllerBase
     public async ValueTask<IActionResult> CsrfAsync(RequestContext context)
         => Json(new
         {
-            token = await context.GetCsrfTokenAsync()
+            token = await context.GetCsrfTokenAsync(),
         });
 
     [Post("/auth/logout")]

@@ -80,30 +80,24 @@ internal sealed class SavannaHtmlContext
 
                     break;
                 case State.Open:
-                    if (character == '/')
+                    switch (character)
                     {
-                        _closing = true;
-                    }
-                    else if (character == '!' && index + 2 < text.Length && text[index + 1] == '-' && text[index + 2] == '-')
-                    {
-                        _state          =  State.Comment;
-                        index           += 2;
-                        _previous       =  '\0';
-                        _beforePrevious =  '\0';
-                        continue;
-                    }
-                    else if (character is '!' or '?')
-                    {
-                        _state = State.Declaration;
-                    }
-                    else if (char.IsLetter(character))
-                    {
-                        _tag   = char.ToLowerInvariant(character).ToString();
-                        _state = State.Tag;
-                    }
-                    else
-                    {
-                        _state = State.Declaration;
+                        case '/':
+                            _closing = true;
+                            break;
+                        case '!' when index + 2 < text.Length && text[index + 1] == '-' && text[index + 2] == '-':
+                            _state          =  State.Comment;
+                            index           += 2;
+                            _previous       =  '\0';
+                            _beforePrevious =  '\0';
+                            continue;
+                        case var _ when char.IsLetter(character):
+                            _tag   = char.ToLowerInvariant(character).ToString();
+                            _state = State.Tag;
+                            break;
+                        default:
+                            _state = State.Declaration;
+                            break;
                     }
 
                     break;
@@ -136,60 +130,84 @@ internal sealed class SavannaHtmlContext
 
                     break;
                 case State.Attribute:
-                    if (character == '=')
+                    switch (character)
                     {
-                        _state = State.BeforeValue;
-                    }
-                    else if (character == '>')
-                    {
-                        EndTag();
-                    }
-                    else if (IsWhitespace(character) || character == '/')
-                    {
-                        _state = State.AfterAttribute;
-                    }
-                    else
-                    {
-                        AttributeName     += char.ToLowerInvariant(character);
-                        AttributeSpelling += character;
+                        case '=':
+                        {
+                            _state = State.BeforeValue;
+                            break;
+                        }
+
+                        case '>':
+                        {
+                            EndTag();
+                            break;
+                        }
+                        case '/' or ' ' or '\t' or '\r' or '\n' or '\f':
+                        {
+                            _state = State.AfterAttribute;
+                            break;
+                        }
+                        default:
+                        {
+                            AttributeName     += char.ToLowerInvariant(character);
+                            AttributeSpelling += character;
+                            break;
+                        }
                     }
 
                     break;
                 case State.AfterAttribute:
-                    if (character == '=')
+                    switch (character)
                     {
-                        _state = State.BeforeValue;
-                    }
-                    else if (character == '>')
-                    {
-                        EndTag();
-                    }
-                    else if (!IsWhitespace(character) && character != '/')
-                    {
-                        AttributeName     = char.ToLowerInvariant(character).ToString();
-                        AttributeSpelling = character.ToString();
-                        _state            = State.Attribute;
+                        case '=':
+                        {
+                            _state = State.BeforeValue;
+                            break;
+                        }
+
+                        case '>':
+                        {
+                            EndTag();
+                            break;
+                        }
+                        case not ('/' or ' ' or '\t' or '\r' or '\n' or '\f'):
+                        {
+                            AttributeName     = char.ToLowerInvariant(character).ToString();
+                            AttributeSpelling = character.ToString();
+                            _state            = State.Attribute;
+                            break;
+                        }
                     }
 
                     break;
                 case State.BeforeValue:
-                    if (character == '"')
+                    switch (character)
                     {
-                        _state           = State.DoubleQuoted;
-                        _valueHasContent = false;
-                    }
-                    else if (character == '\'')
-                    {
-                        _state           = State.SingleQuoted;
-                        _valueHasContent = false;
-                    }
-                    else if (character == '>')
-                    {
-                        EndTag();
-                    }
-                    else if (!IsWhitespace(character))
-                    {
-                        _state = State.Unquoted;
+                        case '"':
+                        {
+                            _state           = State.DoubleQuoted;
+                            _valueHasContent = false;
+                            break;
+                        }
+
+                        case '\'':
+                        {
+                            _state           = State.SingleQuoted;
+                            _valueHasContent = false;
+                            break;
+                        }
+
+                        case '>':
+                        {
+                            EndTag();
+                            break;
+                        }
+                        case not (' ' or '\t' or '\r' or '\n' or '\f'):
+                        {
+                            _state = State.Unquoted;
+                            break;
+                        }
                     }
 
                     break;

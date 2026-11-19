@@ -60,7 +60,7 @@ public sealed partial class CSharpFeatures
                 textEdit = new
                 {
                     range   = Position.Range(_template.Text, span.Value),
-                    newText = change.TextChange.NewText
+                    newText = change.TextChange.NewText,
                 },
             });
         }
@@ -98,7 +98,7 @@ public sealed partial class CSharpFeatures
                 contents = new
                 {
                     kind  = "plaintext",
-                    value = field.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + " " + field.Name + "\n\n" + description
+                    value = field.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + " " + field.Name + "\n\n" + description,
                 },
                 range = Position.Range(_template.Text, span.Value),
             };
@@ -109,7 +109,7 @@ public sealed partial class CSharpFeatures
             contents = new
             {
                 kind  = "plaintext",
-                value = string.Join("\n\n", info.Sections.Select(section => string.Concat(section.TaggedParts.Select(part => part.Text))))
+                value = string.Join("\n\n", info.Sections.Select(section => string.Concat(section.TaggedParts.Select(part => part.Text)))),
             },
             range = Position.Range(_template.Text, span.Value),
         };
@@ -149,7 +149,7 @@ public sealed partial class CSharpFeatures
                 : new
                 {
                     uri   = new Uri(_template.Path).AbsoluteUri,
-                    range = Position.Range(_template.Text, span.Value)
+                    range = Position.Range(_template.Text, span.Value),
                 };
         }
 
@@ -162,7 +162,7 @@ public sealed partial class CSharpFeatures
         return new
         {
             uri   = new Uri(path).AbsoluteUri,
-            range = Position.Range(await location.SourceTree.GetTextAsync(cancellationToken), location.SourceSpan)
+            range = Position.Range(await location.SourceTree.GetTextAsync(cancellationToken), location.SourceSpan),
         };
     }
 
@@ -175,14 +175,14 @@ public sealed partial class CSharpFeatures
                      .Where(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error or DiagnosticSeverity.Warning && diagnostic.Location.SourceTree == model.SyntaxTree)
                      .Select(diagnostic => (Diagnostic: diagnostic, Span: MapSpan(diagnostic.Location.SourceSpan)))
                      .Where(item => item.Span is not null)
-                     .Select(item => (object)new
+                     .Select(object (item) => new
                      {
                          range    = Position.Range(_template.Text, item.Span!.Value),
                          severity = item.Diagnostic.Severity == DiagnosticSeverity.Error ? 1 : 2,
                          code     = item.Diagnostic.Id,
                          source   = "C#",
                          message  = item.Diagnostic.GetMessage(),
-                     })
+                     }),
         ];
     }
 

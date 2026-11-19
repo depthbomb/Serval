@@ -52,7 +52,7 @@ public sealed class EditorFeaturesTests
         var features = new CSharpFeatures(snapshot with
         {
             Document = documents.Single(document => !document.IsImports),
-            Templates = documents
+            Templates = documents,
         });
         Assert.Empty(await features.DiagnosticsAsync(CancellationToken.None));
     }
@@ -236,7 +236,7 @@ public sealed class EditorFeaturesTests
         var editedSnapshot = snapshot with
         {
             Document = edited,
-            Templates = [edited]
+            Templates = [edited],
         };
         var changed = templates.GetCSharpFeatures(editedSnapshot)!;
         Assert.NotSame(original, changed);
@@ -244,7 +244,7 @@ public sealed class EditorFeaturesTests
 
         var projectEdited = editedSnapshot with
         {
-            Project = snapshot.Project!.AddDocument("New.cs", "namespace Example; public class NewType {}").Project
+            Project = snapshot.Project!.AddDocument("New.cs", "namespace Example; public class NewType {}").Project,
         };
         Assert.NotSame(changed, templates.GetCSharpFeatures(projectEdited));
         templates.InvalidateProjects();
@@ -290,7 +290,7 @@ public sealed class EditorFeaturesTests
         var snapshot = Snapshot(workspace, template);
         snapshot = snapshot with
         {
-            Project = snapshot.Project!.WithParseOptions(new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: debug ? ["DEBUG"] : []))
+            Project = snapshot.Project!.WithParseOptions(new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: debug ? ["DEBUG"] : [])),
         };
         var diagnostics = JsonSerializer.SerializeToElement(await new CSharpFeatures(snapshot).DiagnosticsAsync(CancellationToken.None));
         var diagnostic  = Assert.Single(diagnostics.EnumerateArray());
@@ -300,8 +300,8 @@ public sealed class EditorFeaturesTests
         var end   = Position.Read(range.GetProperty("end")).Offset(snapshot.Document.Text);
         Assert.Equal(expected, template[start..end]);
         var projection = SavannaProjection.Create(snapshot.Document);
-        Assert.All(projection.Mappings, mapping => Assert.Equal(template.Substring(mapping.SourceSpan.Start, mapping.SourceSpan.Length),
-            projection.Text.Substring(mapping.GeneratedSpan.Start, mapping.GeneratedSpan.Length)));
+        Assert.All(projection.Mappings, mapping => Assert.Equal(template.AsSpan(mapping.SourceSpan.Start, mapping.SourceSpan.Length),
+            projection.Text.AsSpan(mapping.GeneratedSpan.Start, mapping.GeneratedSpan.Length)));
     }
 
     [Theory]

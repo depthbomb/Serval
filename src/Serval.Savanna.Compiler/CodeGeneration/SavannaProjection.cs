@@ -91,67 +91,70 @@ public static class SavannaProjection
             var argument = Argument(token, command.Length);
             if (token.Tag is { Closing: false } tag)
             {
-                if (command == "foreach")
+                switch (command)
                 {
-                    code.Append(tag.Get("await") is null ? "foreach (var " : "await foreach (var ");
-                    CopyAttribute(tag, "item");
-                    code.Append(" in ");
-                    CopyAttribute(tag, "in");
-                    code.AppendLine(") {");
-                    scopes.Push("foreach");
-                    continue;
-                }
-
-                if (command == "let")
-                {
-                    code.Append("var ");
-                    CopyAttribute(tag, "name");
-                    code.Append(" = (");
-                    CopyAttribute(tag, "value");
-                    code.AppendLine(");");
-                    continue;
-                }
-
-                if (command is "extends" or "include" or "component" or "json")
-                {
-                    if (command == "component")
+                    case "foreach":
                     {
-                        code.Append("_ = typeof(");
-                        CopyAttribute(tag, "type");
+                        code.Append(tag.Get("await") is null ? "foreach (var " : "await foreach (var ");
+                        CopyAttribute(tag, "item");
+                        code.Append(" in ");
+                        CopyAttribute(tag, "in");
+                        code.AppendLine(") {");
+                        scopes.Push("foreach");
+                        continue;
+                    }
+
+                    case "let":
+                    {
+                        code.Append("var ");
+                        CopyAttribute(tag, "name");
+                        code.Append(" = (");
+                        CopyAttribute(tag, "value");
                         code.AppendLine(");");
+                        continue;
                     }
 
-                    var expression = tag.Get(command switch
+                    case "extends" or "include" or "component" or "json":
                     {
-                        "component" => "arguments",
-                        "json"      => "value",
-                        _           => "model",
-                    });
-                    if (expression is not null)
-                    {
-                        code.Append("__Value(");
-                        Copy(expression.Span);
-                        code.AppendLine(");");
+                        if (command == "component")
+                        {
+                            code.Append("_ = typeof(");
+                            CopyAttribute(tag, "type");
+                            code.AppendLine(");");
+                        }
+
+                        var expression = tag.Get(command switch
+                        {
+                            "component" => "arguments",
+                            "json"      => "value",
+                            _           => "model",
+                        });
+                        if (expression is not null)
+                        {
+                            code.Append("__Value(");
+                            Copy(expression.Span);
+                            code.AppendLine(");");
+                        }
+
+                        if (!tag.SelfClosing && command is "include" or "component")
+                        {
+                            code.AppendLine("{");
+                            scopes.Push(command);
+                        }
+
+                        continue;
                     }
 
-                    if (!tag.SelfClosing && command is "include" or "component")
+                    case "slot" or "whitespace":
                     {
-                        code.AppendLine("{");
-                        scopes.Push(command);
+                        if (!tag.SelfClosing)
+                        {
+                            code.AppendLine("{");
+                            scopes.Push(command);
+                        }
+
+                        continue;
                     }
-
-                    continue;
-                }
-
-                if (command is "slot" or "whitespace")
-                {
-                    if (!tag.SelfClosing)
-                    {
-                        code.AppendLine("{");
-                        scopes.Push(command);
-                    }
-
-                    continue;
                 }
             }
 

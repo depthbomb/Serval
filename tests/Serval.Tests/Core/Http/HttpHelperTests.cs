@@ -39,7 +39,7 @@ public sealed class HttpHelperTests
             Secure   = secure,
             Domain   = domain,
             Path     = path,
-            SameSite = sameSite
+            SameSite = sameSite,
         }));
     }
 

@@ -40,7 +40,7 @@ internal sealed class OidcTestProvider : HttpMessageHandler
 
     internal static HttpResponseMessage Json(object value) => new(HttpStatusCode.OK)
     {
-        Content = new StringContent(JsonSerializer.Serialize(value), Encoding.UTF8, "application/json")
+        Content = new StringContent(JsonSerializer.Serialize(value), Encoding.UTF8, "application/json"),
     };
 
     private string Token()
@@ -49,7 +49,7 @@ internal sealed class OidcTestProvider : HttpMessageHandler
         {
             ["alg"] = Algorithm,
             ["kid"] = KeyId,
-            ["typ"] = "JWT"
+            ["typ"] = "JWT",
         };
         var claims = new Dictionary<string, object?>
         {
@@ -108,7 +108,7 @@ internal sealed class OidcTestProvider : HttpMessageHandler
                 if (EcKey is not null)
                 {
                     var ec = EcKey.ExportParameters(false);
-                    key = new()
+                    key = new Dictionary<string, object?>
                     {
                         ["kty"] = "EC",
                         ["crv"] = Algorithm switch { "ES256" => "P-256", "ES384" => "P-384", _ => "P-521" },
@@ -119,11 +119,11 @@ internal sealed class OidcTestProvider : HttpMessageHandler
                 else
                 {
                     var rsa = Key.ExportParameters(false);
-                    key = new()
+                    key = new Dictionary<string, object?>
                     {
                         ["kty"] = "RSA",
                         ["n"]   = Encode(rsa.Modulus!),
-                        ["e"]   = Encode(rsa.Exponent!)
+                        ["e"]   = Encode(rsa.Exponent!),
                     };
                 }
                 key["kid"] = KeyId;
@@ -131,7 +131,7 @@ internal sealed class OidcTestProvider : HttpMessageHandler
                 key["alg"] = Algorithm;
                 return Json(new
                 {
-                    keys = new[] { key }
+                    keys = new[] { key },
                 });
             case "/token":
                 Interlocked.Increment(ref TokenCalls);
@@ -141,14 +141,14 @@ internal sealed class OidcTestProvider : HttpMessageHandler
                 {
                     access_token = "access-secret",
                     token_type   = "Bearer",
-                    id_token     = ChangeToken?.Invoke(token) ?? token
+                    id_token     = ChangeToken?.Invoke(token) ?? token,
                 });
             case "/userinfo":
                 Interlocked.Increment(ref UserInfoCalls);
                 return Json(new
                 {
                     sub  = UserSubject,
-                    name = "UserInfo name"
+                    name = "UserInfo name",
                 });
             default:
                 throw new InvalidOperationException("Unexpected test request: " + request.RequestUri);

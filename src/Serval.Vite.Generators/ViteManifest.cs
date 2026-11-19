@@ -165,14 +165,7 @@ internal static class ViteManifest
     }
 
     private static bool ReadBoolean(JsonElement value, string key, string field)
-    {
-        if (value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
-        {
-            throw new ManifestException($"Chunk '{key}': '{field}' must be a boolean.");
-        }
-
-        return value.GetBoolean();
-    }
+        => value.ValueKind is not (JsonValueKind.True or JsonValueKind.False) ? throw new ManifestException($"Chunk '{key}': '{field}' must be a boolean.") : value.GetBoolean();
 
     private static string[] ReadList(JsonElement value, string key, string field, CancellationToken cancellationToken)
     {

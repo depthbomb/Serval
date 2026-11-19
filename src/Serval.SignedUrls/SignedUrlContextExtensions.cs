@@ -29,12 +29,7 @@ public static class SignedUrlContextExtensions
         public SignedUrlData RequireSignedUrl()
         {
             var result = context.ValidateSignedUrl();
-            if (!result.IsValid)
-            {
-                throw new HttpErrorException(StatusCodes.Forbidden, "A valid signed URL is required.");
-            }
-
-            return result.Data!;
+            return !result.IsValid ? throw new HttpErrorException(StatusCodes.Forbidden, "A valid signed URL is required.") : result.Data!;
         }
     }
 }

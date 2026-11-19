@@ -51,7 +51,7 @@ public sealed class DemoAccountStore : IPasswordAccountStore
 
             _account = _account with
             {
-                PasswordHash = newHash
+                PasswordHash = newHash,
             };
             return ValueTask.FromResult(true);
         }

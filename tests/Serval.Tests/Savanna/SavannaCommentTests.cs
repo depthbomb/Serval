@@ -51,7 +51,7 @@ public sealed partial class SavannaCompilerTests
                                                return normal + "\n" + development;
                                            }
                                        }
-                                       """, Options.WithPreprocessorSymbols(debug ? new[] { "DEBUG" } : []), false);
+                                       """, Options.WithPreprocessorSymbols(debug ? DebugSymbols : []), false);
         var renders = output.Split('\n');
         Assert.Equal(2, renders.Length);
         Assert.Equal(renders[0], renders[1]);
@@ -89,11 +89,11 @@ public sealed class SavannaCommentTests
     {
         using var development = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
-            EnvironmentName = Environments.Development
+            EnvironmentName = Environments.Development,
         }).Build();
         using var production = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
-            EnvironmentName = Environments.Production
+            EnvironmentName = Environments.Production,
         }).Build();
         Assert.True(new SavannaRenderContext(development.Services).IsDevelopment);
         Assert.False(new SavannaRenderContext(production.Services).IsDevelopment);
@@ -122,8 +122,10 @@ public sealed class SavannaCommentTests
     }
 }
 
-internal static class SavannaTestOutput
+internal static partial class SavannaTestOutput
 {
-    public static string NamesOnly(string output) => Regex.Replace(output,
-        @"; id=[a-f0-9]{12}; output=utf-8; renderer=(?:compiled|component)(?:; minify=html; blocks=\d+; partials=\d+; components=\d+)?", "");
+    public static string NamesOnly(string output) => DetailsPattern().Replace(output, "");
+
+    [GeneratedRegex(@"; id=[a-f0-9]{12}; output=utf-8; renderer=(?:compiled|component)(?:; minify=html; blocks=\d+; partials=\d+; components=\d+)?")]
+    private static partial Regex DetailsPattern();
 }

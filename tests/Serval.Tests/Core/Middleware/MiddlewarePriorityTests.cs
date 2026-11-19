@@ -40,12 +40,12 @@ public sealed class MiddlewarePriorityTests
                 new RecordingAttribute("default"),
                 new RecordingAttribute("min", 20)
                 {
-                    Priority = int.MinValue
+                    Priority = int.MinValue,
                 },
                 new RecordingAttribute("negative", -10),
                 new UseMiddlewareAttribute(typeof(RecordingMiddleware), "injected", 42)
                 {
-                    Priority = 0
+                    Priority = 0,
                 });
         });
         await using var request = app.Request();
@@ -99,12 +99,7 @@ public sealed class MiddlewarePriorityTests
         public ValueTask ExecuteAsync(RequestContext context)
         {
             events.Add("result");
-            if (fail)
-            {
-                throw new InvalidOperationException("Result failed.");
-            }
-
-            return context.Response.WriteTextAsync("ok", context.RequestAborted);
+            return fail ? throw new InvalidOperationException("Result failed.") : context.Response.WriteTextAsync("ok", context.RequestAborted);
         }
     }
 }

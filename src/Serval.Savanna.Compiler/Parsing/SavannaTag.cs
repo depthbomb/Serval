@@ -79,7 +79,7 @@ public sealed class SavannaTag
     {
         var tag = new SavannaTag
         {
-            Closing = text[start + 1] == '/'
+            Closing = text[start + 1] == '/',
         };
         var offset    = start + (tag.Closing ? 3 : 2);
         var nameStart = offset;
@@ -101,19 +101,17 @@ public sealed class SavannaTag
                 break;
             }
 
-            if (text[offset] == '>')
+            switch (text[offset])
             {
-                offset++;
-                tag.Span = TextSpan.FromBounds(start, offset);
-                return tag;
-            }
-
-            if (text[offset] == '/' && offset + 1 < text.Length && text[offset + 1] == '>')
-            {
-                tag.SelfClosing =  true;
-                offset          += 2;
-                tag.Span        =  TextSpan.FromBounds(start, offset);
-                return tag;
+                case '>':
+                    offset++;
+                    tag.Span = TextSpan.FromBounds(start, offset);
+                    return tag;
+                case '/' when offset + 1 < text.Length && text[offset + 1] == '>':
+                    tag.SelfClosing =  true;
+                    offset          += 2;
+                    tag.Span        =  TextSpan.FromBounds(start, offset);
+                    return tag;
             }
 
             var attributeStart = offset;
@@ -174,7 +172,7 @@ public sealed class SavannaTag
             {
                 tag._attributes.Add(name, new SavannaAttribute(name, value, TextSpan.FromBounds(valueStart, valueEnd))
                 {
-                    NameSpan = new TextSpan(attributeStart, name.Length)
+                    NameSpan = new TextSpan(attributeStart, name.Length),
                 });
             }
         }

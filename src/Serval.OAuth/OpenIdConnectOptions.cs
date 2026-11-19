@@ -20,7 +20,7 @@ public sealed class OpenIdConnectOptions
     /// <summary>Accepted asymmetric signing algorithms. Defaults to RS256; unsigned and HMAC tokens are unsupported.</summary>
     public ISet<string> SigningAlgorithms { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
-        "RS256"
+        "RS256",
     };
 
     /// <summary>Additional trusted audiences. The client ID must still be present and azp must identify the client.</summary>
@@ -48,7 +48,7 @@ public sealed class OpenIdConnectOptions
     {
         if (!Uri.TryCreate(Issuer, UriKind.Absolute, out var issuer) || issuer.Query.Length != 0)
         {
-            throw new ArgumentException("An absolute OIDC issuer without a query is required.", nameof(Issuer));
+            throw new ArgumentException("An absolute OIDC issuer without a query is required.");
         }
 
         options.ValidateUri(issuer, nameof(Issuer));
@@ -73,7 +73,7 @@ public sealed class OpenIdConnectOptions
             RefreshCooldown < TimeSpan.FromSeconds(1)                                                                                || RefreshCooldown > RefreshInterval      ||
             MaximumTokenBytes is < 1024 or > 1024 * 1024)
         {
-            throw new ArgumentOutOfRangeException(nameof(OpenIdConnectOptions), "Invalid OIDC time or size limits.");
+            throw new ArgumentOutOfRangeException(null, "Invalid OIDC time or size limits.");
         }
 
         if (AdditionalAudiences.Any(string.IsNullOrWhiteSpace))

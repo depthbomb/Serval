@@ -111,9 +111,12 @@ internal sealed class OpenIdConnectValidator
         JsonWebKey[] keys;
         try
         {
-            keys = configuration.Keys.Where(key => (kid is null                   || key.Kid                 == kid) &&
+            keys =
+            [
+                .. configuration.Keys.Where(key => (kid is null                   || key.Kid                 == kid) &&
                                                    (string.IsNullOrEmpty(key.Alg) || key.Alg                 == alg) &&
-                                                   (alg.StartsWith("ES", StringComparison.Ordinal) ? key.Kty == "EC" : key.Kty == "RSA" && key.KeySize >= 2048)).ToArray();
+                                                   (alg.StartsWith("ES", StringComparison.Ordinal) ? key.Kty == "EC" : key is { Kty: "RSA", KeySize: >= 2048 })),
+            ];
         }
         catch (Exception exception) when (exception is FormatException or ArgumentException or CryptographicException)
         {
@@ -169,19 +172,13 @@ internal sealed class OpenIdConnectValidator
             throw new OAuthProtocolException("invalid_id_token_audience");
         }
 
-        string[] audiences;
-        if (audience.ValueKind == JsonValueKind.String)
+        var audiences = audience.ValueKind switch
         {
-            audiences = [audience.GetString()!];
-        }
-        else if (audience.ValueKind == JsonValueKind.Array && audience.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String))
-        {
-            audiences = audience.EnumerateArray().Select(item => item.GetString()!).ToArray();
-        }
-        else
-        {
-            throw new OAuthProtocolException("invalid_id_token_audience");
-        }
+            JsonValueKind.String => [audience.GetString()!],
+            JsonValueKind.Array when audience.EnumerateArray().All(item => item.ValueKind == JsonValueKind.String)
+                => audience.EnumerateArray().Select(item => item.GetString()!).ToArray(),
+            _ => throw new OAuthProtocolException("invalid_id_token_audience"),
+        };
 
         var party = OAuthProtocol.String(claims, "azp");
         if (!audiences.Contains(_oauth.ClientId, StringComparer.Ordinal)                                      ||
@@ -195,12 +192,8 @@ internal sealed class OpenIdConnectValidator
         var skew    = (long)_options.ClockSkew.TotalSeconds;
         var issued  = Timestamp(claims, "iat");
         var expires = Timestamp(claims, "exp");
-        if (issued > now + skew || expires <= now - skew || issued > expires)
-        {
-            throw new OAuthProtocolException("invalid_id_token_lifetime");
-        }
-
-        if (claims.TryGetProperty("nbf", out _) && Timestamp(claims, "nbf") > now + skew)
+        if (issued > now + skew || expires <= now - skew || issued > expires ||
+            claims.TryGetProperty("nbf", out _) && Timestamp(claims, "nbf") > now + skew)
         {
             throw new OAuthProtocolException("invalid_id_token_lifetime");
         }
@@ -231,7 +224,7 @@ internal sealed class OpenIdConnectValidator
         {
             using var document = JsonDocument.Parse(Base64UrlEncoder.DecodeBytes(part), new JsonDocumentOptions
             {
-                MaxDepth = 32
+                MaxDepth = 32,
             });
             OAuthProtocol.ValidateObject(document.RootElement);
             return document.RootElement.Clone();

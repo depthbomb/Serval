@@ -41,7 +41,7 @@ public sealed class JobRegistrationTests
         JobRegistration.Register(services, JobRegistration.Create<EmptyJob>(JobSchedule.Every(TimeSpan.FromSeconds(1))));
         services.AddSingleton<EmptyJob>();
         await using var provider = services.BuildServiceProvider();
-        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<JobRegistry>());
+        Assert.Throws<InvalidOperationException>(provider.GetRequiredService<JobRegistry>);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class JobRegistrationTests
         JobRegistration.Register(services, JobRegistration.Create<EmptyJob>(JobSchedule.Every(TimeSpan.FromSeconds(1))));
         services.Remove(services.Single(service => service.ServiceType == typeof(EmptyJob)));
         await using var provider = services.BuildServiceProvider();
-        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<JobRegistry>());
+        Assert.Throws<InvalidOperationException>(provider.GetRequiredService<JobRegistry>);
     }
 
     [Theory]

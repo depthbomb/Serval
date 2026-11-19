@@ -112,7 +112,7 @@ public sealed partial class SavannaCompilerTests
                                        }
                                        """);
         Assert.DoesNotContain("<script>alert", output);
-        Assert.Contains("\\u003C/script\\u003E", output);
+        Assert.Contains(@"\u003C/script\u003E", output);
         Assert.Contains("  <b class=\"x\"> a\n  b </b>  ", output);
         Assert.Contains("{{ untouched }}", output);
     }
@@ -143,7 +143,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "<#model type=\"int\" />" + markup
+            ["Page.svn"] = "<#model type=\"int\" />" + markup,
         });
         Assert.NotEmpty(result.Diagnostics);
     }
@@ -182,7 +182,7 @@ public sealed partial class SavannaCompilerTests
     [Fact]
     public void SlotsValidateSuppliesAndRcDataIncludesAreRejected()
     {
-        foreach (var caller in new[] { "<#include view=\"Card.svn\" />", "<#include view=\"Card.svn\"><#slot name=\"typo\">x</#slot></#include>", "<#include view=\"Card.svn\">unassigned</#include>", })
+        foreach (var caller in new[] { "<#include view=\"Card.svn\" />", "<#include view=\"Card.svn\"><#slot name=\"typo\">x</#slot></#include>", "<#include view=\"Card.svn\">unassigned</#include>" })
         {
             var result = Compile(new Dictionary<string, string>
             {

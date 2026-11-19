@@ -9,15 +9,20 @@ public sealed class SerializationTests
     [Fact]
     public void ConcurrentMessagesKeepTheirOwnAttachmentsAndSerializerSettings()
     {
-        var options = new SocketIOOptions();
-        options.Json.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+        var options = new SocketIOOptions
+        {
+            Json =
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            },
+        };
         options.Validate();
         Parallel.For(0, 1000, index =>
         {
             var value = new Payload
             {
                 PacketData = BitConverter.GetBytes(index),
-                NestedData = [BitConverter.GetBytes(~index)]
+                NestedData = [BitConverter.GetBytes(~index)],
             };
             var packets = PacketCodec.Encode(2, "/", index, new object[] { "binary", value }, options);
             Assert.Contains("packet_data", packets[0].PollingText);
@@ -37,7 +42,7 @@ public sealed class SerializationTests
         var options = new SocketIOOptions
         {
             MaxAttachments  = 1,
-            MaxPayloadBytes = 100
+            MaxPayloadBytes = 100,
         };
         for (var index = 0; index < 10; index++)
         {
@@ -55,8 +60,8 @@ public sealed class SerializationTests
         var       options = new SocketIOOptions();
         using var invalid = JsonDocument.Parse("[{\"_placeholder\":true,\"num\":1}]");
         using var valid   = JsonDocument.Parse("[{\"_placeholder\":true,\"num\":0}]");
-        Assert.Throws<JsonException>(() => new SocketIOArguments(invalid.RootElement, [new byte[] { 1 }], options.Json).Get<byte[]>(0));
-        Assert.Equal(new byte[] { 2 }, new SocketIOArguments(valid.RootElement, [new byte[] { 2 }], options.Json).Get<byte[]>(0));
+        Assert.Throws<JsonException>(() => new SocketIOArguments(invalid.RootElement, [[1]], options.Json).Get<byte[]>(0));
+        Assert.Equal(new byte[] { 2 }, new SocketIOArguments(valid.RootElement, [[2]], options.Json).Get<byte[]>(0));
         Assert.Throws<JsonException>(() => new SocketIOArguments(valid.RootElement, [], options.Json).Get<byte[]>(0));
     }
 

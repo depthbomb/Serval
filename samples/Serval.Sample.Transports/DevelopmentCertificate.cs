@@ -23,7 +23,7 @@ public static class DevelopmentCertificate
         request.CertificateExtensions.Add(new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, true));
         var usages = new OidCollection
         {
-            new Oid("1.3.6.1.5.5.7.3.1")
+            new Oid("1.3.6.1.5.5.7.3.1"),
         };
         request.CertificateExtensions.Add(new X509EnhancedKeyUsageExtension(usages, true));
         using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));

@@ -48,10 +48,10 @@ public sealed class ServerIntegrationTests
                     {
                         definition = new
                         {
-                            linkSupport
-                        }
-                    }
-                }
+                            linkSupport,
+                        },
+                    },
+                },
             });
             Assert.Equal("utf-16", initialized.GetProperty("capabilities").GetProperty("positionEncoding").GetString());
             Assert.Contains(initialized.GetProperty("capabilities").GetProperty("semanticTokensProvider").GetProperty("legend").GetProperty("tokenTypes").EnumerateArray(), token => token.GetString() == "property");
@@ -67,20 +67,20 @@ public sealed class ServerIntegrationTests
                     uri,
                     languageId = "savanna",
                     version    = 1,
-                    text       = header + "{{ Model."
-                }
+                    text       = header + "{{ Model.",
+                },
             });
             var completion = await Request("textDocument/completion", new
             {
                 textDocument = new
                 {
-                    uri
+                    uri,
                 },
                 position = new
                 {
                     line      = 1,
-                    character = 9
-                }
+                    character = 9,
+                },
             });
             Assert.Contains(completion.GetProperty("items").EnumerateArray(), item => item.GetProperty("label").GetString() == "Title");
 
@@ -89,34 +89,34 @@ public sealed class ServerIntegrationTests
             {
                 textDocument = new
                 {
-                    uri
+                    uri,
                 },
                 position = new
                 {
                     line      = 1,
-                    character = 13
-                }
+                    character = 13,
+                },
             });
             Assert.Contains("Title", hover.GetProperty("contents").GetProperty("value").GetString());
             var definition = await Request("textDocument/definition", new
             {
                 textDocument = new
                 {
-                    uri
+                    uri,
                 },
                 position = new
                 {
                     line      = 1,
-                    character = 13
-                }
+                    character = 13,
+                },
             });
             Assert.EndsWith("CatalogController.cs", Assert.Single(definition.EnumerateArray()).GetProperty(linkSupport ? "targetUri" : "uri").GetString());
             var diagnostics = await Request("textDocument/diagnostic", new
             {
                 textDocument = new
                 {
-                    uri
-                }
+                    uri,
+                },
             });
             Assert.Contains(diagnostics.GetProperty("items").EnumerateArray(), item => item.GetProperty("code").GetString() == "CS1061");
 
@@ -126,8 +126,8 @@ public sealed class ServerIntegrationTests
             {
                 textDocument = new
                 {
-                    uri
-                }
+                    uri,
+                },
             });
             Assert.Contains(stale.GetProperty("items").EnumerateArray(), item => item.GetProperty("code").GetString() == "CS1061");
 
@@ -136,16 +136,16 @@ public sealed class ServerIntegrationTests
             {
                 textDocument = new
                 {
-                    uri
-                }
+                    uri,
+                },
             });
             Assert.DoesNotContain(fixedDiagnostics.GetProperty("items").EnumerateArray(), item => item.GetProperty("source").GetString() == "C#");
             await Notify("textDocument/didClose", new
             {
                 textDocument = new
                 {
-                    uri
-                }
+                    uri,
+                },
             });
 
             var cardPath = Path.Combine(root, "samples", "Serval.Sample.Savanna", "Views", "Products", "Card.svn");
@@ -159,8 +159,8 @@ public sealed class ServerIntegrationTests
                     uri        = cardUri,
                     languageId = "savanna",
                     version    = 1,
-                    text       = card
-                }
+                    text       = card,
+                },
             });
             foreach (var name in new[] { "Product", "Model", "Url", "ToString" })
             {
@@ -169,13 +169,13 @@ public sealed class ServerIntegrationTests
                 {
                     textDocument = new
                     {
-                        uri = cardUri
+                        uri = cardUri,
                     },
                     position = new
                     {
                         line      = position.Line,
-                        character = position.Character
-                    }
+                        character = position.Character,
+                    },
                 });
                 var location   = Assert.Single(target.EnumerateArray());
                 var targetPath = new Uri(location.GetProperty(linkSupport ? "targetUri" : "uri").GetString()!).LocalPath;
@@ -194,16 +194,16 @@ public sealed class ServerIntegrationTests
             {
                 textDocument = new
                 {
-                    uri = cardUri
-                }
+                    uri = cardUri,
+                },
             });
             Assert.NotEmpty(semantic.GetProperty("data").EnumerateArray());
             await Notify("textDocument/didClose", new
             {
                 textDocument = new
                 {
-                    uri = cardUri
-                }
+                    uri = cardUri,
+                },
             });
 
             var importsPath = Path.Combine(root, "samples", "Serval.Sample.Savanna", "Views", "_Imports.svn");
@@ -216,23 +216,23 @@ public sealed class ServerIntegrationTests
                     uri        = importsUri,
                     languageId = "savanna",
                     version    = 1,
-                    text       = imports
-                }
+                    text       = imports,
+                },
             });
             var importsDiagnostics = await Request("textDocument/diagnostic", new
             {
                 textDocument = new
                 {
-                    uri = importsUri
-                }
+                    uri = importsUri,
+                },
             });
             Assert.Empty(importsDiagnostics.GetProperty("items").EnumerateArray());
             await Notify("textDocument/didClose", new
             {
                 textDocument = new
                 {
-                    uri = importsUri
-                }
+                    uri = importsUri,
+                },
             });
 
             var customRoot = Path.Combine(Path.GetTempPath(), "ServalSavannaServerTests", Guid.NewGuid().ToString("N"));
@@ -249,7 +249,7 @@ public sealed class ServerIntegrationTests
                 UseShellExecute        = false,
                 CreateNoWindow         = true,
                 RedirectStandardOutput = true,
-                RedirectStandardError  = true
+                RedirectStandardError  = true,
             };
             foreach (var argument in new[] { "restore", projectFile, "--disable-build-servers", "--verbosity", "quiet" })
             {
@@ -269,28 +269,28 @@ public sealed class ServerIntegrationTests
                     uri        = customUri,
                     languageId = "savanna",
                     version    = 1,
-                    text       = "{% model string %}\n{% extends \"Layouts/"
-                }
+                    text       = "{% model string %}\n{% extends \"Layouts/",
+                },
             });
             var paths = await Request("textDocument/completion", new
             {
                 textDocument = new
                 {
-                    uri = customUri
+                    uri = customUri,
                 },
                 position = new
                 {
                     line      = 1,
-                    character = 20
-                }
+                    character = 20,
+                },
             });
             Assert.Contains(paths.GetProperty("items").EnumerateArray(), item => item.GetProperty("label").GetString() == "Layouts/Base.svn");
             await Notify("textDocument/didClose", new
             {
                 textDocument = new
                 {
-                    uri = customUri
-                }
+                    uri = customUri,
+                },
             });
             await Request("shutdown", new
                 {});
@@ -306,15 +306,15 @@ public sealed class ServerIntegrationTests
                     textDocument = new
                     {
                         uri,
-                        version
+                        version,
                     },
                     contentChanges = new[]
                     {
                         new
                         {
-                            text
-                        }
-                    }
+                            text,
+                        },
+                    },
                 });
             }
         }
@@ -327,6 +327,8 @@ public sealed class ServerIntegrationTests
             }
         }
 
+        return;
+
         async Task<JsonElement> Request(string method, object parameters)
         {
             var requestId = ++id;
@@ -335,7 +337,7 @@ public sealed class ServerIntegrationTests
                 jsonrpc = "2.0",
                 id      = requestId,
                 method,
-                @params = parameters
+                @params = parameters,
             }, timeout.Token);
             using var response = await protocol.ReadAsync(timeout.Token);
             Assert.True(response is not null, process.HasExited ? await errorOutput : "The server closed its output stream.");
@@ -351,7 +353,7 @@ public sealed class ServerIntegrationTests
             {
                 jsonrpc = "2.0",
                 method,
-                @params = parameters
+                @params = parameters,
             }, timeout.Token);
         }
     }

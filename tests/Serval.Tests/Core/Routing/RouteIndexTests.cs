@@ -96,12 +96,17 @@ public sealed class RouteIndexTests
     [Fact]
     public void DeferredCapturesKeepDefaultsAndCatchAllsWithoutReevaluatingConstraints()
     {
-        var calls   = 0;
-        var options = new ServalOptions();
-        options.RouteConstraints["probe"] = (_, _) =>
+        var calls = 0;
+        var options = new ServalOptions
         {
-            calls++;
-            return true;
+            RouteConstraints =
+            {
+                ["probe"] = (_, _) =>
+                {
+                    calls++;
+                    return true;
+                },
+            },
         };
         var template = new RouteTemplate("/api/items/{id:probe}/detail/{page:int=2}/{**tail}", options);
         Assert.True(template.TryMatch(["api", "items", "7", "detail"], false, out var values));

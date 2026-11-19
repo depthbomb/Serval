@@ -39,7 +39,7 @@ public sealed class SampleWireTests
         {
             using var client = new HttpClient(new SocketsHttpHandler
             {
-                UseProxy = false
+                UseProxy = false,
             });
             using var response = await client.GetAsync($"http://localhost:{port}/", timeout.Token);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -65,7 +65,7 @@ public sealed class SampleWireTests
         {
             using var client = new HttpClient(new SocketsHttpHandler
             {
-                UseProxy = false
+                UseProxy = false,
             });
             var last = 0;
             while (last < 10)

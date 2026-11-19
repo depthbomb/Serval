@@ -359,13 +359,16 @@ internal sealed class SavannaHtmlMinifier
                     quote = '\0';
                 }
             }
-            else if (character is '\'' or '"')
+            else
             {
-                quote = character;
-            }
-            else if (character == '>')
-            {
-                return index;
+                switch (character)
+                {
+                    case '\'' or '"':
+                        quote = character;
+                        break;
+                    case '>':
+                        return index;
+                }
             }
         }
 

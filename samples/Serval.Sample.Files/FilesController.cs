@@ -71,7 +71,7 @@ public sealed class FilesController : ControllerBase
         return Json(new
         {
             length,
-            sha256 = Convert.ToHexString(hash.GetHashAndReset())
+            sha256 = Convert.ToHexString(hash.GetHashAndReset()),
         });
     }
 }

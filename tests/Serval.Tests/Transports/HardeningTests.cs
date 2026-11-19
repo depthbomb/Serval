@@ -56,10 +56,13 @@ public sealed class HardeningTests
     {
         var response = new MemoryResponse
         {
-            StatusCode = status
+            StatusCode = status,
+            Headers =
+            {
+                [HeaderNames.ContentLength] = "0",
+                ["Transfer-Encoding"]       = transferEncoding,
+            },
         };
-        response.Headers[HeaderNames.ContentLength] = "0";
-        response.Headers["Transfer-Encoding"]       = transferEncoding;
         await Assert.ThrowsAsync<InvalidOperationException>(() => response.StartAsync().AsTask());
         Assert.False(response.HasStarted);
     }
@@ -80,12 +83,17 @@ public sealed class HardeningTests
     {
         using var cancellation = new CancellationTokenSource();
         var       calls        = 0;
-        var       options      = new ServalOptions();
-        options.RouteConstraints["probe"] = (_, _) =>
+        var options = new ServalOptions
         {
-            calls++;
-            cancellation.Cancel();
-            return false;
+            RouteConstraints =
+            {
+                ["probe"] = (_, _) =>
+                {
+                    calls++;
+                    cancellation.Cancel();
+                    return false;
+                },
+            },
         };
         var registry = new ControllerRegistry();
         for (var index = 0; index < 3; index++)

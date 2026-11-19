@@ -41,7 +41,7 @@ public sealed class Endpoint
         Template            = builder.Template;
         Name                = builder.Name;
         ControllerType      = builder.ControllerType;
-        Metadata            = Array.AsReadOnly(builder.Metadata.ToArray());
+        Metadata            = Array.AsReadOnly([.. builder.Metadata]);
         RequestTimeout      = builder.RequestTimeout;
         MaxRequestBodyBytes = builder.MaxRequestBodyBytes;
         Forms               = builder.Forms.Copy();
@@ -101,7 +101,7 @@ public sealed class EndpointBuilder
             timeout != Timeout.InfiniteTimeSpan &&
             (timeout <= TimeSpan.Zero || timeout.TotalMilliseconds > uint.MaxValue - 1))
         {
-            throw new ArgumentOutOfRangeException(nameof(RequestTimeout));
+            throw new ArgumentOutOfRangeException(null, RequestTimeout, "RequestTimeout must be infinite or a positive duration within the timer limit.");
         }
 
         if (Metadata.Any(static (object? item) => item is null) || Middleware.Any(static (MiddlewareAttribute? item) => item is null))

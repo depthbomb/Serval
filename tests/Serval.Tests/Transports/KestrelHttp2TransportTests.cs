@@ -19,7 +19,7 @@ public sealed class KestrelHttp2TransportTests
         InitialHttp2StreamWindowSize = 65535,
         SslOptions =
         {
-            RemoteCertificateValidationCallback = (_, _, _, _) => true
+            RemoteCertificateValidationCallback = (_, _, _, _) => true,
         },
     };
 

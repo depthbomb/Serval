@@ -69,21 +69,11 @@ internal static class RouteConstraintParser
 
     private static Func<string, bool> NumericRange(decimal minimum, decimal maximum)
     {
-        if (minimum > maximum)
-        {
-            throw new ArgumentException("A route constraint's minimum cannot exceed its maximum.");
-        }
-
-        return value => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number) && number >= minimum && number <= maximum;
+        return minimum > maximum ? throw new ArgumentException("A route constraint's minimum cannot exceed its maximum.") : value => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number) && number >= minimum && number <= maximum;
     }
 
     private static Func<string, bool> LengthRange(int minimum, int maximum)
     {
-        if (minimum > maximum)
-        {
-            throw new ArgumentException("A length constraint's minimum cannot exceed its maximum.");
-        }
-
-        return value => value.Length >= minimum && value.Length <= maximum;
+        return minimum > maximum ? throw new ArgumentException("A length constraint's minimum cannot exceed its maximum.") : value => value.Length >= minimum && value.Length <= maximum;
     }
 }

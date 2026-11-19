@@ -73,12 +73,7 @@ public sealed class FormBindingTests
         {
             captured = (await context.Request.ReadFormAsync()).GetFile("file");
             Assert.Single(Directory.GetFiles(directory));
-            if (fail)
-            {
-                throw new HttpErrorException(422);
-            }
-
-            return new TextResult("ok");
+            return fail ? throw new HttpErrorException(422) : new TextResult("ok");
         }));
         const string body = "--example\r\nContent-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\n\r\nhello\r\n--example--\r\n";
         Assert.Equal(fail ? 422 : 200, (await app.SendAsync("/capture-form", "POST", body, "multipart/form-data; boundary=example")).StatusCode);

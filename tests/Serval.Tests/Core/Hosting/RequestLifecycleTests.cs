@@ -151,7 +151,7 @@ public sealed class RequestLifecycleTests
     {
         var probe = new Probe
         {
-            Starting = (_, _, _) => ValueTask.FromException(new InvalidOperationException("startup"))
+            Starting = (_, _, _) => ValueTask.FromException(new InvalidOperationException("startup")),
         };
         await using var app      = Application(probe, configureBuilder: builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
         var             response = await app.SendAsync("/test/task");
@@ -176,7 +176,7 @@ public sealed class RequestLifecycleTests
                 "complete" => context.Response.CompleteAsync(ct),
                 "abort"    => context.Response.AbortAsync(ct),
                 _          => context.Response.WriteTextAsync("forbidden", ct),
-            }
+            },
         };
         await using var app      = Application(probe);
         var             response = await app.SendAsync("/test/task");
@@ -198,12 +198,12 @@ public sealed class RequestLifecycleTests
             {
                 completionCanceled = ct.IsCancellationRequested;
                 return ValueTask.CompletedTask;
-            }
+            },
         };
         await using var app = Application(probe, options => options.RequestTimeout = clientCancellation ? TimeSpan.FromSeconds(10) : TimeSpan.FromMilliseconds(40));
         if (clientCancellation)
         {
-            cts.Cancel();
+            await cts.CancelAsync();
         }
 
         var response   = await app.SendAsync("/test/slow", cancellationToken: cts.Token);
@@ -230,7 +230,7 @@ public sealed class RequestLifecycleTests
                 {
                     laterCanceled = ct.IsCancellationRequested;
                 }
-            }
+            },
         };
         await using var app = Application(probe, options => options.CompletionTimeout = TimeSpan.FromMilliseconds(40),
             builder => builder.AddRequestLifecycleHandler<Recorder<Last>>());
@@ -256,7 +256,7 @@ public sealed class RequestLifecycleTests
     {
         var probe = new Probe
         {
-            Completed = (_, _, _, _) => ValueTask.FromException(new InvalidOperationException("completion"))
+            Completed = (_, _, _, _) => ValueTask.FromException(new InvalidOperationException("completion")),
         };
         await using var app = Application(probe, configureBuilder: builder =>
         {
@@ -307,17 +307,17 @@ public sealed class RequestLifecycleTests
             {
                 try
                 {
-                    await context.Response.WriteTextAsync("late");
+                    await context.Response.WriteTextAsync("late", CancellationToken.None);
                 }
                 catch (InvalidOperationException)
                 {
                     rejected = true;
                 }
-            }
+            },
         };
         await using var app = Application(probe);
         using var       cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
         var response = await app.SendAsync("/test/slow", cancellationToken: cts.Token);
         Assert.True(rejected);
         Assert.Empty(response.Text);
@@ -352,7 +352,7 @@ public sealed class RequestLifecycleTests
             {
                 await using var registration = ct.Register(() => entered.TrySetResult());
                 await release.Task;
-            }
+            },
         };
         await using var app     = Application(probe, options => options.CompletionTimeout = TimeSpan.FromMilliseconds(30));
         var             pending = app.SendAsync("/test/task");
@@ -417,7 +417,7 @@ public sealed class RequestLifecycleTests
         services.AddServal().AddRequestLifecycleHandler<Recorder<First>>();
         services.AddSingleton<Recorder<First>>();
         await using var provider = services.BuildServiceProvider();
-        var             error    = Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IRequestHandler>());
+        var             error    = Assert.Throws<InvalidOperationException>(provider.GetRequiredService<IRequestHandler>);
         Assert.Contains("scoped", error.Message);
     }
 
@@ -437,7 +437,10 @@ public sealed class RequestLifecycleTests
 
     public sealed class BrokenHandler : RequestLifecycleHandler
     {
-        public BrokenHandler() => throw new InvalidOperationException("activation failed");
+        public BrokenHandler()
+        {
+            throw new InvalidOperationException("activation failed");
+        }
     }
 
     public sealed class First;

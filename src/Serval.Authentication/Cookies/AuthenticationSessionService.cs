@@ -113,7 +113,7 @@ public sealed class AuthenticationSessionService
         var ticket = new AuthenticationTicket(principal, scheme, properties with
         {
             IssuedUtc = issued,
-            ExpiresUtc = expires
+            ExpiresUtc = expires,
         }).Copy();
         _ = AuthenticationResult.Success(ticket);
         var credential = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -146,7 +146,7 @@ public sealed class AuthenticationSessionService
             Principal = principal ?? ticket.Principal,
             Properties = ticket.Properties with
             {
-                ExpiresUtc = expiry < maximum ? expiry : maximum
+                ExpiresUtc = expiry < maximum ? expiry : maximum,
             },
         };
         var result = AuthenticationResult.Success(renewed.Copy());

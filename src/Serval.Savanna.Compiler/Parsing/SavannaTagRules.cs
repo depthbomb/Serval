@@ -60,11 +60,6 @@ public static class SavannaTagRules
 
     internal static void Validate(SavannaTag tag, string path, List<SavannaDiagnostic> diagnostics)
     {
-        void Error(string message)
-        {
-            diagnostics.Add(new SavannaDiagnostic("SAVANNA001", message, path, tag.Span));
-        }
-
         if (!Attributes.TryGetValue(tag.Name, out var allowed))
         {
             Error("Unknown Savanna tag: " + tag.Name);
@@ -113,6 +108,13 @@ public static class SavannaTagRules
             {
                 Error("The " + tag.Name + " tag requires '" + name + "'.");
             }
+        }
+
+        return;
+
+        void Error(string message)
+        {
+            diagnostics.Add(new SavannaDiagnostic("SAVANNA001", message, path, tag.Span));
         }
     }
 }

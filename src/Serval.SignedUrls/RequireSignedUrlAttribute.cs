@@ -15,12 +15,5 @@ public sealed class RequireSignedUrlAttribute : MiddlewareAttribute
     /// <inheritdoc />
     /// <remarks>Missing, invalid, or expired URLs produce status 403 through the framework's exception handler.</remarks>
     public override ValueTask InvokeAsync(RequestContext context, RequestDelegate next)
-    {
-        if (!context.HasValidSignedUrl())
-        {
-            throw new HttpErrorException(StatusCodes.Forbidden, "A valid signed URL is required.");
-        }
-
-        return next(context);
-    }
+        => !context.HasValidSignedUrl() ? throw new HttpErrorException(StatusCodes.Forbidden, "A valid signed URL is required.") : next(context);
 }

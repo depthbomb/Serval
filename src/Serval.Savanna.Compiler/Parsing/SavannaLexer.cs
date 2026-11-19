@@ -159,7 +159,7 @@ public static class SavannaLexer
 
                 tokens.Add(new SavannaToken(SavannaTokenKind.Directive, (tag.Closing ? "end" : "") + tag.Name, tag.Span)
                 {
-                    Tag = tag
+                    Tag = tag,
                 });
                 continue;
             }

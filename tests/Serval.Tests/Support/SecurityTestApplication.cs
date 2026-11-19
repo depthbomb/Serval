@@ -30,7 +30,7 @@ internal sealed class SecurityTestApplication : IAsyncDisposable
         Services = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateScopes  = true,
-            ValidateOnBuild = true
+            ValidateOnBuild = true,
         });
     }
 
@@ -61,7 +61,7 @@ internal sealed class SecurityTestRequest : IAsyncDisposable
         _scope = services.CreateAsyncScope();
         var headers = new Headers
         {
-            [HeaderNames.Cookie] = cookie
+            [HeaderNames.Cookie] = cookie,
         };
         configureHeaders?.Invoke(headers);
         var request = new Request(method, new Uri(url), HttpVersion.Version11, headers, Stream.Null, 1024);

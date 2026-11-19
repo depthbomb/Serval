@@ -75,7 +75,7 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
             // Validation can replace claims, but cannot extend a credential's original lifetime.
             ticket = ticket with
             {
-                Principal = result.Ticket!.Principal
+                Principal = result.Ticket!.Principal,
             };
         }
 
@@ -123,7 +123,7 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
 
         var session = await _sessions.IssueAsync(scheme, principal, properties with
         {
-            Items = items
+            Items = items,
         }, GetToken(context), context.RequestAborted);
 
         var token  = session.Credential;
@@ -158,7 +158,7 @@ public sealed class CookieAuthenticationHandler : AuthenticationHandler, ISignIn
     private void SetCookie(RequestContext context, string token, AuthenticationProperties properties)
         => context.Response.Cookies.Set(_options.CookieName, token, _options.Cookie with
         {
-            Expires = properties.IsPersistent ? properties.ExpiresUtc : null
+            Expires = properties.IsPersistent ? properties.ExpiresUtc : null,
         });
 
     private static void EnsureWritable(RequestContext context)

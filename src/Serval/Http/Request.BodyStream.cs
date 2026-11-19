@@ -13,9 +13,9 @@ public sealed partial class Request
     /// The transport stream is never closed. Form and multipart modes cannot be mixed with raw reading.
     /// The lease and its reads must not be used concurrently. Select the endpoint before opening the lease.
     /// </remarks>
-    public Stream OpenBodyStream(CancellationToken ct = default) => OpenBodyStreamCore(ct, false);
+    public Stream OpenBodyStream(CancellationToken ct = default) => OpenBodyStreamCore(false, ct);
 
-    private Stream OpenBodyStreamCore(CancellationToken ct, bool multipart)
+    private BodyReadStream OpenBodyStreamCore(bool multipart, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -29,7 +29,7 @@ public sealed partial class Request
                 throw new InvalidOperationException("The body is already reserved for another reader.");
             }
 
-            var stream = new BodyReadStream(this, ct, true);
+            var stream = new BodyReadStream(this, true, ct);
             _readingBody       = true;
             _rawBodyRead       = true;
             _streamedMultipart = multipart;
@@ -55,7 +55,7 @@ public sealed partial class Request
         private readonly CancellationTokenSource _cts;
         private readonly bool                    _release;
 
-        internal BodyReadStream(Request request, CancellationToken ct, bool release)
+        internal BodyReadStream(Request request, bool release, CancellationToken ct)
         {
             _request = request;
             _cts     = CancellationTokenSource.CreateLinkedTokenSource(ct, request.RequestAborted);

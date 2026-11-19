@@ -83,7 +83,7 @@ public sealed class NotesController : ControllerBase
 
         context.Response.Headers[HeaderNames.Location] = context.Urls.Path("notes.show", new Dictionary<string, object?>
         {
-            ["id"] = note.Id
+            ["id"] = note.Id,
         });
         return Json(note, NotesJsonContext.Default.Note, StatusCodes.Created);
     }

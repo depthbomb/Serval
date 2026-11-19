@@ -51,11 +51,6 @@ public sealed class SavannaSlots
             return fragment(writer, context);
         }
 
-        if (required)
-        {
-            throw new InvalidOperationException("A required Savanna slot was not supplied: " + name);
-        }
-
-        return ValueTask.CompletedTask;
+        return required ? throw new InvalidOperationException("A required Savanna slot was not supplied: " + name) : ValueTask.CompletedTask;
     }
 }

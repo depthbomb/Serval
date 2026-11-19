@@ -52,13 +52,15 @@ public sealed class RequestBodyBufferTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Read(cancelled));
         Assert.Equal(0, cancelledBody.Position);
 
+        return;
+
         Task Read(Request message)
         {
             return format switch
             {
-                "bytes" => message.ReadBodyAsync().AsTask(),
-                "text"  => message.ReadTextAsync().AsTask(),
-                _       => message.ReadJsonAsync<string>().AsTask(),
+                "bytes" => message.ReadBodyAsync(CancellationToken.None).AsTask(),
+                "text"  => message.ReadTextAsync(CancellationToken.None).AsTask(),
+                _       => message.ReadJsonAsync<string>(CancellationToken.None).AsTask(),
             };
         }
     }
@@ -66,6 +68,6 @@ public sealed class RequestBodyBufferTests
     private static Request Request(Stream body, long limit = 100000) => new("POST", new Uri("http://localhost/"), HttpVersion.Version11,
         new Headers
         {
-            [HeaderNames.ContentType] = MimeTypes.Json
+            [HeaderNames.ContentType] = MimeTypes.Json,
         }, body, limit);
 }

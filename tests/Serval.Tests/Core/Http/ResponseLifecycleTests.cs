@@ -18,11 +18,11 @@ public sealed class ResponseLifecycleTests
         var response = new MemoryResponse();
         if (lifecycle)
         {
-            response.LifecycleStarting = ct => response.FlushAsync(ct);
+            response.LifecycleStarting = response.FlushAsync;
         }
         else
         {
-            response.OnStarting(ct => response.FlushAsync(ct));
+            response.OnStarting(response.FlushAsync);
         }
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => response.StartAsync().AsTask());

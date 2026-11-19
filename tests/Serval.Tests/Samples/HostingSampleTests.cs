@@ -29,7 +29,7 @@ public sealed class HostingSampleTests
             using var created = await sample.Client.PostAsJsonAsync("/notes", new
             {
                 title = "  Persist me  ",
-                body  = "First version"
+                body  = "First version",
             });
             Assert.Equal(HttpStatusCode.Created, created.StatusCode);
             location = created.Headers.Location!.ToString();
@@ -40,20 +40,20 @@ public sealed class HostingSampleTests
             using var invalid = await sample.Client.PostAsJsonAsync("/notes", new
             {
                 title = "",
-                body  = "Invalid"
+                body  = "Invalid",
             });
             Assert.Equal(HttpStatusCode.UnprocessableContent, invalid.StatusCode);
             using var oversized = await sample.Client.PostAsJsonAsync("/notes", new
             {
                 title = "Invalid",
-                body  = new string('x', 4001)
+                body  = new string('x', 4001),
             });
             Assert.Equal(HttpStatusCode.UnprocessableContent, oversized.StatusCode);
 
             using var replaced = await sample.Client.PutAsJsonAsync(location, new
             {
                 title = "Saved",
-                body  = "Second version"
+                body  = "Second version",
             });
             Assert.Equal(HttpStatusCode.OK, replaced.StatusCode);
             var reads = await Task.WhenAll(Enumerable.Range(0, 12).Select(_ => sample.Client.GetFromJsonAsync<Note>(location)));
@@ -165,7 +165,7 @@ public sealed class HostingSampleTests
     private static string ConnectionString(string path) => new SqliteConnectionStringBuilder
     {
         DataSource = path,
-        Pooling    = false
+        Pooling    = false,
     }.ToString();
 
     private static async Task ReplaceSourceAsync(string path, string content)
@@ -240,7 +240,7 @@ public sealed class HostingSampleTests
                 await host.StartAsync(timeout.Token);
                 return new RunningSample(host, new HttpClient(new SocketsHttpHandler
                 {
-                    UseProxy = false
+                    UseProxy = false,
                 })
                 {
                     BaseAddress = new Uri($"http://localhost:{port}"),

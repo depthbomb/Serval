@@ -64,14 +64,7 @@ public sealed class SavannaResult<TModel> : IActionResult
 
             using var body = new MemoryStream();
             using var bufferedWriter = new SavannaWriter((bytes, token) =>
-            {
-                if (bytes.Length > limit - body.Length)
-                {
-                    throw new InvalidOperationException("The rendered view exceeds the configured size limit.");
-                }
-
-                return body.WriteAsync(bytes, token);
-            });
+                bytes.Length > limit - body.Length ? throw new InvalidOperationException("The rendered view exceeds the configured size limit.") : body.WriteAsync(bytes, token));
             await _view.RenderAsync(bufferedWriter, _model, renderContext);
             await bufferedWriter.FlushAsync(context.RequestAborted);
             await context.Response.WriteAsync(body.GetBuffer().AsMemory(0, checked((int)body.Length)), context.RequestAborted);

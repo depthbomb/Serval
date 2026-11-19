@@ -16,7 +16,6 @@ public abstract partial class Response
 
     private bool _starting;
     private bool _completed;
-    private bool _ended;
     private bool _disposing;
 
     private List<Func<CancellationToken, ValueTask>>? _startingCallbacks;
@@ -24,7 +23,7 @@ public abstract partial class Response
     private List<IAsyncDisposable>?                   _resources;
 
     /// <summary>Whether the response has completed or been aborted.</summary>
-    protected bool HasEnded => _ended;
+    protected bool HasEnded { get; private set; }
 
     /// <summary>Runs a callback before final headers are frozen, in reverse registration order.</summary>
     /// <remarks>Callbacks may change headers and status but must not write or start the response. Each runs at most once.</remarks>
@@ -41,7 +40,7 @@ public abstract partial class Response
     {
         ArgumentNullException.ThrowIfNull(callback);
 
-        if (HasStarted || _starting || _ended)
+        if (HasStarted || _starting || HasEnded)
         {
             throw new InvalidOperationException("Response startup has already begun.");
         }
@@ -83,7 +82,7 @@ public abstract partial class Response
     public void RegisterForDisposeAsync(IAsyncDisposable resource)
     {
         ArgumentNullException.ThrowIfNull(resource);
-        if (_ended || _disposing)
+        if (HasEnded || _disposing)
         {
             throw new InvalidOperationException("Request resource registration has closed.");
         }
@@ -93,7 +92,7 @@ public abstract partial class Response
 
     internal void EndProcessing(bool aborted = false)
     {
-        _ended    =  true;
+        HasEnded  =  true;
         IsAborted |= aborted;
         Headers.Freeze();
     }
@@ -177,7 +176,7 @@ public abstract partial class Response
     /// <summary>Rejects writes after completion or abortion and writes from receiving or starting hooks.</summary>
     protected void EnsureCanWrite()
     {
-        if (_ended)
+        if (HasEnded)
         {
             throw new InvalidOperationException("The response has completed or been aborted.");
         }

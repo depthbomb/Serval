@@ -17,7 +17,7 @@ public sealed class JobShutdownTests
         var state = new ExecutionState();
         var clock = new FaultingTimeProvider
         {
-            FailDisposal = true
+            FailDisposal = true,
         };
         var services = new ServiceCollection().AddLogging();
         services.AddSingleton(state);
@@ -34,7 +34,9 @@ public sealed class JobShutdownTests
             await state.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
             var stop = hosted.StopAsync(CancellationToken.None);
             await clock.DisposalAttempted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            await Task.WhenAny(stop, Task.Delay(100));
+            using var observation = new CancellationTokenSource();
+            await Task.WhenAny(stop, Task.Delay(100, observation.Token));
+            await observation.CancelAsync();
             var stoppedEarly = stop.IsCompleted;
             state.Release.TrySetResult();
             await run;
@@ -59,7 +61,7 @@ public sealed class JobShutdownTests
     {
         var clock = new FaultingTimeProvider
         {
-            FailCreationAt = 2
+            FailCreationAt = 2,
         };
         var services = new ServiceCollection().AddLogging();
         services.AddSingleton<TimeProvider>(clock);
@@ -87,7 +89,10 @@ public sealed class JobShutdownTests
     {
         private readonly ExecutionState _state;
 
-        public ExecutionScope(ExecutionState state) => _state = state;
+        public ExecutionScope(ExecutionState state)
+        {
+            _state = state;
+        }
 
         public ValueTask DisposeAsync()
         {
@@ -127,13 +132,7 @@ public sealed class JobShutdownTests
         public override DateTimeOffset GetUtcNow() => _clock.GetUtcNow();
 
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
-        {
-            if (Interlocked.Increment(ref _created) == FailCreationAt)
-            {
-                throw new IOException("Timer creation failed.");
-            }
-            return new FaultingTimer(_clock.CreateTimer(callback, state, dueTime, period), this);
-        }
+            => Interlocked.Increment(ref _created) == FailCreationAt ? throw new IOException("Timer creation failed.") : new FaultingTimer(_clock.CreateTimer(callback, state, dueTime, period), this);
     }
 
     private sealed class FaultingTimer : ITimer

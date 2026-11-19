@@ -37,7 +37,7 @@ public sealed record AuthenticationTicket(ClaimsPrincipal Principal, string Sche
     public AuthenticationTicket Copy() => new(new ClaimsPrincipal(Principal.Identities.Select(identity => identity.Clone())), Scheme,
         Properties with
         {
-            Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal)
+            Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal),
         });
 }
 
@@ -71,12 +71,7 @@ public sealed class AuthenticationResult
     {
         ArgumentNullException.ThrowIfNull(ticket);
 
-        if (!ticket.Principal.Identities.Any(identity => identity.IsAuthenticated))
-        {
-            throw new ArgumentException("An authenticated identity is required.", nameof(ticket));
-        }
-
-        return new AuthenticationResult(ticket, null);
+        return ticket.Principal.Identities.Any(identity => identity.IsAuthenticated) ? new AuthenticationResult(ticket, null) : throw new ArgumentException("An authenticated identity is required.", nameof(ticket));
     }
 
     /// <summary>Creates a result for a request without applicable credentials.</summary>

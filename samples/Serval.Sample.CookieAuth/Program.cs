@@ -42,7 +42,7 @@ public static class Program
                 options.Cookie = new CookieOptions
                 {
                     Secure   = false,
-                    SameSite = SameSite.Strict
+                    SameSite = SameSite.Strict,
                 };
                 options.Lifetime = TimeSpan.FromMinutes(20);
             })

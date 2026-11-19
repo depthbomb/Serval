@@ -152,8 +152,7 @@ public sealed class JobGenerator : IIncrementalGenerator
         error = null;
         var periodic   = attribute.AttributeClass?.ToDisplayString() == PeriodicAttribute;
         var returnType = periodic ? "System.TimeSpan" : "Caprine.CronTimer.CronExpression";
-        if (attribute.ConstructorArguments[0].Value is not INamedTypeSymbol type
-            || type.TypeKind is not (TypeKind.Class or TypeKind.Struct)
+        if (attribute.ConstructorArguments[0].Value is not INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct } type
             || !compilation.IsSymbolAccessibleWithin(type, compilation.Assembly)
             || attribute.ConstructorArguments[1].Value is not string name || string.IsNullOrWhiteSpace(name))
         {
@@ -174,11 +173,11 @@ public sealed class JobGenerator : IIncrementalGenerator
         var expected = compilation.GetTypeByMetadataName(returnType);
         var members = type.GetMembers(name).Where(member => member.IsStatic && !member.IsAbstract && compilation.IsSymbolAccessibleWithin(member, compilation.Assembly)).Where(member => member switch
         {
-            IPropertySymbol property => !property.IsIndexer && property.SetMethod is null && !property.ReturnsByRef && !property.ReturnsByRefReadonly
-                && property.GetMethod is { } getter && compilation.IsSymbolAccessibleWithin(getter, compilation.Assembly)
-                && SymbolEqualityComparer.Default.Equals(property.Type, expected),
-            IMethodSymbol method => method.MethodKind == MethodKind.Ordinary && !method.IsGenericMethod && method.Parameters.Length == 0
-                && !method.ReturnsByRef && !method.ReturnsByRefReadonly && SymbolEqualityComparer.Default.Equals(method.ReturnType, expected),
+            IPropertySymbol { IsIndexer: false, SetMethod: null, ReturnsByRef: false, ReturnsByRefReadonly: false, GetMethod: {} getter } property
+                => compilation.IsSymbolAccessibleWithin(getter, compilation.Assembly)
+                   && SymbolEqualityComparer.Default.Equals(property.Type, expected),
+            IMethodSymbol { MethodKind: MethodKind.Ordinary, IsGenericMethod: false, Parameters.Length: 0, ReturnsByRef: false, ReturnsByRefReadonly: false } method
+                => SymbolEqualityComparer.Default.Equals(method.ReturnType, expected),
             _ => false,
         }).ToArray();
         if (members.Length != 1)

@@ -31,16 +31,16 @@ public sealed class WorkspaceCacheTests
         {
             new
             {
-                text = "{% model bool %}changed"
-            }
+                text = "{% model bool %}changed",
+            },
         }), 2);
         Assert.Equal("bool", (await workspace.SnapshotAsync(partial, CancellationToken.None)).Document.Model);
         Assert.False(workspace.Change(partial, JsonSerializer.SerializeToElement(new[]
         {
             new
             {
-                text = "stale"
-            }
+                text = "stale",
+            },
         }), 1));
         workspace.Close(partial);
         Assert.Equal("string", (await workspace.SnapshotAsync(partial, CancellationToken.None)).Document.Model);

@@ -30,7 +30,7 @@ public sealed class EndpointMatch
         ArgumentNullException.ThrowIfNull(allowedMethods);
         Endpoint       = endpoint;
         RouteValues    = new Dictionary<string, string>(routeValues ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase).AsReadOnly();
-        AllowedMethods = Array.AsReadOnly(allowedMethods.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray());
+        AllowedMethods = Array.AsReadOnly([.. allowedMethods.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)]);
     }
 
     /// <summary>Applies endpoint metadata, body limits, and deadline before application middleware reads the body.</summary>

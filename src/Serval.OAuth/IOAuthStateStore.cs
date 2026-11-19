@@ -49,7 +49,7 @@ public sealed class OAuthState
         ExpiresUtc      = ExpiresUtc,
         Properties = Properties with
         {
-            Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal)
+            Items = new Dictionary<string, string>(Properties.Items, StringComparer.Ordinal),
         },
     };
 }

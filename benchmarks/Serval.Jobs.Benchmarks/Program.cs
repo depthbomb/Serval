@@ -11,13 +11,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
-using Serval.Jobs;
 
 namespace Serval.Jobs.Benchmarks;
 
 public static class Program
 {
     private const int Samples = 7;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+    };
 
     public static async Task Main(string[] args)
     {
@@ -98,10 +102,7 @@ public static class Program
             Environment.ProcessorCount,
             Samples,
             Measurements = measurements,
-        }, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        }, JsonOptions);
         Console.WriteLine(json);
         if (args.Length != 0)
         {
@@ -169,14 +170,20 @@ public static class Program
         public bool          Scheduled { get; }
         public SemaphoreSlim Signal    { get; } = new(0);
 
-        public CompletionState(bool scheduled) => Scheduled = scheduled;
+        public CompletionState(bool scheduled)
+        {
+            Scheduled = scheduled;
+        }
     }
 
     public sealed class CompletionScope : IAsyncDisposable
     {
         private readonly CompletionState _state;
 
-        public CompletionScope(CompletionState state) => _state = state;
+        public CompletionScope(CompletionState state)
+        {
+            _state = state;
+        }
 
         public ValueTask DisposeAsync()
         {
@@ -193,7 +200,10 @@ public static class Program
     {
         private readonly CompletionScope _scope;
 
-        public ProbeJob(CompletionScope scope) => _scope = scope;
+        public ProbeJob(CompletionScope scope)
+        {
+            _scope = scope;
+        }
 
         public ValueTask ExecuteAsync(CancellationToken ct)
         {

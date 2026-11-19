@@ -44,10 +44,9 @@ internal sealed class KestrelMiddleware
             var nativeRequest = context.Request;
             var connection = context.Connection;
             // Request-level connection fields can be rewritten by upstream middleware.
-            var endpoints = context.Features.Get<IConnectionEndPointFeature>();
-            var localEndPoint = endpoints?.LocalEndPoint as IPEndPoint ??
-                (connection.LocalIpAddress is {} local ? new IPEndPoint(local, connection.LocalPort) : null);
-            var host = nativeRequest.Host;
+            var endpoints     = context.Features.Get<IConnectionEndPointFeature>();
+            var localEndPoint = endpoints?.LocalEndPoint as IPEndPoint ?? (connection.LocalIpAddress is {} local ? new IPEndPoint(local, connection.LocalPort) : null);
+            var host          = nativeRequest.Host;
             if (!host.HasValue && nativeRequest.Protocol == "HTTP/1.0")
             {
                 // Host is optional in HTTP/1.0. Use the accepting endpoint when the client supplies no authority.
@@ -85,10 +84,9 @@ internal sealed class KestrelMiddleware
                 "HTTP/1.1" => HttpVersion.Version11,
                 "HTTP/2"   => HttpVersion.Version20,
                 "HTTP/3"   => HttpVersion.Version30,
-                _          => throw new RequestTransportException("Unsupported HTTP version.")
+                _          => throw new RequestTransportException("Unsupported HTTP version."),
             };
-            var remoteEndPoint = endpoints?.RemoteEndPoint as IPEndPoint ??
-                (connection.RemoteIpAddress is {} remote ? new IPEndPoint(remote, connection.RemotePort) : null);
+            var remoteEndPoint = endpoints?.RemoteEndPoint as IPEndPoint ?? (connection.RemoteIpAddress is {} remote ? new IPEndPoint(remote, connection.RemotePort) : null);
             var request = new Request(context.Request.Method, url, version, headers,
                 new KestrelRequestBodyStream(context.Request.Body), _options.MaxRequestBodyBytes,
                 new RequestConnection(remoteEndPoint, localEndPoint));

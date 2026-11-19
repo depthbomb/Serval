@@ -132,7 +132,7 @@ public sealed class ResponseCookies
         => Set(name, "", (options ?? new CookieOptions()) with
         {
             MaxAge = TimeSpan.Zero,
-            Expires = DateTimeOffset.UnixEpoch
+            Expires = DateTimeOffset.UnixEpoch,
         });
 
     private static void ValidateAttribute(string? value)

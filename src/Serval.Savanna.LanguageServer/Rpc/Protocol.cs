@@ -70,12 +70,7 @@ public sealed class Protocol
             var read = await _input.ReadAsync(_readBuffer.AsMemory(_readCount), cancellationToken);
             if (read == 0)
             {
-                if (_readCount == 0)
-                {
-                    return null;
-                }
-
-                throw new EndOfStreamException("Incomplete LSP header.");
+                return _readCount == 0 ? null : throw new EndOfStreamException("Incomplete LSP header.");
             }
 
             _readCount += read;

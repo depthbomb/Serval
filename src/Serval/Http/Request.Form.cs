@@ -85,14 +85,7 @@ public sealed partial class Request
     ///     disposal.
     /// </remarks>
     public ValueTask<RequestData> ReadFormAsync(CancellationToken ct = default)
-    {
-        if (!FormDataParser.IsForm(FormDataParser.ContentType(Headers[HeaderNames.ContentType])))
-        {
-            throw new HttpErrorException(StatusCodes.UnsupportedMediaType, "A form content type is required.");
-        }
-
-        return ReadPostAsync(ct);
-    }
+        => !FormDataParser.IsForm(FormDataParser.ContentType(Headers[HeaderNames.ContentType])) ? throw new HttpErrorException(StatusCodes.UnsupportedMediaType, "A form content type is required.") : ReadPostAsync(ct);
 
     /// <summary>Parses and caches form data or top-level JSON properties, regardless of the request's HTTP method.</summary>
     /// <remarks>
@@ -187,7 +180,7 @@ public sealed partial class Request
         _storage = new RequestBodyStorage(FormOptions);
         try
         {
-            await using var body = new BodyReadStream(this, ct, false);
+            await using var body = new BodyReadStream(this, false, ct);
             await ReadChunksAsync(body, _storage.AppendAsync, ct);
             var data = await FormDataParser.ParseAsync(_storage, type, FormOptions, JsonOptions, ct);
             if (data.Files.Count == 0)

@@ -36,7 +36,7 @@ public sealed class ApiController : ControllerBase
         var id = RouteValue<int>("id");
         var url = context.Urls.Path("widgets.get", new Dictionary<string, object?>
         {
-            ["id"] = id
+            ["id"] = id,
         });
 
         return JsonAsync(new Widget(id, $"Widget {id}", url), SampleJsonContext.Default.Widget);
@@ -50,7 +50,7 @@ public sealed class ApiController : ControllerBase
 
         var url = context.Urls.Path("widgets.get", new Dictionary<string, object?>
         {
-            ["id"] = 1
+            ["id"] = 1,
         });
         context.Response.Headers[HeaderNames.Location] = url;
 
@@ -63,7 +63,7 @@ public sealed class ApiController : ControllerBase
         // The sample's HTTP listener uses loopback HTTP. Production cookies default to Secure.
         context.Response.Cookies.Set("theme", "dark", new CookieOptions
         {
-            Secure = context.Request.Url.Scheme == "https"
+            Secure = context.Request.Url.Scheme == "https",
         });
 
         return TextAsync("Cookie set.");

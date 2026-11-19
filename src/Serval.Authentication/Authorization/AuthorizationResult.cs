@@ -45,12 +45,5 @@ public sealed class AuthorizationResult
     /// <returns>The failed result.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The failure kind is not a declared enum value.</exception>
     public static AuthorizationResult Fail(AuthorizationFailureKind kind, string? reason = null)
-    {
-        if (!Enum.IsDefined(kind))
-        {
-            throw new ArgumentOutOfRangeException(nameof(kind));
-        }
-
-        return new AuthorizationResult(kind, reason);
-    }
+        => !Enum.IsDefined(kind) ? throw new ArgumentOutOfRangeException(nameof(kind)) : new AuthorizationResult(kind, reason);
 }

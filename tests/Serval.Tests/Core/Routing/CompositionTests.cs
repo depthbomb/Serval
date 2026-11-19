@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Serval.Hosting;
-using Serval.Http;
 using Serval.Routing;
 using Serval.Tests.Support;
 
@@ -52,7 +50,7 @@ public sealed class CompositionTests
         Assert.Equal("alice", (await app.SendAsync("/delegate/alice")).Text);
         Assert.Equal("/delegate/bob", app.Services.GetRequiredService<IUrlGenerator>().Path("hello", new Dictionary<string, object?>
         {
-            ["name"] = "bob"
+            ["name"] = "bob",
         }));
         Assert.Equal(204, (await app.SendAsync("/delegate/alice", "OPTIONS")).StatusCode);
         Assert.Equal(405, (await app.SendAsync("/delegate/alice", "DELETE")).StatusCode);

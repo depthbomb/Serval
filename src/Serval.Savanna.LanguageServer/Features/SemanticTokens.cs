@@ -100,7 +100,7 @@ public static class SemanticTokens
 
         return new
         {
-            data
+            data,
         };
     }
 

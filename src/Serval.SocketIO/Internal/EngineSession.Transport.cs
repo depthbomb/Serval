@@ -284,7 +284,11 @@ internal sealed partial class EngineSession
         }
         finally
         {
-            message?.Dispose();
+            if (message is not null)
+            {
+                await message.DisposeAsync();
+            }
+
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }

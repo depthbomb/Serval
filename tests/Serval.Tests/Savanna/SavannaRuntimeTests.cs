@@ -72,7 +72,7 @@ public sealed class SavannaRuntimeTests
     public async Task CancelledRenderingDoesNotCommitOutput()
     {
         using var cancelled = new CancellationTokenSource();
-        cancelled.Cancel();
+        await cancelled.CancelAsync();
         var view = new SavannaView<string>("cancel", static (writer, model, context) => writer.WriteValueAsync(model, context));
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => view.RenderToStringAsync("text", new SavannaRenderContext(cancellationToken: cancelled.Token)).AsTask());
     }
@@ -163,7 +163,7 @@ public sealed class SavannaRuntimeTests
             "",
             new('x', 5000),
             string.Concat(Enumerable.Range(0, 128).Select(value => (char)value)),
-            "\ud800broken\udfff🙂\u0000<&>\"'`+",
+            "\ud800broken\udfff🙂\0<&>\"'`+",
             "a&b<c>d\"e'f",
             "中文 café 🙂",
         };

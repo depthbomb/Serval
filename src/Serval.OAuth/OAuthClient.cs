@@ -150,7 +150,7 @@ public sealed class OAuthClient : IDisposable
     {
         var form = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["grant_type"] = "client_credentials"
+            ["grant_type"] = "client_credentials",
         };
         AddScope(form, scopes ?? _options.Scopes);
         return TokenAsync("client_credentials", form, cancellationToken);
@@ -175,7 +175,7 @@ public sealed class OAuthClient : IDisposable
                        ?? throw new InvalidOperationException("A revocation endpoint is required.");
         var form = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["token"] = token
+            ["token"] = token,
         };
         if (tokenTypeHint is not null)
         {
@@ -382,7 +382,7 @@ public sealed class OAuthClient : IDisposable
         {
             document = JsonDocument.Parse(content.GetBuffer().AsMemory(0, (int)content.Length), new JsonDocumentOptions
             {
-                MaxDepth = 32
+                MaxDepth = 32,
             });
         }
         catch (JsonException)

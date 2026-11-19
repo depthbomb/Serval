@@ -45,7 +45,7 @@ public sealed class SavannaMarkupRuntimeTests
         Assert.Same(policy, nested.UrlPolicy);
         Assert.Equal("/products/a%20b", nested.Urls.Path("products", new Dictionary<string, object?>
         {
-            ["id"] = "a b"
+            ["id"] = "a b",
         }));
         Assert.Same(context, context.WithSlots(SavannaSlots.Empty));
     }

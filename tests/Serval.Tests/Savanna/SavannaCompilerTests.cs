@@ -18,12 +18,14 @@ namespace Serval.Tests.Savanna;
 
 public sealed partial class SavannaCompilerTests
 {
+    private static readonly string[] DebugSymbols = ["DEBUG"];
+
     private static readonly CSharpParseOptions Options = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.CSharp15);
     private static readonly MetadataReference[] References =
     [
         .. ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
                                                                        .Append(typeof(SavannaView<>).Assembly.Location).Append(typeof(RequestContext).Assembly.Location).Distinct()
-                                                                       .Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path))
+                                                                       .Select<string, MetadataReference>(path => MetadataReference.CreateFromFile(path)),
     ];
 
     [Fact]
@@ -69,7 +71,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "{% model int %}" + html
+            ["Page.svn"] = "{% model int %}" + html,
         });
         var output = await Run(result, """
                                        public static class Entry
@@ -85,7 +87,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "{% model string %}<div class=\"static\"\n title=\"{{ Model }}\" data-empty=\"{{ string.Empty }}\">\ntext\n</div>"
+            ["Page.svn"] = "{% model string %}<div class=\"static\"\n title=\"{{ Model }}\" data-empty=\"{{ string.Empty }}\">\ntext\n</div>",
         });
         var output = await Run(result, """
                                        public static class Entry
@@ -168,7 +170,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "{% model int %}" + body
+            ["Page.svn"] = "{% model int %}" + body,
         });
         Assert.Empty(result.Diagnostics);
         var output = await Run(result, """
@@ -228,7 +230,7 @@ public sealed partial class SavannaCompilerTests
         var result = Compile(new Dictionary<string, string>
         {
             ["Page.svn"] = template,
-            ["Card.svn"] = "<#model type='int'><p>{{ Model }}</p>"
+            ["Card.svn"] = "<#model type='int'><p>{{ Model }}</p>",
         });
         Assert.Empty(result.Sources);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code && diagnostic.Path == "/Templates/Page.svn");
@@ -277,7 +279,7 @@ public sealed partial class SavannaCompilerTests
         const string template = "{% model string %}\r\n<p>🙂 {{ Model.Missing }}</p>";
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = template
+            ["Page.svn"] = template,
         });
         Assert.Empty(result.Diagnostics);
         var diagnostics = CreateCompilation(result, "").GetDiagnostics();
@@ -303,7 +305,7 @@ public sealed partial class SavannaCompilerTests
     {
         var result = Compile(new Dictionary<string, string>
         {
-            ["Page.svn"] = "{% model string %}<a href=\"{{ Model }}\">x</a>"
+            ["Page.svn"] = "{% model string %}<a href=\"{{ Model }}\">x</a>",
         });
         Assert.DoesNotContain(CreateCompilation(result, "").GetDiagnostics(), diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
     }
@@ -313,7 +315,7 @@ public sealed partial class SavannaCompilerTests
     [InlineData("./Views")]
     [InlineData("Unused/../Views/")]
     [InlineData(".\\Views")]
-    [InlineData("Unused\\..\\Views\\")]
+    [InlineData(@"Unused\..\Views\")]
     public void GeneratorDiscoversFilesAndRemovesDeletedOutputs(string root)
     {
         var             file        = new TemplateFile("/project/Views/Page.svn", "{% model int %}<p>{{ Model }}</p>");
