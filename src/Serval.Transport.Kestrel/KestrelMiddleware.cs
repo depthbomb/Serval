@@ -56,8 +56,10 @@ internal sealed class KestrelMiddleware
             }
 
             var encodedUrl = UriHelper.BuildAbsolute(nativeRequest.Scheme, host, nativeRequest.PathBase, nativeRequest.Path, nativeRequest.QueryString);
-            if (!Uri.TryCreate(encodedUrl, UriKind.Absolute, out var url))
+            if (!Uri.TryCreate(encodedUrl, UriKind.Absolute, out var url)
+                || !PathString.FromUriComponent(url.AbsolutePath).Equals(nativeRequest.PathBase.Add(nativeRequest.Path), StringComparison.Ordinal))
             {
+                // A second decoding or normalization must not change the path checked by upstream middleware.
                 context.Response.StatusCode = StatusCodes.BadRequest;
                 return;
             }
