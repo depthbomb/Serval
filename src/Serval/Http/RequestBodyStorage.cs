@@ -46,8 +46,21 @@ internal sealed class RequestBodyStorage : IAsyncDisposable
         if (_stream is MemoryStream memory && bytes.Length > _threshold - memory.Length)
         {
             var path = Path.Combine(_directory, "serval-body-" + Guid.NewGuid().ToString("N") + ".tmp");
-            var file = new FileStream(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read | FileShare.Delete, 16384,
-                FileOptions.Asynchronous                                                             | FileOptions.DeleteOnClose);
+            var fileOptions = new FileStreamOptions
+            {
+                Mode       = FileMode.CreateNew,
+                Access     = FileAccess.ReadWrite,
+                Share      = FileShare.Read | FileShare.Delete,
+                BufferSize = 16_384,
+                Options    = FileOptions.Asynchronous | FileOptions.DeleteOnClose,
+            };
+            if (!OperatingSystem.IsWindows())
+            {
+                // Request bodies can contain credentials. Restrict access at creation, before writing any bytes.
+                fileOptions.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+            }
+
+            var file = new FileStream(path, fileOptions);
             try
             {
                 memory.Position = 0;
