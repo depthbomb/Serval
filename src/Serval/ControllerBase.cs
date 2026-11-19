@@ -237,14 +237,4 @@ public abstract class ControllerBase
 
     /// <summary>Stops the request deadline timer, while preserving cancellation on disconnect or transport shutdown.</summary>
     protected void DisableRequestTimeout() => Context.DisableRequestTimeout();
-
-    /// <summary>Sends HTTP 103 hint fields using the current request's cancellation token.</summary>
-    /// <param name="headers">The hint fields, usually Link headers describing resources to preload.</param>
-    /// <returns>True when sent, or false when the transport does not support Early Hints.</returns>
-    /// <remarks>Uses Response.SendEarlyHintsAsync; the final response remains writable after a successful send.</remarks>
-    /// <exception cref="ArgumentNullException">The headers are null.</exception>
-    /// <exception cref="ArgumentException">The hints contain framing or connection-specific fields.</exception>
-    /// <exception cref="InvalidOperationException">No action is active, or the response has already started.</exception>
-    /// <exception cref="OperationCanceledException">The request was canceled.</exception>
-    protected ValueTask<bool> SendEarlyHintsAsync(Headers headers) => Response.SendEarlyHintsAsync(headers, RequestAborted);
 }

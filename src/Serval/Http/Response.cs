@@ -30,10 +30,6 @@ public abstract partial class Response
     /// <summary>Whether the final response has started, an upgrade has begun, or a header write has failed.</summary>
     public bool HasStarted { get; private set; }
 
-    /// <summary>Whether this transport can send HTTP 103 responses before the final response.</summary>
-    /// <remarks>Defaults to false. The built-in transports do not support Early Hints.</remarks>
-    public virtual bool SupportsEarlyHints => false;
-
     /// <summary>The final response status, defaulting to 200.</summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is outside 200 through 599.</exception>
     /// <exception cref="InvalidOperationException">The response has already started or ended.</exception>
@@ -55,87 +51,10 @@ public abstract partial class Response
 
     internal JsonSerializerOptions JsonOptions { get; set; } = JsonSerializerOptions.Web;
 
-    private bool _earlyHintsFailed;
-
     /// <summary>Creates the mutable headers and cookie writer for a transport response.</summary>
     protected Response()
     {
         Cookies = new ResponseCookies(Headers);
-    }
-
-    /// <summary>Sends an HTTP 103 Early Hints response without starting the final response.</summary>
-    /// <param name="headers">The hint fields, usually Link headers describing resources to preload.</param>
-    /// <param name="ct">Cancels the operation.</param>
-    /// <returns>True when the hints were sent; false when this transport does not support Early Hints.</returns>
-    /// <remarks>
-    ///     The supplied headers are copied before sending and are neither frozen nor added to the final response.
-    ///     Await each send before writing again. Multiple hint responses may precede the final response, whose status,
-    ///     headers, and cookies remain writable. Unsupported transports leave the response untouched.
-    ///     If a transport write fails, the response becomes unwritable and must be aborted because a partial header
-    ///     block may have reached the client. Sending hints does not guarantee that a client will act on them.
-    /// </remarks>
-    /// <exception cref="ArgumentNullException">The headers are null.</exception>
-    /// <exception cref="ArgumentException">The hints contain content-length or connection-specific fields.</exception>
-    /// <exception cref="InvalidOperationException">The final response has already started or a header write failed.</exception>
-    /// <exception cref="OperationCanceledException">The operation was canceled.</exception>
-    public async ValueTask<bool> SendEarlyHintsAsync(Headers headers, CancellationToken ct = default)
-    {
-        ArgumentNullException.ThrowIfNull(headers);
-        EnsureCanWrite();
-        if (_starting)
-        {
-            throw new InvalidOperationException("A response startup callback cannot send Early Hints.");
-        }
-
-        if (HasStarted)
-        {
-            throw new InvalidOperationException("The response has already started.");
-        }
-
-        ct.ThrowIfCancellationRequested();
-
-        var hints = new Headers();
-        foreach (var (name, values) in headers)
-        {
-            var forbidden = name.Equals(HeaderNames.ContentLength, StringComparison.OrdinalIgnoreCase)    ||
-                            name.Equals(HeaderNames.TransferEncoding, StringComparison.OrdinalIgnoreCase) ||
-                            name.Equals(HeaderNames.Connection, StringComparison.OrdinalIgnoreCase)       ||
-                            name.Equals(HeaderNames.Upgrade, StringComparison.OrdinalIgnoreCase)          ||
-                            name.Equals(HeaderNames.KeepAlive, StringComparison.OrdinalIgnoreCase)        ||
-                            name.Equals(HeaderNames.ProxyConnection, StringComparison.OrdinalIgnoreCase)  ||
-                            name.Equals(HeaderNames.Te, StringComparison.OrdinalIgnoreCase)               ||
-                            name.Equals(HeaderNames.Trailer, StringComparison.OrdinalIgnoreCase);
-            if (forbidden)
-            {
-                throw new ArgumentException($"The '{name}' header is not allowed in Early Hints.", nameof(headers));
-            }
-
-            foreach (var value in values)
-            {
-                hints.Append(name, value);
-            }
-        }
-
-        if (!SupportsEarlyHints)
-        {
-            return false;
-        }
-
-        hints.Freeze();
-        try
-        {
-            await OnSendEarlyHintsAsync(hints, ct);
-        }
-        catch
-        {
-            // A partial informational frame cannot safely be followed by an error response.
-            _earlyHintsFailed = true;
-            HasStarted        = true;
-            Headers.Freeze();
-            throw;
-        }
-
-        return true;
     }
 
     /// <summary>Freezes headers and starts the transport response once.</summary>
@@ -146,16 +65,11 @@ public abstract partial class Response
     ///     leaves the response marked as started. Completed or aborted responses reject further starts and writes.
     /// </remarks>
     /// <exception cref="InvalidOperationException">
-    ///     Content-Length is set for status 204 or alongside Transfer-Encoding, or an earlier Early Hints write failed.
+    ///     Content-Length is set for status 204 or alongside Transfer-Encoding.
     /// </exception>
     public async ValueTask StartAsync(CancellationToken cancellationToken = default)
     {
         EnsureCanWrite();
-        if (_earlyHintsFailed)
-        {
-            throw new InvalidOperationException("An Early Hints write failed. Abort this response before sending anything else.");
-        }
-
         if (!HasStarted)
         {
             if (_startingCallbacks is { Count: > 0 } || LifecycleStarting is not null)
@@ -404,15 +318,6 @@ public abstract partial class Response
     /// <returns>An operation that completes when the transport starts the response.</returns>
     /// <remarks>Called once by StartAsync after HasStarted is set and headers are frozen.</remarks>
     protected abstract ValueTask OnStartAsync(CancellationToken cancellationToken);
-
-    /// <summary>Writes and flushes a complete HTTP 103 header block without ending the response stream.</summary>
-    /// <param name="headers">A validated, frozen snapshot of the hint fields.</param>
-    /// <param name="ct">Cancels the write.</param>
-    /// <returns>An operation that completes when the header block has been sent.</returns>
-    /// <remarks>Override together with SupportsEarlyHints. The default implementation throws if invoked.</remarks>
-    /// <exception cref="NotSupportedException">The transport has not implemented Early Hints.</exception>
-    protected virtual ValueTask OnSendEarlyHintsAsync(Headers headers, CancellationToken ct)
-        => ValueTask.FromException(new NotSupportedException("Early Hints are unavailable on this transport."));
 
     /// <summary>Writes body bytes after response startup.</summary>
     /// <param name="bytes">The bytes to send without retaining their memory beyond the returned operation.</param>

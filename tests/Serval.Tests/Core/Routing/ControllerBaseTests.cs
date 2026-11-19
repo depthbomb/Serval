@@ -140,10 +140,6 @@ public sealed class BaseHelperController : ControllerBase
         Assert.Same(Context.User, User);
         Items["tag"] = tag;
         DisableRequestTimeout();
-        Assert.False(await SendEarlyHintsAsync(new Headers
-        {
-            [HeaderNames.Link] = "</site.css>; rel=preload; as=style"
-        }));
         await Task.Yield();
         Assert.Equal(tag, Items["tag"]);
         Response.Headers["X-Context"] = "yes";

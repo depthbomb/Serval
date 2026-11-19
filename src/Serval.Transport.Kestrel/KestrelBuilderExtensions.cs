@@ -21,7 +21,7 @@ public static class KestrelBuilderExtensions
         /// <remarks>
         ///     Register Serval through Services.AddServal before building the application. Configure listening addresses,
         ///     certificates, HTTP protocols, and server limits through Kestrel's standard hosting APIs. Serval's body,
-        ///     header, concurrency, and request deadline limits also apply. Early Hints are unavailable on this transport.
+        ///     header, concurrency, and request deadline limits also apply.
         ///     Application request services are scoped by Serval. Requests must observe cancellation during host shutdown.
         /// </remarks>
         public IApplicationBuilder UseServal(WebSocketOptions? webSockets = null)

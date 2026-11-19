@@ -10,7 +10,6 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Serval.Generated;
 using Serval.Hosting;
-using Serval.Http;
 using Serval.Tests.Support;
 
 namespace Serval.Tests.Transports;
@@ -46,8 +45,6 @@ public sealed class KestrelTransportTests
                     context.Response.Headers["X-Starting"] = "yes";
                     return ValueTask.CompletedTask;
                 });
-                Assert.False(context.Response.SupportsEarlyHints);
-                Assert.False(await context.Response.SendEarlyHintsAsync(new Headers { ["Link"] = "</site.css>; rel=preload" }));
                 await context.Response.WriteTextAsync(context.Request.ProtocolVersion.ToString());
             });
             serval.AddEndpoint("GET", "/empty", context =>
@@ -78,7 +75,6 @@ public sealed class KestrelTransportTests
         Assert.Equal(2, headers.Headers.GetValues("Set-Cookie").Count());
         Assert.Equal("yes", Assert.Single(headers.Headers.GetValues("X-Starting")));
         Assert.Equal(version.ToString(), await headers.Content.ReadAsStringAsync());
-        Assert.False(headers.Headers.Contains("Link"));
         using var empty = await host.Client.GetAsync("/empty");
         Assert.Equal(HttpStatusCode.NoContent, empty.StatusCode);
         Assert.Empty(await empty.Content.ReadAsByteArrayAsync());

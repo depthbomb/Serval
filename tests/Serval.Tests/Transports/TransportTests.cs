@@ -49,18 +49,6 @@ public sealed class TransportTests
                 context.Response.Cookies.Set("second", "two", options);
                 return ValueTask.FromResult<IActionResult>(new TextResult("cookies"));
             });
-            serval.AddController<object>(HttpMethods.Get, "/transport/early-hints", null, async (_, context) =>
-            {
-                var hints = new Headers
-                {
-                    [HeaderNames.Link] = "</site.css>; rel=preload; as=style"
-                };
-                Assert.False(context.Response.SupportsEarlyHints);
-                Assert.False(await context.Response.SendEarlyHintsAsync(hints, context.RequestAborted));
-                Assert.False(context.Response.HasStarted);
-                context.Response.Headers["X-Final"] = "yes";
-                return new TextResult("final");
-            });
         }, clientTimeout: TimeSpan.FromSeconds(10));
         var client = server.Client;
         Assert.Equal("12:controller,method", await client.GetStringAsync("/test/items/12"));
@@ -74,11 +62,6 @@ public sealed class TransportTests
         using var head = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, "/test/items/12"));
         Assert.Equal(HttpStatusCode.OK, head.StatusCode);
         Assert.Empty(await head.Content.ReadAsByteArrayAsync());
-        using var hints = await client.GetAsync("/transport/early-hints");
-        Assert.Equal(HttpStatusCode.OK, hints.StatusCode);
-        Assert.Equal("yes", Assert.Single(hints.Headers.GetValues("X-Final")));
-        Assert.False(hints.Headers.Contains(HeaderNames.Link));
-        Assert.Equal("final", await hints.Content.ReadAsStringAsync());
         using var cookie = await client.GetAsync("/api/cookie");
         Assert.Contains("theme=dark", cookie.Headers.GetValues(HeaderNames.SetCookie).Single());
         using var multipleCookies = await client.GetAsync("/transport/cookies");

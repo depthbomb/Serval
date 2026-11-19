@@ -105,7 +105,7 @@ When using `CreateSlimBuilder`, also call `builder.WebHost.UseQuic()` to enable 
 the `Microsoft.AspNetCore.Hosting` namespace.
 `UseServal()` enables WebSockets and sends all requests reaching it through Serval's routing, middleware, and request
 scopes. ASP.NET middleware may run before it. HTTP/2 WebSocket requests use CONNECT, so register a CONNECT endpoint
-when accepting those connections. Early Hints are unavailable through this transport.
+when accepting those connections. Serval does not expose an Early Hints sending API.
 
 Both Kestrel's limits and Serval's limits apply; increase both body limits when accepting large uploads. Body parser
 rejections retain their HTTP error status. Request cancellation includes client disconnects and host shutdown.

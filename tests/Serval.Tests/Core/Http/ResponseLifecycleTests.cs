@@ -4,7 +4,6 @@
 #endregion
 
 using Serval.Http;
-using Serval.Http.Constants;
 using Serval.Tests.Support;
 
 namespace Serval.Tests.Core.Http;
@@ -32,7 +31,7 @@ public sealed class ResponseLifecycleTests
     }
 
     [Fact]
-    public async Task EarlyHintsDoNotFireStartingHooksButAnUpgradeDoesOnce()
+    public async Task UpgradeFiresStartingHooksOnce()
     {
         var events   = new List<string>();
         var response = new UpgradeResponse();
@@ -47,10 +46,6 @@ public sealed class ResponseLifecycleTests
             response.Headers["X-Upgrade"] = "yes";
             return ValueTask.CompletedTask;
         };
-        Assert.True(await response.SendEarlyHintsAsync(new Headers
-        {
-            [HeaderNames.Link] = "</site.css>; rel=preload"
-        }));
         Assert.Empty(events);
         await response.UpgradeAsync();
         Assert.Equal(["local", "lifecycle"], events);
@@ -145,8 +140,6 @@ public sealed class ResponseLifecycleTests
 
     private sealed class UpgradeResponse : Response
     {
-        public override bool SupportsEarlyHints => true;
-
         public override ValueTask FlushAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
         public override async ValueTask CompleteAsync(CancellationToken ct = default)
@@ -166,7 +159,5 @@ public sealed class ResponseLifecycleTests
         protected override ValueTask OnStartAsync(CancellationToken ct) => ValueTask.CompletedTask;
 
         protected override ValueTask OnWriteAsync(ReadOnlyMemory<byte> bytes, CancellationToken ct) => ValueTask.CompletedTask;
-
-        protected override ValueTask OnSendEarlyHintsAsync(Headers headers, CancellationToken ct) => ValueTask.CompletedTask;
     }
 }
