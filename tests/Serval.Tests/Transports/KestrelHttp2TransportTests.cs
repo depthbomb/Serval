@@ -3,19 +3,15 @@
 // Copyright (c) 2026 Caprine Logic
 #endregion
 
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
 using Serval.Generated;
-using Serval.Hosting;
 using Serval.Http.Constants;
 using Serval.Tests.Support;
-using Serval.Transport.Http2;
 
-namespace Serval.Tests.Transports.Http2;
+namespace Serval.Tests.Transports;
 
-public sealed class Http2TransportTests
+public sealed class KestrelHttp2TransportTests
 {
     private static readonly SocketsHttpHandler ClientHandler = new()
     {
@@ -32,15 +28,7 @@ public sealed class Http2TransportTests
     {
         for (var iteration = 0; iteration < 10; iteration++)
         {
-            var builder = Host.CreateApplicationBuilder();
-            builder.Logging.ClearProviders();
-            builder.Services.AddServal().AddHttp2(options =>
-            {
-                options.EndPoint = new IPEndPoint(IPAddress.Loopback, 0);
-                options.UseTls   = false;
-            });
-            using var host = builder.Build();
-            await host.StartAsync();
+            await using var host = await TransportTestHost.StartAsync(HttpVersion.Version20, false, ClientHandler);
             await Task.Yield();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             await host.StopAsync(timeout.Token);
@@ -59,7 +47,8 @@ public sealed class Http2TransportTests
         Random.Shared.NextBytes(file);
         await File.WriteAllBytesAsync(Path.Combine(directory, "download.bin"), file);
         await using var server = await TransportTestHost.StartAsync(HttpVersion.Version20, tls, ClientHandler,
-            serval => Serval_Sample_TransportsControllers.Register(serval), options => options.StaticFiles.DirectoryPath = directory);
+            serval => Serval_Sample_TransportsControllers.Register(serval), options => options.StaticFiles.DirectoryPath = directory,
+            configureKestrel: options => options.Limits.Http2.MaxRequestHeaderFieldSize = 32_768);
         var       client = server.Client;
         using var first  = await client.GetAsync("/test/items/12");
         Assert.Equal(HttpVersion.Version20, first.Version);

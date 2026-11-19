@@ -13,16 +13,17 @@ public sealed class TransportController : ControllerBase
 {
     [Get("/")]
     public ValueTask<IActionResult> IndexAsync(RequestContext context) => TextAsync("""
-                                                                                    One route pipeline, three transports
-                                                                                    HTTP/1.1 is enabled by default on localhost:8110 (override with --port).
-                                                                                    Add --http2 for TLS on 127.0.0.1:8444 (override with --http2-port).
-                                                                                    Add --http3 for QUIC on 127.0.0.1:8443 (override with --http3-port).
-                                                                                    HTTP/2 and HTTP/3 use a temporary self-signed development certificate.
+                                                                                    One route pipeline, Kestrel or HttpListener
+                                                                                    Kestrel serves HTTP/1.1 on 127.0.0.1:8110 (override with --port).
+                                                                                    HTTPS supports HTTP/1.1 and HTTP/2 on 127.0.0.1:8443 (override with --https-port).
+                                                                                    Add --http3 to also enable HTTP/3 on the HTTPS port.
+                                                                                    HTTPS uses a temporary self-signed development certificate.
                                                                                     HTTP/3 needs System.Net.Quic support and a compatible QUIC client.
+                                                                                    Use --http-listener for the simpler HTTP/1.1 alternative on localhost:8110.
                                                                                     GET /protocol reports the negotiated protocol version.
                                                                                     GET /api/widgets/42, POST /api/widgets with JSON {"name":"Widget"}
                                                                                     GET /api/cookie, /api/download, /api/events, and /hello.json
-                                                                                    GET /api/socket supports WebSockets on HttpListener only.
+                                                                                    GET /api/socket supports HTTP/1.1 WebSockets on either transport.
                                                                                     The focused Streaming sample includes bounded WebSocket messages and SSE resume.
                                                                                     """);
 

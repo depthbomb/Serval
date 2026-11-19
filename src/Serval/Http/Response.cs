@@ -31,7 +31,7 @@ public abstract partial class Response
     public bool HasStarted { get; private set; }
 
     /// <summary>Whether this transport can send HTTP 103 responses before the final response.</summary>
-    /// <remarks>Defaults to false. Serval's HTTP/2 and HTTP/3 transports support Early Hints.</remarks>
+    /// <remarks>Defaults to false. The built-in transports do not support Early Hints.</remarks>
     public virtual bool SupportsEarlyHints => false;
 
     /// <summary>The final response status, defaulting to 200.</summary>

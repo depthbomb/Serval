@@ -16,8 +16,6 @@ using System.Security.Cryptography.X509Certificates;
 using Serval.Generated;
 using Serval.Hosting;
 using Serval.Sample.Transports;
-using Serval.Transport.Http2;
-using Serval.Transport.Http3;
 using Serval.Transport.HttpListener;
 using Serval.Transport.Kestrel;
 
@@ -84,7 +82,7 @@ internal sealed class TransportTestHost : IAsyncDisposable
         HttpClient? client = null;
         try
         {
-            var webBuilder = kestrel ? WebApplication.CreateSlimBuilder() : null;
+            var webBuilder = kestrel || version.Major > 1 ? WebApplication.CreateSlimBuilder() : null;
             IHostApplicationBuilder builder = webBuilder is null ? Host.CreateApplicationBuilder() : webBuilder;
             builder.Logging.ClearProviders();
             builder.Services.AddScoped<ScopedProbe>();
@@ -121,38 +119,11 @@ internal sealed class TransportTestHost : IAsyncDisposable
             }
             else
             {
-                switch (version.Major)
+                serval.AddHttpListener(options =>
                 {
-                    case 1:
-                        serval.AddHttpListener(options =>
-                        {
-                            options.Prefixes.Clear();
-                            options.Prefixes.Add($"http://localhost:{port}/");
-                        });
-                        break;
-                    case 2:
-                        serval.AddHttp2(options =>
-                        {
-                            options.EndPoint = new IPEndPoint(IPAddress.Loopback, port);
-                            options.UseTls = tls;
-                            // Configuration runs immediately; the returned host owns the certificate.
-                            // ReSharper disable once AccessToDisposedClosure
-                            options.Certificate = certificate;
-                        });
-                        break;
-                    case 3:
-                        serval.AddHttp3(options =>
-                        {
-                            options.EndPoint = new IPEndPoint(IPAddress.Loopback, port);
-                            // Configuration runs immediately; the returned host owns the certificate.
-                            // ReSharper disable once AccessToDisposedClosure
-                            options.Certificate = certificate;
-                        });
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(version));
-                }
-
+                    options.Prefixes.Clear();
+                    options.Prefixes.Add($"http://localhost:{port}/");
+                });
                 host = ((HostApplicationBuilder)builder).Build();
             }
 

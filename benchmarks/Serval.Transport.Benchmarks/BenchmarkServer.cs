@@ -9,8 +9,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Serval.Hosting;
-using Serval.Transport.Http2;
-using Serval.Transport.Http3;
 using Serval.Transport.HttpListener;
 using Serval.Transport.Kestrel;
 
@@ -76,20 +74,6 @@ internal static class BenchmarkServer
                 {
                     options.Prefixes.Clear();
                     options.Prefixes.Add($"http://localhost:{port}/");
-                });
-                break;
-            case "http2":
-                serval.AddHttp2(options =>
-                {
-                    options.EndPoint = new IPEndPoint(IPAddress.Loopback, port);
-                    options.Certificate = certificate;
-                });
-                break;
-            case "http3":
-                serval.AddHttp3(options =>
-                {
-                    options.EndPoint = new IPEndPoint(IPAddress.Loopback, port);
-                    options.Certificate = certificate;
                 });
                 break;
             default:

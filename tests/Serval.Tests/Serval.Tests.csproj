@@ -20,8 +20,6 @@
     <ProjectReference Include="../../src/Serval.Vite/Serval.Vite.csproj"/>
     <ProjectReference Include="../../src/Serval.Vite.Generators/Serval.Vite.Generators.csproj"/>
     <ProjectReference Include="../../src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
-    <ProjectReference Include="../../src/Serval.Transport.Http2/Serval.Transport.Http2.csproj"/>
-    <ProjectReference Include="../../src/Serval.Transport.Http3/Serval.Transport.Http3.csproj"/>
     <ProjectReference Include="../../samples/Serval.Sample.Routing/Serval.Sample.Routing.csproj"/>
     <ProjectReference Include="../../samples/Serval.Sample.TodoApi/Serval.Sample.TodoApi.csproj"/>
     <ProjectReference Include="../../samples/Serval.Sample.Middleware/Serval.Sample.Middleware.csproj"/>

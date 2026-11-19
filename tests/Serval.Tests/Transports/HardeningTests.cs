@@ -5,122 +5,17 @@
 
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
-using System.Text;
 using Serval.Hosting;
 using Serval.Http;
 using Serval.Http.Constants;
 using Serval.Http.Results;
 using Serval.Routing;
 using Serval.Tests.Support;
-using H2 = Serval.Transport.Http2.Protocol;
-using H3 = Serval.Transport.Http3.Protocol;
 
 namespace Serval.Tests.Transports;
 
 public sealed class HardeningTests
 {
-    [Theory]
-    [InlineData("content-length", "3")]
-    [InlineData("host", "other.example")]
-    [InlineData("transfer-encoding", "chunked")]
-    [InlineData("connection", "close")]
-    [InlineData("te", "trailers")]
-    [InlineData("Upper", "value")]
-    [InlineData("x-field", " value")]
-    [InlineData("x-field", "value\t")]
-    [InlineData("x-field", "a\r\ninjected: value")]
-    [InlineData("x-field", "a\0b")]
-    [InlineData(":path", "/other")]
-    public async Task Http3RejectsMalformedTrailers(string name, string value)
-    {
-        using var wire = new MemoryStream();
-        await H3.Frames.WriteAsync(wire, H3.Frames.Headers, FieldSection((name, value)), CancellationToken.None);
-        wire.Position = 0;
-        await using var body  = new H3.Http3BodyStream(wire, 1024, 1024, 0);
-        var             error = await Assert.ThrowsAsync<H3.Http3ProtocolException>(() => body.CopyToAsync(Stream.Null));
-        Assert.Equal(H3.Http3Error.Message, error.ErrorCode);
-    }
-
-    [Fact]
-    public async Task Http3AcceptsOrdinaryTrailersAfterData()
-    {
-        using var wire = new MemoryStream();
-        await H3.Frames.WriteAsync(wire, H3.Frames.Data, "abc"u8.ToArray(), CancellationToken.None);
-        await H3.Frames.WriteAsync(wire, H3.Frames.Headers, FieldSection(("x-checksum", "abc")), CancellationToken.None);
-        wire.Position = 0;
-        await using var body   = new H3.Http3BodyStream(wire, 1024, 1024, 3);
-        using var       result = new MemoryStream();
-        await body.CopyToAsync(result);
-        Assert.Equal("abc", Encoding.UTF8.GetString(result.ToArray()));
-    }
-
-    [Theory]
-    [InlineData("40")]
-    [InlineData("8000")]
-    [InlineData("c00000")]
-    [InlineData("0140")]
-    public async Task TruncatedHttp3FramePrefixesAreProtocolErrors(string hex)
-    {
-        using var wire  = new MemoryStream(Convert.FromHexString(hex));
-        var       error = await Assert.ThrowsAsync<H3.Http3ProtocolException>(() => H3.Frames.ReadAsync(wire, CancellationToken.None).AsTask());
-        Assert.Equal(H3.Http3Error.Frame, error.ErrorCode);
-    }
-
-    [Fact]
-    public async Task TruncatedHttp3HeaderPayloadIsAProtocolError()
-    {
-        using var wire  = new MemoryStream([0]);
-        var       error = await Assert.ThrowsAsync<H3.Http3ProtocolException>(() => H3.Frames.ReadPayloadAsync(wire, 2, 1024, CancellationToken.None).AsTask());
-        Assert.Equal(H3.Http3Error.Frame, error.ErrorCode);
-    }
-
-    [Fact]
-    public void QpackPreservesHeaderOctetsAndCountsWireBytes()
-    {
-        var fields = H3.QPack.Decode(FieldSection(("x", "\u00ff\u00c0\u0080")), 36);
-        Assert.Equal(("x", "\u00ff\u00c0\u0080"), Assert.Single(fields));
-        var headers = new Headers
-        {
-            ["x"] = "\u00ff\u00c0\u0080"
-        };
-        Assert.Contains(("x", "\u00ff\u00c0\u0080"), H3.QPack.Decode(H3.QPack.Encode(200, headers), 1024));
-        headers["x"] = "\u0100";
-        Assert.Throws<ArgumentException>(() => H3.QPack.Encode(200, headers));
-    }
-
-    [Theory]
-    [InlineData("example.com", null, null)]
-    [InlineData("example.com:", null, null)]
-    [InlineData("example.com:443", "https", null)]
-    [InlineData("example.com:443", null, "/")]
-    [InlineData("example.com:443", "https", "/")]
-    public void MalformedConnectTargetsAreRejected(string authority, string? scheme, string? path)
-    {
-        List<(string Name, string Value)> fields = [(":method", "CONNECT"), (":authority", authority)];
-        if (scheme is not null)
-        {
-            fields.Add((":scheme", scheme));
-        }
-
-        if (path is not null)
-        {
-            fields.Add((":path", path));
-        }
-
-        Assert.Throws<H2.Http2ProtocolException>(() => H2.RequestHeaders.Parse(fields, 1, true));
-        Assert.Throws<H3.Http3ProtocolException>(() => H3.RequestHeaders.Parse(fields));
-    }
-
-    [Theory]
-    [InlineData("example.com:443")]
-    [InlineData("[::1]:443")]
-    public void ValidConnectTargetsArePreserved(string authority)
-    {
-        (string Name, string Value)[] fields = [(":method", "CONNECT"), (":authority", authority)];
-        Assert.Equal("CONNECT", H2.RequestHeaders.Parse(fields, 1, true).Method);
-        Assert.Equal("CONNECT", H3.RequestHeaders.Parse(fields).Method);
-    }
-
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -207,30 +102,6 @@ public sealed class HardeningTests
     }
 
     [Fact]
-    public void RandomCompressedHeadersStayWithinLimitsAndFailWithProtocolErrors()
-    {
-        var random = new Random(981744);
-        for (var iteration = 0; iteration < 5000; iteration++)
-        {
-            var bytes = new byte[random.Next(0, 65)];
-            random.NextBytes(bytes);
-            try
-            {
-                var fields = new H2.HPack().Decode(bytes, 256);
-                Assert.InRange(fields.Sum(field => field.Name.Length + field.Value.Length + 32), 0, 256);
-            }
-            catch (H2.Http2ProtocolException) {}
-
-            try
-            {
-                var fields = H3.QPack.Decode([0, 0, .. bytes], 256);
-                Assert.InRange(fields.Sum(field => field.Name.Length + field.Value.Length + 32), 0, 256);
-            }
-            catch (H3.Http3ProtocolException) {}
-        }
-    }
-
-    [Fact]
     public async Task Win32PathAliasesCannotEscapeTheStaticRoot()
     {
         if (!OperatingSystem.IsWindows())
@@ -251,47 +122,6 @@ public sealed class HardeningTests
         Assert.Equal(StatusCodes.NotFound, (await app.SendAsync("/..%20/secret.txt")).StatusCode);
         Assert.Equal(StatusCodes.NotFound, (await app.SendAsync("/safe.txt%20")).StatusCode);
         Assert.Equal("public", (await app.SendAsync("/safe.txt")).Text);
-    }
-
-    [Fact]
-    public void PseudoHeadersCannotNormalizeDelIntoTheRequestPath()
-    {
-        (string Name, string Value)[] fields = [(":method", "GET"), (":scheme", "https"), (":authority", "example.com"), (":path", "/a\u007fb")];
-        Assert.Throws<H2.Http2ProtocolException>(() => H2.RequestHeaders.Parse(fields, 1, true));
-        Assert.Throws<H3.Http3ProtocolException>(() => H3.RequestHeaders.Parse(fields));
-    }
-
-    internal static byte[] FieldSection(params (string Name, string Value)[] fields)
-    {
-        List<byte> bytes = [0, 0];
-        foreach (var (name, value) in fields)
-        {
-            WriteInteger(name.Length, 3, 0x30);
-            bytes.AddRange(Encoding.Latin1.GetBytes(name));
-            WriteInteger(value.Length, 7, 0);
-            bytes.AddRange(Encoding.Latin1.GetBytes(value));
-        }
-
-        return [.. bytes];
-
-        void WriteInteger(int value, int prefix, byte flags)
-        {
-            var mask = (1 << prefix) - 1;
-            bytes.Add((byte)(flags | Math.Min(value, mask)));
-            if (value < mask)
-            {
-                return;
-            }
-
-            value -= mask;
-            while (value >= 128)
-            {
-                bytes.Add((byte)(value & 0x7f | 0x80));
-                value >>= 7;
-            }
-
-            bytes.Add((byte)value);
-        }
     }
 
     private sealed class StalledReadStream : MemoryStream

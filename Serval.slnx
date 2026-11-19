@@ -12,8 +12,6 @@
   <Folder Name="/Framework/Transports/">
     <Project Path="src/Serval.Transport.Kestrel/Serval.Transport.Kestrel.csproj"/>
     <Project Path="src/Serval.Transport.HttpListener/Serval.Transport.HttpListener.csproj"/>
-    <Project Path="src/Serval.Transport.Http2/Serval.Transport.Http2.csproj"/>
-    <Project Path="src/Serval.Transport.Http3/Serval.Transport.Http3.csproj"/>
   </Folder>
   <Folder Name="/Build tooling/">
     <Project Path="src/Serval.Generators/Serval.Generators.csproj"/>

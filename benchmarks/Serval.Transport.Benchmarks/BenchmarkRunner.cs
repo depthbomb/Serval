@@ -17,7 +17,7 @@ internal static class BenchmarkRunner
     public static async Task RunAsync(string[] args)
     {
         var output = Option("--output") ?? throw new ArgumentException("Supply --output with a JSON path outside the repository.");
-        var transports = (Option("--transports") ?? "listener,http2,http3").Split(',');
+        var transports = (Option("--transports") ?? "listener,kestrel1,kestrel2,kestrel3").Split(',');
         var repetitions = int.Parse(Option("--repetitions") ?? "5");
         var seconds = double.Parse(Option("--seconds") ?? "3", System.Globalization.CultureInfo.InvariantCulture);
         var warmup = double.Parse(Option("--warmup") ?? "2", System.Globalization.CultureInfo.InvariantCulture);

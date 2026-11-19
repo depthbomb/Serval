@@ -52,6 +52,8 @@ This listens on <http://localhost:8080/>. Controllers support constructor inject
 `Task<IActionResult>` or `ValueTask<IActionResult>`. Inheriting `ControllerBase` is optional; it provides helpers
 for reading input and returning responses.
 
+For HTTP/2 and optional HTTP/3, use [Kestrel hosting](#hosting-with-kestrel). HttpListener remains the simpler alternative.
+
 NuGet packages include their source generators. When using project references, add the analyzers explicitly as shown
 in the [routing sample project](samples/Serval.Sample.Routing/Serval.Sample.Routing.csproj).
 `AddGeneratedControllers()` registers the current assembly's controllers. For an assembly named `MyLibrary`, use
@@ -73,8 +75,6 @@ Build packages locally or use your internal feed.
 | [Serval.Vite](src/Serval.Vite) | Generated asset references and Vite development server support. |
 | [Serval.Transport.HttpListener](src/Serval.Transport.HttpListener) | HTTP and WebSockets; used by most samples. |
 | [Serval.Transport.Kestrel](src/Serval.Transport.Kestrel) | Kestrel HTTP/1.1, HTTP/2, HTTP/3, and WebSockets through the Serval pipeline. |
-| [Serval.Transport.Http2](src/Serval.Transport.Http2) | Experimental HTTP/2 over TCP and TLS. |
-| [Serval.Transport.Http3](src/Serval.Transport.Http3) | Experimental HTTP/3 over QUIC. |
 
 ## Hosting with Kestrel
 
@@ -112,8 +112,9 @@ rejections retain their HTTP error status. Request cancellation includes client 
 The Kestrel package requires the `Microsoft.AspNetCore.App` shared framework, supplied by the ASP.NET Core runtime
 or included in a self-contained deployment. The core Serval package has no ASP.NET Core framework reference.
 
-Run `dotnet run --project samples/Serval.Sample.Transports -- --kestrel` for HTTP on port 8110 and HTTPS with
-HTTP/1.1, HTTP/2, and HTTP/3 on port 8443. The generated certificate is temporary and untrusted. Use `--port` and
+Run `dotnet run --project samples/Serval.Sample.Transports` for Kestrel HTTP on port 8110 and HTTPS with
+HTTP/1.1 and HTTP/2 on port 8443. Add `-- --http3` to also enable HTTP/3, or `-- --http-listener` to use
+HttpListener with HTTP/1.1 only. The generated HTTPS certificate is temporary and untrusted. Use `--port` and
 `--https-port` to change those ports. HTTP/3 requires platform QUIC support.
 
 ## Lifecycle handlers and middleware
@@ -355,7 +356,7 @@ Run a sample with `dotnet run --project samples/<project-name>`.
 | [BearerAuth](samples/Serval.Sample.BearerAuth) | Bearer tokens and authorization policies. | 8107 |
 | [OAuth](samples/Serval.Sample.OAuth) | OAuth and OIDC sign-in with local sessions. | 8108 |
 | [Exceptions](samples/Serval.Sample.Exceptions) | Custom error handling. | 8109 |
-| [Transports](samples/Serval.Sample.Transports) | HTTP/2 and HTTP/3 transport options. | 8110 |
+| [Transports](samples/Serval.Sample.Transports) | Kestrel with optional HTTP/3, or HttpListener. | 8110 |
 | [EntityFramework](samples/Serval.Sample.EntityFramework) | EF Core and request-scoped database access. | 8111 |
 | [BackgroundServices](samples/Serval.Sample.BackgroundServices) | Startup work and background services. | 8112 |
 | [Savanna](samples/Serval.Sample.Savanna) | Typed templates, layouts, and components. | 8113 |
@@ -375,7 +376,7 @@ npm ci --prefix samples/Serval.Sample.Vite/ClientApp --ignore-scripts
 
 For Vite HMR, run the sample with `-p:ViteDevelopment=true`, start
 `npm --prefix samples/Serval.Sample.Vite/ClientApp run dev` in another terminal, and open <http://localhost:5173/>.
-The transports sample accepts `-- --http2` or `-- --http3`; HTTP/3 requires QUIC support.
+The transports sample uses Kestrel by default. Add `-- --http3` for HTTP/3 or `-- --http-listener` for HttpListener.
 The OAuth sample needs provider configuration; see the [OAuth package README](src/Serval.OAuth/README.md).
 
 ## Working on the repository
@@ -428,7 +429,7 @@ Results are loopback measurements with a client on the same machine. Run without
 ```powershell
 dotnet build benchmarks/Serval.Transport.Benchmarks -c Release -p:GeneratePackageOnBuild=false
 $env:DOTNET_TieredCompilation = '0'
-dotnet benchmarks/Serval.Transport.Benchmarks/bin/Release/net11.0/Serval.Transport.Benchmarks.dll --transports listener,kestrel1,http2,kestrel2,http3,kestrel3 --output "$env:TEMP/serval-transports.json"
+dotnet benchmarks/Serval.Transport.Benchmarks/bin/Release/net11.0/Serval.Transport.Benchmarks.dll --transports listener,kestrel1,kestrel2,kestrel3 --output "$env:TEMP/serval-transports.json"
 Remove-Item Env:DOTNET_TieredCompilation
 ```
 

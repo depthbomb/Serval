@@ -183,7 +183,7 @@ public sealed class TransportTests
     }
 
     [QuicFact]
-    public async Task Http3ServesConcurrentRequestsJsonBodiesAndErrors()
+    public async Task KestrelHttp3ServesConcurrentRequestsJsonBodiesAndErrors()
     {
         await using var server = await TransportTestHost.StartAsync(HttpVersion.Version30, true, ClientHandler,
             serval => Serval_Sample_TransportsControllers.Register(serval));

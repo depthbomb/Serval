@@ -29,10 +29,10 @@ public sealed class QueryTransportTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public Task Http2ServesQueryBodiesAndErrors(bool tls) => ExerciseAsync(HttpVersion.Version20, tls);
+    public Task KestrelHttp2ServesQueryBodiesAndErrors(bool tls) => ExerciseAsync(HttpVersion.Version20, tls);
 
     [QuicFact]
-    public Task Http3ServesQueryBodiesAndErrors() => ExerciseAsync(HttpVersion.Version30, true);
+    public Task KestrelHttp3ServesQueryBodiesAndErrors() => ExerciseAsync(HttpVersion.Version30, true);
 
     private static async Task ExerciseAsync(Version version, bool tls)
     {
