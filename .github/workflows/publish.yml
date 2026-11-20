@@ -2,7 +2,7 @@ name: Publish NuGet packages
 
 on:
   release:
-    types: [published]
+    types: [ published ]
   workflow_dispatch:
     inputs:
       publish:
@@ -73,7 +73,7 @@ jobs:
         run: dotnet build Serval.slnx -c Release --nologo -p:ContinuousIntegrationBuild=true -warnaserror --disable-build-servers
       - name: Test framework, jobs, protocols, and language server
         run: |
-          foreach ($project in @('Serval.Tests', 'Serval.Jobs.Tests', 'Serval.SocketIO.Tests', 'Serval.Savanna.LanguageServer.Tests')) {
+          foreach ($project in @('Serval.Tests', 'Serval.Configuration.Tests', 'Serval.Jobs.Tests', 'Serval.SocketIO.Tests', 'Serval.Savanna.LanguageServer.Tests')) {
             dotnet test "tests/$project/$project.csproj" -c Release --no-build --no-restore --nologo --disable-build-servers
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }

@@ -2,10 +2,14 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Text.Json;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using PackageConsumer.Generated;
 using Serval;
+using Serval.Configuration;
 using Serval.Generated;
 using Serval.Hosting;
 using Serval.Http;
@@ -49,9 +53,27 @@ public static class Program
             _ = Assembly.Load(packageId).GetExportedTypes();
         }
 
+        var dotenvPath = Path.Combine(AppContext.BaseDirectory, "package.env");
+        await File.WriteAllTextAsync(dotenvPath, "APP_PORT=8120\nServer__Name=package-consumer");
         var builder = Host.CreateApplicationBuilder();
+        builder.UseDotEnvConfiguration(new DotEnvConfigurationOptions
+        {
+            Path                = dotenvPath,
+            Optional            = false,
+            ReloadOnChange      = false,
+            LoadEnvironmentFile = false,
+            KeyMappings         = { ["APP_PORT"] = "Server:Port" },
+        });
+        builder.Services.AddSingleton<IValidateOptions<PackageOptions>, PackageOptionsValidator>();
+        builder.Services.AddOptions<PackageOptions>().BindConfiguration("Server").ValidateOnStart();
         builder.Services.AddServal().AddGeneratedControllers().AddGeneratedJobs();
         using var host = builder.Build();
+        var settings = host.Services.GetRequiredService<IOptions<PackageOptions>>().Value;
+        if (settings.Port != 8120 || settings.Name != "package-consumer")
+        {
+            throw new InvalidOperationException("Dotenv configuration and generated options binding failed.");
+        }
+
         var jobs = host.Services.GetRequiredService<JobRegistry>();
         if (jobs.GetJobs().Count != 1 || jobs.GetJob("package-check").Schedule.Period != TimeSpan.FromMinutes(1))
         {
@@ -72,6 +94,18 @@ public static class Program
         Console.WriteLine($"Package consumer passed on {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}.");
     }
 }
+
+public sealed class PackageOptions
+{
+    [Range(1, 65_535)]
+    public int Port { get; set; }
+
+    [Required]
+    public string Name { get; set; } = string.Empty;
+}
+
+[OptionsValidator]
+public sealed partial class PackageOptionsValidator : IValidateOptions<PackageOptions> {}
 
 [Controller]
 public sealed class PackageController : ControllerBase

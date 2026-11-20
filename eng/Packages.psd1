@@ -1,7 +1,8 @@
 @{
-    # Dependency order is also the publishing order.
+# Dependency order is also the publishing order.
     Packages = @(
         'Serval'
+        'Serval.Configuration'
         'Serval.Authentication'
         'Serval.OAuth'
         'Serval.SignedUrls'

@@ -63,12 +63,13 @@ in the [routing sample project](samples/Serval.Sample.Routing/Serval.Sample.Rout
 
 ## Packages
 
-The ten public packages share the version in [Directory.Build.props](Directory.Build.props).
+The eleven public packages share the version in [Directory.Build.props](Directory.Build.props).
 Generators and the Savanna compiler are bundled where needed; they are not separate packages.
 
 | Package                                                            | Purpose                                                                       |
 |--------------------------------------------------------------------|-------------------------------------------------------------------------------|
 | [Serval](src/Serval)                                               | Controllers, routing, middleware, static files, and streaming.                |
+| [Serval.Configuration](src/Serval.Configuration)                   | Dotenv files, conventional key mappings, and standard .NET configuration.     |
 | [Serval.Authentication](src/Serval.Authentication)                 | Cookie and bearer authentication, authorization, password hashing, and CSRF.  |
 | [Serval.OAuth](src/Serval.OAuth)                                   | OAuth 2.0 clients and OpenID Connect sign-in.                                 |
 | [Serval.SignedUrls](src/Serval.SignedUrls)                         | Signed links with optional expiration.                                        |
@@ -87,7 +88,8 @@ The workflow uploads both packages and symbols to NuGet and attaches them to the
 Running it manually against a version tag leaves publishing disabled by default.
 
 Publishing uses the `nuget` GitHub environment, restricted to `v*` tags, with its `NUGET_USER` variable set to
-the NuGet profile name. Create a [NuGet Trusted Publishing policy](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)
+the NuGet profile name. Create
+a [NuGet Trusted Publishing policy](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing)
 for repository owner `depthbomb`, repository `Serval`, workflow file `publish.yml`, and environment `nuget`.
 Allow new packages and new versions for `Serval*`. Authentication uses GitHub OIDC and a temporary NuGet key.
 
@@ -100,6 +102,175 @@ Run the same package checks locally with PowerShell 7:
 This builds packages in a temporary directory, checks metadata, dependencies, symbols, Source Link, and bundled
 generators, then builds and runs a consumer using only those packages on .NET 10 and .NET 11.
 Pass `-PackageDirectory <directory>` to validate existing release artifacts.
+
+## Dotenv configuration
+
+Reference `Serval.Configuration` to use `.env` files in place of `appsettings.json`. The package works with the
+standard .NET host and ASP.NET Core builders, including Kestrel's `WebApplication.CreateSlimBuilder`. It depends
+on Microsoft.Extensions.Hosting and can also be used without the Serval HTTP framework.
+
+Call `UseDotEnvConfiguration` immediately after creating the builder, before reading configuration or registering
+services. Existing `IConfiguration`, `GetConnectionString`, logging, and options consumers keep using the same APIs.
+For example, inside your application's entry point:
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Serval.Configuration;
+
+public static class Program
+{
+    public static void Main(string[] args)
+    {
+        var builder = Host.CreateApplicationBuilder(args);
+        builder.UseDotEnvConfiguration(new DotEnvConfigurationOptions
+        {
+            KeyMappings =
+            {
+                ["APP_PORT"] = "Server:Port",
+                ["DATABASE_URL"] = "ConnectionStrings:Catalog",
+            },
+        });
+
+        var port = builder.Configuration.GetValue<int>("Server:Port");
+        var connectionString = builder.Configuration.GetConnectionString("Catalog");
+        // Register your services and transport using these settings, then build and run the host.
+    }
+}
+```
+
+### Choosing a key style
+
+| Style         | Example             | When to use it                                                                                                                          |
+|---------------|---------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Section-based | `Server__Port=8120` | Prefer this for .NET options, nested settings, logging, and direct JSON migrations. No mapping is needed.                               |
+| Conventional  | `APP_PORT=8120`     | Use this for names shared with deployment platforms, scripts, or other languages. Map it when a .NET consumer expects a different path. |
+
+Both styles can appear in the same file:
+
+```dotenv
+# These two names use the explicit mappings above.
+APP_PORT=8120
+DATABASE_URL="Data Source=catalog.db"
+
+# These keys work directly with .NET configuration sections.
+Server__Name=Catalog
+Server__AllowedOrigins__0=https://example.com
+Server__AllowedOrigins__1=https://admin.example.com
+Logging__LogLevel__Default=Information
+Logging__LogLevel__Microsoft.Hosting.Lifetime=Warning
+```
+
+Double underscores become `:` section separators. Single underscores remain literal, so `APP_PORT` can also be
+read directly as `configuration["APP_PORT"]`. Mapping it adds `Server:Port` while keeping the original name.
+Keys ignore case. Dotenv files also accept `:` separators and dots in names; `__` works better when sharing names
+with operating-system environment variables. Numeric sections represent array elements. Large nested collections
+are usually easier to maintain in JSON; `AddDotEnvFile` can be combined with other providers when needed.
+
+Mappings only rename keys. For example, naming a value `DATABASE_URL` does not convert a PostgreSQL URL into a
+provider-specific connection string. Supply the format expected by your database client.
+
+### Files, overrides, and reloads
+
+By default, `UseDotEnvConfiguration` replaces the two default appsettings file sources with `.env` and
+`.env.{EnvironmentName}`, relative to the host's content root. Both files are optional, allowing deployments that
+use only real environment variables. Use `Optional = false` to require the base file, `Path` to choose another file,
+`LoadEnvironmentFile = false` to skip the environment-specific file, or `ReloadOnChange = false` to disable watching.
+The environment-specific file is always optional. Register the host integration once.
+
+With the default host, precedence from lowest to highest is:
+
+1. `.env`
+2. `.env.{EnvironmentName}`, such as `.env.Development`
+3. Development user secrets
+4. Real environment variables
+5. Command-line arguments
+
+Other existing sources keep their relative order. Mappings apply separately within each existing source, including
+environment variables, command-line arguments, and user secrets. A higher-priority conventional key therefore
+overrides a lower-priority section key. If both names occur in the **same source**, the explicit destination key
+wins, including an empty value, regardless of line order. For example, `Server__Port=9000` takes precedence over
+`APP_PORT=8000` in one file when `APP_PORT` maps to `Server:Port`. Two assignments to the same normalized key in one
+file are errors. Mappings must have unique names and destinations; chained mappings are rejected.
+
+Both dotenv files are checked before the host's sources are replaced. A missing required file or a parsing error
+leaves the existing host configuration intact. Values already stored in in-memory providers are preserved.
+Assigning a conventional key through `IConfiguration` also updates its mapped file value, unless that file provider
+has an explicit destination key. Assigning the destination directly makes it explicit until the file is reloaded.
+
+For command-line overrides, use `--APP_PORT=9000` or .NET's section syntax `--Server:Port=9000`. For environment
+variables, use `APP_PORT` or `Server__Port`. Sources added after `UseDotEnvConfiguration` follow ordinary .NET
+precedence and do not inherit its mappings. Configure mappings on later dotenv sources explicitly.
+
+`AddDotEnvFile(path, optional, reloadOnChange)` adds a single file at the end of an `IConfigurationBuilder`'s sources.
+Its defaults require the file and disable watching. The `AddDotEnvFile(Action<DotEnvConfigurationSource>)` overload
+also exposes `KeyMappings`, `FileProvider`, and the standard file-provider error settings. This lower-level API
+does not replace JSON or rearrange other providers. Add environment-variable and argument providers afterward if
+they should override it.
+
+The parser accepts UTF-8 files, blank lines, `#` comments, optional `export`, empty values, and single- or
+double-quoted values. Unquoted inline comments start with `#` after whitespace; URL fragments stay intact.
+Single quotes preserve backslashes. Double quotes decode `\n`, `\r`, `\t`, `\"`, and `\\`; other escapes remain
+literal. Quoted values may span lines, with line endings normalized to `\n`. Variable interpolation and shell
+commands are left as literal text. Parse errors report a line number without including the value.
+
+Values stay in `IConfiguration`; loading a file does not change the process environment. The host chooses its
+environment, content root, and application name before this extension runs. Set `DOTNET_ENVIRONMENT` outside the
+file, or pass `HostApplicationBuilderSettings`, to select `.env.Development`. A `DOTNET_ENVIRONMENT` entry inside
+`.env` does not change that selection. The initial host creation still reads any existing appsettings files, so
+remove them when migrating. Serval's own callback-based options still need explicit configuration.
+
+File watching uses .NET's file configuration provider. Bound `IOptionsMonitor<T>` values update on reload;
+previously read strings and `IOptions<T>.Value` do not become live values. Validation also runs when monitored
+options are recreated. Invalid reloads follow the standard file-provider error behavior. Keep actual `.env` files
+out of source control and publish output; commit an `.env.example` with safe example values.
+
+### Generated binding and validation
+
+The package supports Microsoft's configuration-binding and options-validation source generators. Enable binding
+generation in the **application project that calls the binding APIs**:
+
+```xml
+<PropertyGroup>
+  <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+</PropertyGroup>
+```
+
+Use standard calls such as `Get<ServerOptions>()` or `AddOptions<ServerOptions>().BindConfiguration("Server")`.
+The generator sees the canonical section keys after mapping, so both dotenv styles use the same generated binder.
+The Microsoft packages needed by these generators are supplied through the package's hosting dependency.
+
+For generated validation, place data annotations such as `[Required]` and `[Range]` on your options and declare a
+validator:
+
+```csharp
+using Microsoft.Extensions.Options;
+
+[OptionsValidator]
+public sealed partial class ServerOptionsValidator : IValidateOptions<ServerOptions> {}
+```
+
+Register that validator as `IValidateOptions<ServerOptions>` and use `ValidateOnStart()` on the options builder.
+Use writable `set` properties for options bound into an existing instance. See the complete
+[configuration sample](samples/Serval.Sample.Configuration/Program.cs), its
+[options and generated validator declaration](samples/Serval.Sample.Configuration/ServerOptions.cs), and its
+[project settings](samples/Serval.Sample.Configuration/Serval.Sample.Configuration.csproj).
+
+Generation avoids reflection in supported binding and validation paths and helps with trimming and Native AOT.
+It does not compile `.env` contents or secrets into assemblies. Files, environment variables, and arguments remain
+runtime inputs, including reloads. No additional Serval generator is required. Other application dependencies and
+unsupported binding shapes still need their own AOT review. Microsoft's docs cover
+[binding generation](https://learn.microsoft.com/dotnet/core/extensions/configuration-generator) and
+[validation generation](https://learn.microsoft.com/dotnet/core/extensions/options-validation-generator).
+
+Run the sample with `dotnet run --project samples/Serval.Sample.Configuration`. It reads the committed example,
+validates the generated options, prints the name and port, and exits. Try `-- --APP_PORT=9000` to override the port
+or `-- --APP_PORT=0` to see startup validation fail.
+
+Run `dotnet run --project benchmarks/Serval.Configuration.Benchmarks -c Release` to measure parsing, mapped
+section enumeration, lookups, and host setup. An optional argument after `--` saves the results as JSON. The harness
+warms each case, reports the median of nine batches, checks returned values, and records allocations. Compare
+Release builds on the same machine without running other builds or benchmarks alongside them.
 
 ## Hosting with Kestrel
 

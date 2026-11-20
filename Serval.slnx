@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Framework/">
     <Project Path="src/Serval/Serval.csproj"/>
+    <Project Path="src/Serval.Configuration/Serval.Configuration.csproj"/>
     <Project Path="src/Serval.Authentication/Serval.Authentication.csproj"/>
     <Project Path="src/Serval.Jobs/Serval.Jobs.csproj"/>
     <Project Path="src/Serval.Savanna/Serval.Savanna.csproj"/>
@@ -24,6 +25,7 @@
     <Project Path="src/Serval.Savanna.LanguageServer/Serval.Savanna.LanguageServer.csproj"/>
   </Folder>
   <Folder Name="/Samples/">
+    <Project Path="samples/Serval.Sample.Configuration/Serval.Sample.Configuration.csproj"/>
     <Project Path="samples/Serval.Sample.Jobs/Serval.Sample.Jobs.csproj"/>
     <Project Path="samples/Serval.Sample.Vite/Serval.Sample.Vite.csproj"/>
     <Project Path="samples/Serval.Sample.Savanna/Serval.Sample.Savanna.csproj"/>
@@ -45,12 +47,14 @@
     <Project Path="samples/Serval.Sample.BackgroundServices/Serval.Sample.BackgroundServices.csproj"/>
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="tests/Serval.Configuration.Tests/Serval.Configuration.Tests.csproj"/>
     <Project Path="tests/Serval.Jobs.Tests/Serval.Jobs.Tests.csproj"/>
     <Project Path="tests/Serval.Tests/Serval.Tests.csproj"/>
     <Project Path="tests/Serval.SocketIO.Tests/Serval.SocketIO.Tests.csproj"/>
     <Project Path="tests/Serval.Savanna.LanguageServer.Tests/Serval.Savanna.LanguageServer.Tests.csproj"/>
   </Folder>
   <Folder Name="/Benchmarks/">
+    <Project Path="benchmarks/Serval.Configuration.Benchmarks/Serval.Configuration.Benchmarks.csproj"/>
     <Project Path="benchmarks/Serval.Transport.Benchmarks/Serval.Transport.Benchmarks.csproj"/>
     <Project Path="benchmarks/Serval.Jobs.Benchmarks/Serval.Jobs.Benchmarks.csproj"/>
     <Project Path="benchmarks/Serval.SocketIO.Benchmarks/Serval.SocketIO.Benchmarks.csproj"/>
